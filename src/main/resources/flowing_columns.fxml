@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import java.net.URL?>
+<HBox xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="me.theeninja.pfflowing.gui.FlowingColumnsController"
+          prefHeight="400.0" prefWidth="600.0"
+          fx:id="flowingColumns">
+    <VBox fx:id="aff_1" HBox.hgrow="ALWAYS">
+        <Label text="Aff 1" fx:id="aff_1_header" />
+        <VBox fx:id="aff_1_content" />
+    </VBox>
+    <VBox fx:id="neg_1" HBox.hgrow="ALWAYS">
+        <Label text="Neg 1" fx:id="neg_1_header"/>
+        <VBox fx:id="neg_1_content" />
+    </VBox>
+    <VBox fx:id="aff_2" HBox.hgrow="ALWAYS">
+        <Label text="Aff 2" fx:id="aff_2_header"/>
+        <VBox fx:id="aff_2_content" />
+    </VBox>
+    <VBox fx:id="neg_2" HBox.hgrow="ALWAYS">
+        <Label text="Neg 2" fx:id="neg_2_header"/>
+        <VBox fx:id="neg_2_content" />
+    </VBox>
+    <VBox fx:id="aff_3" HBox.hgrow="ALWAYS">
+        <Label text="Aff 3" fx:id="aff_3_header"/>
+        <VBox fx:id="aff_3_content" />
+    </VBox>
+    <VBox fx:id="neg_3" HBox.hgrow="ALWAYS">
+        <Label text="Neg 3" fx:id="neg_3_header"/>
+        <VBox fx:id="neg_3_content" />
+    </VBox>
+    <VBox fx:id="aff_4" HBox.hgrow="ALWAYS">
+        <Label text="Aff 4" fx:id="aff_4_header"/>
+        <VBox fx:id="aff_4_content" />
+    </VBox>
+    <VBox fx:id="neg_4" HBox.hgrow="ALWAYS">
+        <Label text="Neg 4" fx:id="neg_4_header"/>
+        <VBox fx:id="neg_4_content" />
+    </VBox>
+    <stylesheets>
+        <URL value="@flowing_columns.css" />
+    </stylesheets>
+</HBox>

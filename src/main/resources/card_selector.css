@@ -1,0 +1,7 @@
+#cardSelectorTreeView {
+    -fx-background-color: red;
+}
+
+#cardSelectorTreeView .tree-cell {
+    -fx-wrap-text: true;
+}

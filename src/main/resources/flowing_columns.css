@@ -1,0 +1,12 @@
+VBox .label {
+
+}
+
+.speechSelected {
+    -fx-border-width: 2;
+    -fx-border-color: sandybrown;
+}
+
+.selectedFlowingRegion {
+    -fx-background-color: dodgerblue;
+}
