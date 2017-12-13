@@ -6,14 +6,14 @@ import java.util.Arrays;
 import java.util.List;
 
 public enum Speech {
-    NEG_4(Side.NEGATION, "neg_4"),
-    AFF_4(Side.AFFIRMATIVE, "aff_4"),
-    NEG_3(Side.NEGATION, "neg_3"),
-    AFF_3(Side.AFFIRMATIVE, "aff_3"),
-    NEG_2(Side.NEGATION, "neg_2"),
-    AFF_2(Side.AFFIRMATIVE, "aff_2"),
-    NEG_1(Side.NEGATION, "neg_1"),
-    AFF_1(Side.AFFIRMATIVE, "aff_1");
+    NEG_4(Side.NEGATION),
+    AFF_4(Side.AFFIRMATIVE),
+    NEG_3(Side.NEGATION),
+    AFF_3(Side.AFFIRMATIVE),
+    NEG_2(Side.NEGATION),
+    AFF_2(Side.AFFIRMATIVE),
+    NEG_1(Side.NEGATION),
+    AFF_1(Side.AFFIRMATIVE);
 
     public static final List<Speech> SPEECH_ORDER = Arrays.asList(AFF_1, NEG_1, AFF_2, NEG_2, AFF_3, NEG_3, AFF_4, NEG_4);
 
@@ -55,18 +55,13 @@ public enum Speech {
     }
 
     private final Side side;
-    private final String flowingColumnFXID;
 
-    Speech(Side side, String flowingColumnFXID) {
+    Speech(Side side) {
         this.side = side;
-        this.flowingColumnFXID = flowingColumnFXID;
     }
 
     public Side getSide() {
         return side;
     }
 
-    public String getFlowingColumnFXID() {
-        return flowingColumnFXID;
-    }
 }

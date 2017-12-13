@@ -9,6 +9,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -49,5 +50,45 @@ public final class Utils {
                     change.getRemoved().forEach(removeFunction);
             }
         };
+    }
+
+    public static <T> boolean isLastElement(List<T> list, T element) {
+        return list.indexOf(element) == (list.size() - 1);
+    }
+
+    public static <T> T getNextElement(List<T> list, T element) {
+        int currentIndex = list.indexOf(element);
+        return list.get(currentIndex + 1);
+    }
+
+    public static <T> T getRelativeElement(List<T> list, T baseElement, int offset) {
+        int baseIndex = list.indexOf(baseElement);
+
+        if (offset == 0) {
+            return baseElement;
+        }
+
+        int newIndex = 0;
+
+        int beginningIndex = 0;
+        int endIndex = list.size() - 1;
+
+        // Indicates that we go forward in the array, potentially wrapping around the right end
+        if (offset > 0) {
+            newIndex = baseIndex + (offset % list.size());
+            if (newIndex > endIndex)
+                newIndex -= 8;
+        }
+        // Indicates that we go backwards in the array, potentially wrapping around the left end
+        else if (offset < 0) {
+            newIndex = baseIndex - (-offset % list.size());
+            if (newIndex < beginningIndex)
+                newIndex += 8;
+        }
+
+        if (newIndex > endIndex || newIndex < beginningIndex) {
+            throw new IllegalArgumentException("Base element provided, considering offset, will result in an illegal final index.");
+        }
+        return list.get(newIndex);
     }
 }

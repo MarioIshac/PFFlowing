@@ -1,12 +1,14 @@
 package me.theeninja.pfflowing.flowing;
 
+import javafx.scene.control.*;
+import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import me.theeninja.pfflowing.Configuration;
 
-import java.awt.*;
-
-public class FlowingRegion extends Text implements Identifiable {
+public class FlowingRegion extends Label implements Identifiable {
     private static int currentID = 0;
     private int id;
 
@@ -16,6 +18,7 @@ public class FlowingRegion extends Text implements Identifiable {
         super(representation);
         this.representation = representation;
         this.id = currentID++;
+        this.setFont(Configuration.FONT);
     }
 
     @Override

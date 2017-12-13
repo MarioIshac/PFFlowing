@@ -11,6 +11,9 @@
             fx:controller="me.theeninja.pfflowing.gui.PFFlowingApplicationController"
             prefHeight="400.0" prefWidth="600.0"
             fx:id="pfFlowingMain">
+    <top>
+        <fx:include source="navigator.fxml" prefHeight="20" />
+    </top>
     <left>
         <fx:include source="card_selector.fxml" />
     </left>
