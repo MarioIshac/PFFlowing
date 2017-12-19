@@ -1,67 +1,51 @@
 package me.theeninja.pfflowing.flowing;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import me.theeninja.pfflowing.Side;
+import me.theeninja.pfflowing.Utils;
+import me.theeninja.pfflowing.gui.Bindable;
+import me.theeninja.pfflowing.gui.FlowingColumn;
 
-import java.util.Arrays;
 import java.util.List;
 
-public enum Speech {
-    NEG_4(Side.NEGATION),
-    AFF_4(Side.AFFIRMATIVE),
-    NEG_3(Side.NEGATION),
-    AFF_3(Side.AFFIRMATIVE),
-    NEG_2(Side.NEGATION),
-    AFF_2(Side.AFFIRMATIVE),
-    NEG_1(Side.NEGATION),
-    AFF_1(Side.AFFIRMATIVE);
-
-    public static final List<Speech> SPEECH_ORDER = Arrays.asList(AFF_1, NEG_1, AFF_2, NEG_2, AFF_3, NEG_3, AFF_4, NEG_4);
-
-    private static int beginningIndex = 0;
-    private static int endIndex = SPEECH_ORDER.size() - 1;
-
-    /**
-     *
-     * @param baseSpeech The speech to base the offset off of.
-     * @param offset The number of speeches to move forwards (positive #) or backwards (negative #).
-     * @return The speech relative to the base speech given the offset,
-     * considering wrapping around the beginning or end.
-     * @throws IllegalArgumentException
-     */
-    public static Speech getRelativeSpeech(Speech baseSpeech, int offset) throws IllegalArgumentException {
-        int baseIndex = SPEECH_ORDER.indexOf(baseSpeech);
-
-        if (offset == 0) {
-            return baseSpeech;
-        }
-
-        int newIndex = 0;
-
-        if (offset > 0) {
-            newIndex = baseIndex + (offset % SPEECH_ORDER.size());
-            if (newIndex > endIndex)
-                newIndex -= 8;
-        }
-        else if (offset < 0) {
-            newIndex = baseIndex - (-offset % SPEECH_ORDER.size());
-            if (newIndex < beginningIndex)
-                newIndex += 8;
-        }
-
-        if (newIndex > endIndex || newIndex < beginningIndex) {
-            throw new IllegalArgumentException("Speech provided, considering offset, will result in an illegal final index.");
-        }
-        return SPEECH_ORDER.get(newIndex);
-    }
-
+public class Speech implements Bindable<FlowingColumn> {
     private final Side side;
+    private final String labelText;
+    private final ObservableList<FlowingRegion> flowingRegionList;
+    private FlowingColumn bindedFlowingColumn;
 
-    Speech(Side side) {
+    Speech(Side side, String labelText) {
         this.side = side;
+        this.labelText = labelText;
+        this.flowingRegionList = FXCollections.observableArrayList();
     }
 
     public Side getSide() {
         return side;
     }
 
+    public String getLabelText() {
+        return labelText;
+    }
+
+    public ObservableList<FlowingRegion> getFlowingRegionList() {
+        return flowingRegionList;
+    }
+
+    @Override
+    public void setBinded(FlowingColumn flowingColumn) {
+        this.bindedFlowingColumn = flowingColumn;
+        flowingRegionList.addListener(Utils.generateListChangeListener(
+                getBinded().getChildren()::add,
+                getBinded().getChildren()::remove
+        ));
+    }
+
+    @Override
+    public FlowingColumn getBinded() {
+        return bindedFlowingColumn;
+    }
 }

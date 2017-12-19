@@ -1,30 +1,19 @@
 package me.theeninja.pfflowing.gui;
 
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.control.cell.TextFieldTreeCell;
-import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.TransferMode;
-import javafx.scene.text.Text;
-import me.theeninja.pfflowing.Configuration;
 import me.theeninja.pfflowing.DependentController;
 import me.theeninja.pfflowing.Side;
 import me.theeninja.pfflowing.card.Card;
-import me.theeninja.pfflowing.card.CharacterStyle;
 import me.theeninja.pfflowing.card.OffensiveCard;
-import me.theeninja.pfflowing.flowing.FlowingRegion;
-import me.theeninja.pfflowing.flowing.Speech;
 
 import java.net.URL;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -115,7 +104,7 @@ public class CardSelectorController implements Initializable, DependentControlle
         if (keyEvent.getCode() == KeyCode.ENTER) {
             TreeItem<Card> treeItem = cardSelectorTreeView.getSelectionModel().getSelectedItem();
             OffensiveCard offensiveCard = treeItem.getValue().toOffensiveCard(Side.AFFIRMATIVE, FlowingColumnsController.getFXMLInstance().getSelectedFlowingRegions());
-            FlowingColumnsController.getFXMLInstance().addOffensiveFlowingRegion(FlowingColumnsController.getFXMLInstance().getSelectedSpeech(), offensiveCard);
+            FlowingColumnsController.getFXMLInstance().getSpeechListManager().getVisibleSelectedSpeech().getBinded().addOffensiveFlowingRegion(offensiveCard);
             removeCardSelectionListener();
         }
     };

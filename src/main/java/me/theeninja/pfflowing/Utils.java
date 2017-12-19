@@ -9,8 +9,13 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Provides helper methods that assist in the functionality of this application.
@@ -90,5 +95,21 @@ public final class Utils {
             throw new IllegalArgumentException("Base element provided, considering offset, will result in an illegal final index.");
         }
         return list.get(newIndex);
+    }
+
+    public static <T> Optional<T> getPredicateSatisfier(Collection<T> collection, Predicate<T> predicate) {
+        for (T element : collection) {
+            if (predicate.test(element)) {
+                return Optional.of(element);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static <T> List<T> getInstancesOfType(Collection<?> collection, Class<T> classRequired) {
+        return collection.stream()
+                .filter(classRequired::isInstance)
+                .map(classRequired::cast)
+                .collect(Collectors.toList());
     }
 }
