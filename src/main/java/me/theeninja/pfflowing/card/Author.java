@@ -2,7 +2,6 @@ package me.theeninja.pfflowing.card;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 public class Author {
     private final String firstName;

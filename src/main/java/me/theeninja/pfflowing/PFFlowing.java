@@ -2,7 +2,6 @@ package me.theeninja.pfflowing;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 import me.theeninja.pfflowing.card.Card;
 import me.theeninja.pfflowing.card.CardsProcessor;

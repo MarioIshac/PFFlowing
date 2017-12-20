@@ -1,18 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
-<?import java.net.URL?>
 <!-- height need not be specified because this takes up all of border-pane: left -->
+<?import javafx.scene.control.TreeItem?>
+<?import javafx.scene.control.TreeView?>
+<?import java.net.URL?>
 <TreeView xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="me.theeninja.pfflowing.gui.CardSelectorController"
-      prefWidth="200.0"
-      fx:id="cardSelectorTreeView">
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="me.theeninja.pfflowing.gui.CardSelectorController"
+          prefWidth="200.0"
+          fx:id="cardSelectorTreeView">
     <TreeItem fx:id="root" />
     <stylesheets>
         <URL value="@card_selector.css" />

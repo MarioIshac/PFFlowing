@@ -1,12 +1,7 @@
 package me.theeninja.pfflowing.gui;
 
 import javafx.scene.layout.HBox;
-import me.theeninja.pfflowing.flowing.Defensive;
 import me.theeninja.pfflowing.flowing.DefensiveSpeech;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class FlowingColumns extends HBox implements Bindable<SpeechListManager> {
     private SpeechListManager bindedSpeechListManager;
@@ -26,9 +21,7 @@ public class FlowingColumns extends HBox implements Bindable<SpeechListManager> 
 
     @Override
     public void setBinded(SpeechListManager speechListManager) {
-        System.out.println("called 1");
         this.bindedSpeechListManager = speechListManager;
-        bindedSpeechListManager.setBinded(this);
     }
 
     @Override
@@ -36,10 +29,3 @@ public class FlowingColumns extends HBox implements Bindable<SpeechListManager> 
         return bindedSpeechListManager;
     }
 }
-
-// Speech
-// SpeechList
-// SpeechListManager
-// FlowingColumn
-// FlowingColumns
-// FlowingColumnsController

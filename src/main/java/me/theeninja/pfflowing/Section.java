@@ -1,4 +1,4 @@
 package me.theeninja.pfflowing;
 
-public class Contention {
+public interface Section {
 }

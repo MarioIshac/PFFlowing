@@ -1,20 +1,16 @@
 package me.theeninja.pfflowing.gui;
 
-import com.google.common.collect.Iterables;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
-import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import me.theeninja.pfflowing.Configuration;
 import me.theeninja.pfflowing.Side;
-import me.theeninja.pfflowing.Utils;
-import me.theeninja.pfflowing.flowing.*;
+import me.theeninja.pfflowing.flowing.DefensiveSpeech;
+import me.theeninja.pfflowing.flowing.RefutationSpeech;
+import me.theeninja.pfflowing.flowing.Speech;
 import me.theeninja.pfflowing.utils.Pair;
 
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -26,9 +22,11 @@ public class SpeechList extends SimpleListProperty<Pair<DefensiveSpeech, Refutat
         for (DefensiveSpeech defensiveSpeech : DefensiveSpeech.DEFENSIVE_SPEECH_ORDER) {
             if (defensiveSpeech.getSide() == side) {
                 RefutationSpeech refutationSpeech = RefutationSpeech.getRefutationSpeech(defensiveSpeech);
-                add(new Pair<>(defensiveSpeech, refutationSpeech));
+                add(new SpeechPair(defensiveSpeech, refutationSpeech));
             }
         }
+
+        setSelectedSpeech(getSpeeches().get(0));
     }
 
     public void setFlowingColumns(List<FlowingColumn> flowingColumns) {

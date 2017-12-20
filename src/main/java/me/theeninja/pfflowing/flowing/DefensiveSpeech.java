@@ -27,4 +27,11 @@ public class DefensiveSpeech extends Speech {
     private DefensiveSpeech(Side side, String labelText) {
         super(side, labelText);
     }
+
+    public static DefensiveSpeech getDefensiveSpeech(RefutationSpeech refutationSpeech) {
+        for (DefensiveSpeech defensiveSpeech : DefensiveSpeech.DEFENSIVE_SPEECH_ORDER)
+            if (defensiveSpeech == refutationSpeech.getTargetSpeech())
+                return defensiveSpeech;
+        return null;
+    }
 }

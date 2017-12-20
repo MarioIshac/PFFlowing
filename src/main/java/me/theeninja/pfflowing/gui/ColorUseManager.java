@@ -5,7 +5,6 @@ import javafx.scene.paint.Color;
 import me.theeninja.pfflowing.Utils;
 import me.theeninja.pfflowing.utils.Pair;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;

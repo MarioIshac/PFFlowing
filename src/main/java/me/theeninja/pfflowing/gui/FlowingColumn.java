@@ -1,25 +1,27 @@
 package me.theeninja.pfflowing.gui;
 
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import me.theeninja.pfflowing.Configuration;
-import me.theeninja.pfflowing.card.*;
+import me.theeninja.pfflowing.Side;
+import me.theeninja.pfflowing.Utils;
+import me.theeninja.pfflowing.card.Card;
+import me.theeninja.pfflowing.card.CharacterFormatting;
+import me.theeninja.pfflowing.card.CharacterStyle;
+import me.theeninja.pfflowing.card.DefensiveReasoning;
 import me.theeninja.pfflowing.flowing.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 public class FlowingColumn extends VBox implements Bindable<Speech> {
     private final Speech speech;
@@ -27,18 +29,26 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
     private final VBox container;
     private Speech bindedSpeech;
 
+    private Color color;
+
+    private final boolean managesOpposite;
+
     public FlowingColumn(Speech speech) {
         this.speech = speech;
+
         this.label = new Label(speech.getLabelText());
+
         this.container = new VBox();
 
-        this.setBinded(speech);
+        Bindable.bind(this, speech);
 
         getChildren().add(getLabel());
         getChildren().add(getContainer());
 
         setPrefWidth(FlowingColumnsController.getFXMLInstance().getCorrelatingView().getPrefWidth() / 8);
         HBox.setHgrow(this, Priority.ALWAYS);
+
+        managesOpposite = getBinded() instanceof DefensiveSpeech;
     }
 
     public static List<FlowingColumn> of(SpeechList speechList) {
@@ -62,7 +72,7 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
      * is designed so that on the user hitting enter, the text entered into the flowing region writer
      * would be used to create a flowing region representing what the user typed.
      */
-    public void addFlowingRegionWriter() {
+    public void addFlowingRegionWriter(boolean createNewOne) {
         TextArea textArea = new TextArea();
         textArea.prefWidthProperty().bind(this.prefWidthProperty());
         textArea.setWrapText(true);
@@ -72,7 +82,8 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
             if (keyEvent.getCode() == KeyCode.ENTER && keyEvent.isControlDown()) {
                 addDefensiveFlowingRegion(new DefensiveReasoning(textArea.getText()));
                 getChildren().remove(textArea);
-                addFlowingRegionWriter();
+                if (createNewOne)
+                    addFlowingRegionWriter(true);
             }
         });
 
@@ -119,7 +130,14 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         }
 
         flowingRegion.setWrapText(true);
-        getChildren().add(flowingRegion);
+        flowingRegion.setTextFill(color);
+
+        if (isManagesOpposite()) {
+            setMargin(flowingRegion, new Insets(20, 0, 0, 0));
+            flowingRegion.setBackground(Utils.generateBackgroundOfColor(Color.RED));
+        }
+
+        getContainer().getChildren().add(flowingRegion);
     }
 
 
@@ -134,11 +152,22 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
     @Override
     public void setBinded(Speech speech) {
         this.bindedSpeech = speech;
-        speech.setBinded(this);
+        this.color = speech.getSide() == Side.AFFIRMATIVE ? Color.BLACK : Color.RED;
+        this.label.setTextFill(this.color);
     }
 
     @Override
     public Speech getBinded() {
         return bindedSpeech;
+    }
+
+    private FlowingColumn getOpposingFlowingColumn() {
+        FlowingColumns flowingColumns = (FlowingColumns) getParent();
+        SpeechListManager speechListManager = flowingColumns.getBinded();
+        return speechListManager.getSpeechList(this.getBinded()).getOpposite(this.getBinded()).getBinded();
+    }
+
+    public boolean isManagesOpposite() {
+        return managesOpposite;
     }
 }

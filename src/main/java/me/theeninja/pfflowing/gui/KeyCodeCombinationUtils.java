@@ -16,5 +16,7 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination SELECT_RIGHT_TOO = new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination SELECT_UP_TOO = new KeyCodeCombination(KeyCode.UP, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination SELECT_DOWN_TOO = new KeyCodeCombination(KeyCode.DOWN, KeyCombination.CONTROL_DOWN);
+    public static final KeyCodeCombination UNFOCUS = new KeyCodeCombination(KeyCode.ESCAPE);
+    public static final KeyCodeCombination SWITCH = new KeyCodeCombination(KeyCode.N, KeyCombination.SHIFT_DOWN);
 
 }
