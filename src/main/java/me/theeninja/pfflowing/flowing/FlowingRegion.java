@@ -1,7 +1,11 @@
 package me.theeninja.pfflowing.flowing;
 
+import javafx.scene.Group;
+import javafx.scene.Parent;
 import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import me.theeninja.pfflowing.Configuration;
+import me.theeninja.pfflowing.gui.FlowingColumn;
 
 public class FlowingRegion extends Label implements Identifiable {
     private static int currentID = 0;
@@ -23,5 +27,17 @@ public class FlowingRegion extends Label implements Identifiable {
 
     public String getRepresentation() {
         return representation;
+    }
+
+    public FlowingColumn getFlowingColumn() {
+        return (FlowingColumn) getContainer().getParent();
+    }
+
+    public VBox getContainer() {
+        Parent parent = getParent();
+        if (parent instanceof Group)
+            return (VBox) parent.getParent();
+        else
+            return (VBox) parent;
     }
 }

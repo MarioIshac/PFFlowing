@@ -47,7 +47,7 @@ public class PFFlowing extends Application {
         scene.setOnKeyPressed(FlowingColumnsController.getFXMLInstance());
         stage.show();
 
-        String directory = System.getProperty("user.home") + "/Desktop/DebateCards";
+        /* String directory = System.getProperty("user.home") + "/Desktop/DebateCards";
         System.out.println(directory);
         Path path = Paths.get(directory);
 
@@ -59,7 +59,7 @@ public class PFFlowing extends Application {
         }
         else {
             throw new FileNotFoundException("The directory " + directory + " is not valid.");
-        }
+        } */
     }
 
     public Scene getScene() {

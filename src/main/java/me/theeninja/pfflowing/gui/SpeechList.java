@@ -1,8 +1,13 @@
 package me.theeninja.pfflowing.gui;
 
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
+import javafx.scene.layout.Background;
+import javafx.scene.paint.Color;
 import me.theeninja.pfflowing.Side;
+import me.theeninja.pfflowing.Utils;
 import me.theeninja.pfflowing.flowing.DefensiveSpeech;
 import me.theeninja.pfflowing.flowing.RefutationSpeech;
 import me.theeninja.pfflowing.flowing.Speech;
@@ -15,10 +20,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class SpeechList extends SimpleListProperty<Pair<DefensiveSpeech, RefutationSpeech>> {
-    private Speech selectedSpeech;
+    private final Side side;
+    private ObjectProperty<Speech> selectedSpeech;
 
     public SpeechList(Side side) {
         super(FXCollections.observableArrayList());
+        this.side = side;
         for (DefensiveSpeech defensiveSpeech : DefensiveSpeech.DEFENSIVE_SPEECH_ORDER) {
             if (defensiveSpeech.getSide() == side) {
                 RefutationSpeech refutationSpeech = RefutationSpeech.getRefutationSpeech(defensiveSpeech);
@@ -26,6 +33,16 @@ public class SpeechList extends SimpleListProperty<Pair<DefensiveSpeech, Refutat
             }
         }
 
+        setFlowingColumns(FlowingColumn.of(this));
+
+        selectedSpeech = new SimpleObjectProperty<>();
+        selectedSpeechProperty().addListener(((observable, oldValue, newValue) -> {
+            if (oldValue != null)
+                oldValue.getBinded().setBackground(Background.EMPTY);
+            System.out.println(newValue);
+            System.out.println(newValue.getBinded());
+            newValue.getBinded().setBackground(Utils.generateBackgroundOfColor(Color.LIGHTGRAY));
+        }));
         setSelectedSpeech(getSpeeches().get(0));
     }
 
@@ -71,13 +88,16 @@ public class SpeechList extends SimpleListProperty<Pair<DefensiveSpeech, Refutat
         }
         return returnList;
     }
-
-    public Speech getSelectedSpeech() {
+    public ObjectProperty<Speech> selectedSpeechProperty() {
         return selectedSpeech;
     }
 
+    public Speech getSelectedSpeech() {
+        return selectedSpeech.get();
+    }
+
     public void setSelectedSpeech(Speech selectedSpeech) {
-        this.selectedSpeech = selectedSpeech;
+        this.selectedSpeech.set(selectedSpeech);
     }
 
     public Optional<Speech> findFirstSpeech(Predicate<Speech> predicate) {
@@ -85,5 +105,17 @@ public class SpeechList extends SimpleListProperty<Pair<DefensiveSpeech, Refutat
             if (predicate.test(speech))
                 return Optional.of(speech);
         return Optional.empty();
+    }
+
+    public void selectSpeech(int offset) {
+        setSelectedSpeech(Utils.getRelativeElement(
+            getSpeeches(),
+            getSelectedSpeech(),
+            offset
+        ));
+    }
+
+    public Side getSide() {
+        return side;
     }
 }

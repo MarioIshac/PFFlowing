@@ -1,7 +1,12 @@
 package me.theeninja.pfflowing.gui;
 
+import javafx.scene.Node;
 import javafx.scene.layout.HBox;
+import javafx.scene.shape.Line;
+import me.theeninja.pfflowing.Utils;
 import me.theeninja.pfflowing.flowing.DefensiveSpeech;
+
+import java.util.stream.Collectors;
 
 public class FlowingColumns extends HBox implements Bindable<SpeechListManager> {
     private SpeechListManager bindedSpeechListManager;

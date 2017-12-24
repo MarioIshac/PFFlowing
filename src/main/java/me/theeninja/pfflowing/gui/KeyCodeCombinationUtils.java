@@ -18,5 +18,8 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination SELECT_DOWN_TOO = new KeyCodeCombination(KeyCode.DOWN, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination UNFOCUS = new KeyCodeCombination(KeyCode.ESCAPE);
     public static final KeyCodeCombination SWITCH = new KeyCodeCombination(KeyCode.N, KeyCombination.SHIFT_DOWN);
+    public static final KeyCodeCombination RIGHT_SPEECH = new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.SHIFT_DOWN);
+    public static final KeyCodeCombination LEFT_SPEECH = new KeyCodeCombination(KeyCode.LEFT, KeyCodeCombination.SHIFT_DOWN);
+    public static final KeyCodeCombination WRITE = new KeyCodeCombination(KeyCode.W, KeyCodeCombination.CONTROL_DOWN);
 
 }

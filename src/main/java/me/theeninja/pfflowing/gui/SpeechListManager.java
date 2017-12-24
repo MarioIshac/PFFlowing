@@ -26,12 +26,6 @@ public class SpeechListManager implements Bindable<FlowingColumns> {
         AFF_SPEECHES = new SpeechList(Side.AFFIRMATIVE);
         NEG_SPEECHES = new SpeechList(Side.NEGATION);
 
-        AFF_SPEECHES.setSelectedSpeech(DefensiveSpeech.AFF_1);
-        NEG_SPEECHES.setSelectedSpeech(DefensiveSpeech.NEG_1);
-
-        AFF_SPEECHES.setFlowingColumns(FlowingColumn.of(AFF_SPEECHES));
-        NEG_SPEECHES.setFlowingColumns(FlowingColumn.of(NEG_SPEECHES));
-
         setBinded(flowingColumns);
     }
 
