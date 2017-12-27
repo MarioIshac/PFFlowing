@@ -23,7 +23,7 @@ public class OffensiveCard extends Card implements Offensive {
     }
 
     @Override
-    public List<FlowingRegion> getTargetRegions() {
+    public List<FlowingRegion> getTargetRegion() {
         return targetRegion;
     }
 }

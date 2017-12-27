@@ -15,7 +15,7 @@ public class RefutationSpeech extends Speech {
     private static final RefutationSpeech AT_NEG_3 = new RefutationSpeech(DefensiveSpeech.NEG_3, Side.AFFIRMATIVE, "AT Neg 3");
     private static final RefutationSpeech AT_NEG_4 = new RefutationSpeech(DefensiveSpeech.NEG_4, Side.AFFIRMATIVE, "AT Neg 4");
 
-    static final List<RefutationSpeech> REFUTATION_SPEECH_ORDER = Arrays.asList(AT_AFF_1, AT_NEG_1, AT_AFF_2, AT_NEG_2, AT_AFF_3, AT_NEG_3, AT_AFF_4, AT_NEG_4);
+    public static final List<RefutationSpeech> REFUTATION_SPEECH_ORDER = Arrays.asList(AT_AFF_1, AT_NEG_1, AT_AFF_2, AT_NEG_2, AT_AFF_3, AT_NEG_3, AT_AFF_4, AT_NEG_4);
 
     private final DefensiveSpeech targetSpeech;
 

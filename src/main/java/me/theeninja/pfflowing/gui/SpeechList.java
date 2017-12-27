@@ -53,6 +53,7 @@ public class SpeechList extends SimpleListProperty<Pair<DefensiveSpeech, Refutat
     }
 
     public Speech getOpposite(Speech speech) {
+        System.out.println("Opposite" + speech.getLabelText());
         Pair<DefensiveSpeech, RefutationSpeech> pair = getPair(speech);
         if (speech instanceof DefensiveSpeech)
             return pair.getSecond();
@@ -61,13 +62,13 @@ public class SpeechList extends SimpleListProperty<Pair<DefensiveSpeech, Refutat
     }
 
     private Pair<DefensiveSpeech, RefutationSpeech> getPair(Speech speech) {
+        System.out.println(this.size());
+        System.out.println("Pair" + speech.getLabelText());
         for (Pair<DefensiveSpeech, RefutationSpeech> pair : this) {
-            if (speech instanceof DefensiveSpeech)
-                if (pair.getFirst() == speech)
-                    return pair;
-            else
-                if (pair.getSecond() == speech)
-                    return pair;
+            System.out.println(pair.getFirst().getLabelText());
+            System.out.println(pair.getSecond().getLabelText());
+            if (pair.contains(speech))
+                return pair;
         }
         return null;
     }

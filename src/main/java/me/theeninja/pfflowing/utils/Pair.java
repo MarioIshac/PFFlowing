@@ -34,4 +34,8 @@ public class Pair<K, V> {
         setFirst(first);
         setSecond(second);
     }
+
+    public boolean contains(Object object) {
+        return getFirst() == object || getSecond() == object;
+    }
 }

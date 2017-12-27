@@ -7,5 +7,5 @@ import java.util.List;
 public interface Offensive {
     Side getInitiator();
     Side getTargetSide();
-    List<FlowingRegion> getTargetRegions();
+    FlowingRegion getTargetRegion();
 }

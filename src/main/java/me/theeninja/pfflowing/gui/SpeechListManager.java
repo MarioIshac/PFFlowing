@@ -40,7 +40,6 @@ public class SpeechListManager implements Bindable<FlowingColumns> {
     }
 
     private void setSelectedSpeechList(SpeechList selectedSpeechList) {
-        System.out.println("selected");
         this.selectedSpeechList.set(selectedSpeechList);
     }
 
@@ -52,7 +51,6 @@ public class SpeechListManager implements Bindable<FlowingColumns> {
     }
 
     public void selectAffSpeechMap() {
-        System.out.println("aff map selected");
         setSelectedSpeechList(getAffSpeechMap());
     }
 
@@ -61,7 +59,10 @@ public class SpeechListManager implements Bindable<FlowingColumns> {
     }
 
     public SpeechList getSpeechList(Speech speech) {
-        return getSpeechList(speech.getSide());
+        if (AFF_SPEECHES.getSpeeches().contains(speech))
+            return AFF_SPEECHES;
+        else
+            return NEG_SPEECHES;
     }
 
     public SpeechList getSpeechList(Side side) {

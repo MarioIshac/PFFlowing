@@ -61,16 +61,14 @@ public final class Utils {
     }
 
     public static <T> T getNextElement(List<T> list, T element) {
-        int currentIndex = list.indexOf(element);
-        return list.get(currentIndex + 1);
+        return Utils.getRelativeElement(list, element, 1);
     }
 
     public static <T> T getRelativeElement(List<T> list, T baseElement, int offset) {
         int baseIndex = list.indexOf(baseElement);
 
-        if (offset == 0) {
+        if (offset == 0)
             return baseElement;
-        }
 
         int newIndex = 0;
 
@@ -84,15 +82,15 @@ public final class Utils {
                 newIndex -= 8;
         }
         // Indicates that we go backwards in the array, potentially wrapping around the left end
-        else if (offset < 0) {
+        else {
             newIndex = baseIndex - (-offset % list.size());
             if (newIndex < beginningIndex)
                 newIndex += 8;
         }
 
-        if (newIndex > endIndex || newIndex < beginningIndex) {
+        if (newIndex > endIndex || newIndex < beginningIndex)
             throw new IllegalArgumentException("Base element provided, considering offset, will result in an illegal final index.");
-        }
+
         return list.get(newIndex);
     }
 

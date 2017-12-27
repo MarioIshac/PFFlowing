@@ -5,9 +5,9 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
@@ -17,7 +17,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import me.theeninja.pfflowing.Configuration;
+import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.Utils;
 import me.theeninja.pfflowing.card.OffensiveCard;
@@ -84,19 +84,30 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
      */
     private FlowingRegion lastSelected;
 
-
-    /**
-     * The selected flowing column is important to keep track of since many actions used
-     * to modify individual flowing columns require knowledge of which flowing column they are
-     * modifying (in order to access the children, change them, etc).
-     */
-    private FlowingColumn selectedFlowingColumn;
-
     private final Map<KeyCodeCombination, Runnable> keyCodeCombinationMap = new HashMap<>();
+
+    private void toggleFullscreen() {
+        if (PFFlowing.getInstance().getStage().isFullScreen())
+            PFFlowing.getInstance().getStage().setFullScreen(false);
+        else
+            PFFlowing.getInstance().getStage().setFullScreen(true);
+    }
+
+    public Map<KeyCodeCombination, Runnable> getKeyCodeCombinationMap() {
+        return keyCodeCombinationMap;
+    }
 
     private void populateKeyCodeCombinationMap() {
         keyCodeCombinationMap.put(REFUTE, this::refute);
         keyCodeCombinationMap.put(EXTEND, this::extend);
+        keyCodeCombinationMap.put(NARROW_BY_1, () -> {
+            System.out.println("DADAD");
+            getCorrelatingView().getSelectedDisplayShifter().narrowBy(1);
+        });
+        keyCodeCombinationMap.put(EDIT, this::edit);
+        keyCodeCombinationMap.put(UPSCALE_BY_1, () -> getCorrelatingView().getSelectedDisplayShifter().upscaleBy(1));
+        keyCodeCombinationMap.put(SHIFT_DISPLAY_RIGHT, () -> getCorrelatingView().getSelectedDisplayShifter().shift(1));
+        keyCodeCombinationMap.put(SHIFT_DISPLAY_LEFT, () -> getCorrelatingView().getSelectedDisplayShifter().shift(-1));
         keyCodeCombinationMap.put(SELECT_LEFT_ONLY, () -> handleSelection(this::getLeft, getLastSelected(), false));
         keyCodeCombinationMap.put(SELECT_RIGHT_ONLY, () -> handleSelection(this::getRight, getLastSelected(), false));
         keyCodeCombinationMap.put(SELECT_DOWN_ONLY, () -> handleSelection(this::getDown, getLastSelected(), false));
@@ -106,12 +117,13 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
         keyCodeCombinationMap.put(SELECT_DOWN_TOO, () -> handleSelection(this::getDown, getLastSelected(), true));
         keyCodeCombinationMap.put(SELECT_UP_TOO, () -> handleSelection(this::getUp, getLastSelected(), true));
         keyCodeCombinationMap.put(UNFOCUS, () -> flowingColumns.requestFocus());
-        keyCodeCombinationMap.put(SWITCH, () -> getSpeechListManager().switchSelectedSpeechMap());
-        keyCodeCombinationMap.put(RIGHT_SPEECH, () -> speechListManager.getSelectedSpeechList().selectSpeech(1));
-        keyCodeCombinationMap.put(LEFT_SPEECH, () -> speechListManager.getSelectedSpeechList().selectSpeech(-1));
+        keyCodeCombinationMap.put(SWITCH_SPEECHLIST, () -> getSpeechListManager().switchSelectedSpeechMap());
+        keyCodeCombinationMap.put(SELECT_RIGHT_SPEECH, () -> speechListManager.getSelectedSpeechList().selectSpeech(1));
+        keyCodeCombinationMap.put(SELECT_LEFT_SPEECH, () -> speechListManager.getSelectedSpeechList().selectSpeech(-1));
         keyCodeCombinationMap.put(WRITE, () -> {
            speechListManager.getSelectedSpeechList().getSelectedSpeech().getBinded().addFlowingRegionWriter(false);
         });
+        keyCodeCombinationMap.put(TOGGLE_FULLSCREEN, this::toggleFullscreen);
     }
 
 
@@ -122,15 +134,17 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
         initializeListeners();
 
         colorUseManager = new ColorUseManager();
-        speechListManager = new SpeechListManager(flowingColumns);
+        speechListManager = new SpeechListManager(getCorrelatingView());
 
-        Bindable.bind(speechListManager, flowingColumns);
+        Bindable.bind(getSpeechListManager(), getCorrelatingView());
 
         // Set up the flowing pane for aff 1 speech
         speechListManager.selectAffSpeechMap();
+        getCorrelatingView().initializeDisplayShifters();
+        getCorrelatingView().setSelectedDisplayShifter(flowingColumns.getAffDisplayShifter());
 
         // To allow spacing for the arrows
-        flowingColumns.setSpacing(Configuration.SPEECH_SEPERATION);
+        // getCorrelatingView().setSpacing(Configuration.SPEECH_SEPERATION);
 
         // Must be called last
         populateKeyCodeCombinationMap();
@@ -138,6 +152,20 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
 
     public ObservableList<FlowingRegion> getSelectedFlowingRegions() {
         return selectedFlowingRegions;
+    }
+
+    public void edit() {
+        FlowingRegion editedFlowingRegion = getLastSelected();
+        TextField textField = new TextField(editedFlowingRegion.getText());
+        textField.positionCaret(textField.getText().toCharArray().length);
+        PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().setBottom(textField);
+        textField.requestFocus();
+
+        textField.setOnAction(actionEvent -> {
+            editedFlowingRegion.setText(textField.getText());
+            PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().setBottom(null);
+            FlowingColumnsController.getFXMLInstance().getCorrelatingView().requestFocus();
+        });
     }
 
     public FlowingRegion getLastSelected() {
@@ -214,7 +242,7 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
     private <T extends FlowingRegion & Offensive> void link(T offensiveFlowingRegion) {
         System.out.println("calling link");
 
-        List<FlowingRegion> targetFlowingRegions = offensiveFlowingRegion.getTargetRegions();
+        List<FlowingRegion> targetFlowingRegions = offensiveFlowingRegion.getTargetRegion();
 
         if (colorUseManager.hasNext()) {
             Pair<Color, Background> pair = colorUseManager.next();
@@ -307,62 +335,78 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
         }
     }
 
-    public void select(FlowingRegion flowingRegion, boolean isCtrlDown) {
+    public void select(FlowingRegion flowingRegion, boolean multiSelect) {
         setLastSelected(flowingRegion);
 
-        if (!isCtrlDown)
-            selectedFlowingRegions.clear();
-        selectedFlowingRegions.add(getLastSelected());
+        if (!multiSelect)
+            getSelectedFlowingRegions().clear();
+        getSelectedFlowingRegions().add(getLastSelected());
     }
 
-    public void unselect(FlowingRegion flowingRegion, boolean isCtrlDown) {
+    public void unselect(FlowingRegion flowingRegion, boolean multiUnselect) {
         setLastSelected(flowingRegion);
 
-        selectedFlowingRegions.clear();
-        selectedFlowingRegions.add(getLastSelected());
+        getSelectedFlowingRegions().clear();
+        getSelectedFlowingRegions().add(getLastSelected());
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private void handleSelection(Optional<FlowingRegion> flowingRegion, boolean isCtrlDown) {
+    private void handleSelection(Optional<FlowingRegion> flowingRegion, boolean multiSelect) {
         System.out.println("called dude");
         if (!flowingRegion.isPresent())
             return;
 
         FlowingRegion handledFlowingRegion = flowingRegion.get();
 
-        if (selectedFlowingRegions.contains(handledFlowingRegion))
-            unselect(handledFlowingRegion, isCtrlDown);
+        if (getSelectedFlowingRegions().contains(handledFlowingRegion))
+            unselect(handledFlowingRegion, multiSelect);
         else
-            select(handledFlowingRegion, isCtrlDown);
+            select(handledFlowingRegion, multiSelect);
     }
 
+    /**
+     * Provides the one, main view that is represented by this controller.
+     *
+     * @return The one, main view correlating to the controller.
+     */
     @Override
     public FlowingColumns getCorrelatingView() {
         return flowingColumns;
     }
 
+    /**
+     * Processes a {@link KeyEvent} that is newly generated upon a keyboard key press. In order to implement this listener,
+     * this method fulfills the contract that being an {@link EventHandler<KeyEvent>} requires. In the main class,
+     * the fxml instance of this class handles all pressed keys.
+     *
+     * @param keyEvent The event data that provides the key pressed, key combinations used, etc.
+     */
     @Override
     public void handle(KeyEvent keyEvent) {
-        logger.log(Level.INFO, "{0} key pressed", keyEvent.getCode().getName());
-        for (KeyCodeCombination keyCodeCombination : keyCodeCombinationMap.keySet())
+        for (KeyCodeCombination keyCodeCombination : getKeyCodeCombinationMap().keySet())
             if (keyCodeCombination.match(keyEvent)) {
-                keyCodeCombinationMap.get(keyCodeCombination).run();
-
+                getKeyCodeCombinationMap().get(keyCodeCombination).run();
+                System.out.println(keyCodeCombination);
                 // Prevents the card selector from being selected on left arrow key
                 keyEvent.consume();
             }
     }
 
+    /**
+     * Refutes all selected nodes in a position relative to the last selected node. This is done by:
+     * 1) constructing a flowing region writer that, when submitted, yields an offensive flowing region
+     * 2) constructing a visual link between the newly created offensive flowing region and the selected nodes
+     */
     private void refute() {
-        Speech speech = speechListManager.getSelectedSpeechList().getSelectedSpeech();
-        List<Speech> speechListSpeeches = speechListManager.getSpeechList(speech).getSpeeches();
+        Speech speech = getLastSelected().getFlowingColumn().getBinded();
+        List<Speech> speechListSpeeches = getSpeechListManager().getSpeechList(speech).getSpeeches();
 
         // Utils.getRelativeElement(...) will wrap around, yet you cannot refute AT-Neg4 or AT-Aff4 Content
         if (Utils.isLastElement(speechListSpeeches, speech))
             return;
 
         FlowingColumn rightFlowingColumn = Utils.getRelativeElement(speechListSpeeches, speech, 1).getBinded();
-        rightFlowingColumn.addFlowingRegionWriter(false, text -> {
+        rightFlowingColumn.addFlowingRegionWriter(false, true, text -> {
             OffensiveReasoning offensiveReasoning = new OffensiveReasoning(text, speech.getSide(), speech.getSide().getOpposite(), selectedFlowingRegions);
             rightFlowingColumn.addOffensiveFlowingRegion(offensiveReasoning);
         });
@@ -376,6 +420,20 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
         }
     }
 
+    private void organize() {
+        Speech speech = getSpeechListManager().getSelectedSpeechList().getSelectedSpeech();
+        List<FlowingRegion> base = speech.getBinded().getContentContainer().getBaseContent();
+        List<FlowingRegion> ref = speech.getBinded().getContentContainer().getRefContent();
+
+        VBox vbox = new VBox();
+    }
+
+    /**
+     *
+     * @param function
+     * @param flowingRegion
+     * @param isCtrlDown
+     */
     private void handleSelection(Function<FlowingRegion, Optional<FlowingRegion>> function, FlowingRegion flowingRegion, boolean isCtrlDown) {
         handleSelection(function.apply(flowingRegion), isCtrlDown);
     }
@@ -391,7 +449,7 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
     }
 
     private void initializeListeners() {
-        selectedFlowingRegions.addListener(Utils.generateListChangeListener(
+        getSelectedFlowingRegions().addListener(Utils.generateListChangeListener(
             this::addSelectionStyling,
             this::removeSelectionStyling
         ));
@@ -419,7 +477,7 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
      * otherwise an empty {@link Optional}
      */
     private Optional<FlowingRegion> getVerticallyRelativeFlowingRegion(FlowingRegion flowingRegion, int offset) {
-        VBox contentContainer = (VBox) flowingRegion.getParent();
+        ContentContainer contentContainer = (ContentContainer) flowingRegion.getParent();
 
         System.out.println(flowingRegion.getParent());
 
@@ -444,28 +502,25 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
     }
 
     /**
-     *
      * @param flowingRegion The flowing region to base all directions upon.
      * @param offset How far the relative flowing region is in the right/left direction (+ -> right, - -> left)
      * @return Thee flowing region assuming the offset is within the currently utilized part of the flowing pane,
      * otherwise an empty {@link Optional}
      */
     private Optional<FlowingRegion> getHorizontallyRelativeFlowingRegion(FlowingRegion flowingRegion, int offset) {
-        VBox baseContentContainer = (VBox) flowingRegion.getParent();
+        ContentContainer baseContentContainer = flowingRegion.getContainer();
         int indexInParent = baseContentContainer.getChildren().indexOf(flowingRegion);
-        Speech baseSpeech = ((FlowingColumn) baseContentContainer.getParent()).getBinded();
+        Speech baseSpeech = baseContentContainer.getFlowingColumn().getBinded();
 
         Speech relativeSpeech;
 
         try {
-            relativeSpeech = Utils.getRelativeElement(speechListManager.getSelectedSpeechList().getSpeeches(), baseSpeech, offset);
+            relativeSpeech = Utils.getRelativeElement(getSpeechListManager().getSelectedSpeechList().getSpeeches(), baseSpeech, offset);
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }
 
-        System.out.println(relativeSpeech.toString());
-
-        VBox relativeContentContainer = relativeSpeech.getBinded().getContainer();
+        ContentContainer relativeContentContainer = relativeSpeech.getBinded().getContentContainer();
 
         if (relativeContentContainer.getChildren().size() == 0)
             return Optional.empty();
@@ -481,10 +536,8 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
 
         Node node = relativeContentContainer.getChildren().get(indexInParent);
 
-        if (!(node instanceof FlowingRegion)) {
-            System.out.println(node.getParent());
+        if (!(node instanceof FlowingRegion))
             throw new Error("Unexpected error here. Node in this case should always be a flowing region.");
-        }
 
         return Optional.of((FlowingRegion) node);
     }
@@ -529,6 +582,10 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
         return getHorizontallyRelativeFlowingRegion(flowingRegion, -1);
     }
 
+    /**
+     * @return The speech list manager that houses essential data such as selected speech,
+     * selected speech list, etc.
+     */
     public SpeechListManager getSpeechListManager() {
         return speechListManager;
     }

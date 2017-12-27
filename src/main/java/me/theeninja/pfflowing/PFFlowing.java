@@ -2,12 +2,11 @@ package me.theeninja.pfflowing;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Stage;
 import me.theeninja.pfflowing.card.Card;
 import me.theeninja.pfflowing.card.CardsProcessor;
-import me.theeninja.pfflowing.gui.CardSelectorController;
-import me.theeninja.pfflowing.gui.FlowingColumnsController;
-import me.theeninja.pfflowing.gui.PFFlowingApplicationController;
+import me.theeninja.pfflowing.gui.*;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -35,18 +34,20 @@ public class PFFlowing extends Application {
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage stage) {
         this.stage = stage;
         scene = new Scene(PFFlowingApplicationController.getFXMLInstance().getCorrelatingView());
-        FlowingColumnsController.getFXMLInstance().generateLineLinksListener();
+        // FlowingColumnsController.getFXMLInstance().generateLineLinksListener();
         instance = this;
 
         stage.setScene(scene);
         stage.setTitle(APPLICATION_TITLE);
         stage.setFullScreen(true);
-        scene.setOnKeyPressed(FlowingColumnsController.getFXMLInstance());
+        scene.setOnKeyReleased(FlowingColumnsController.getFXMLInstance());
+        stage.setFullScreenExitKeyCombination(KeyCodeCombination.NO_MATCH);
         stage.show();
 
+        FlowingColumnsController.getFXMLInstance().getCorrelatingView().requestFocus();
         /* String directory = System.getProperty("user.home") + "/Desktop/DebateCards";
         System.out.println(directory);
         Path path = Paths.get(directory);

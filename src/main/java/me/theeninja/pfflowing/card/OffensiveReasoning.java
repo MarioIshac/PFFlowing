@@ -29,7 +29,7 @@ public class OffensiveReasoning extends Reasoning implements Offensive {
     }
 
     @Override
-    public List<FlowingRegion> getTargetRegions() {
+    public List<FlowingRegion> getTargetRegion() {
         return targetRegion;
     }
 }

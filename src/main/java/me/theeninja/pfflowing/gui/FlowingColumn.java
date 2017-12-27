@@ -1,12 +1,15 @@
 package me.theeninja.pfflowing.gui;
 
+import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -15,7 +18,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import me.theeninja.pfflowing.Configuration;
 import me.theeninja.pfflowing.Side;
-import me.theeninja.pfflowing.Utils;
 import me.theeninja.pfflowing.card.Card;
 import me.theeninja.pfflowing.card.CharacterFormatting;
 import me.theeninja.pfflowing.card.CharacterStyle;
@@ -27,10 +29,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-public abstract class FlowingColumn extends VBox implements Bindable<Speech> {
+public class FlowingColumn extends VBox implements Bindable<Speech> {
     private final Speech speech;
     private final Label label;
-    private final VBox container;
+    private final ContentContainer contentContainer;
     private Speech bindedSpeech;
 
     private Color color;
@@ -42,12 +44,12 @@ public abstract class FlowingColumn extends VBox implements Bindable<Speech> {
 
         this.label = new Label(speech.getLabelText());
 
-        this.container = new VBox();
+        this.contentContainer = new ContentContainer();
 
-        Bindable.bind(this, speech);
+        Bindable.bind(this, getSpeech());
 
         getChildren().add(getLabel());
-        getChildren().add(getContainer());
+        getChildren().add(getContentContainer());
 
         setPrefWidth(FlowingColumnsController.getFXMLInstance().getCorrelatingView().getPrefWidth() / 8);
         HBox.setHgrow(this, Priority.ALWAYS);
@@ -59,8 +61,9 @@ public abstract class FlowingColumn extends VBox implements Bindable<Speech> {
         List<FlowingColumn> flowingColumns = new ArrayList<>();
         for (Speech speech : speechList.getSpeeches()) {
             FlowingColumn flowColumn = speech.getSide() == speechList.getSide() ?
-                    new DefensiveFlowingColumn(speech) :
-                    new RefutationFlowingColumn(speech);
+                    new FlowingColumn(speech) :
+                    new FlowingColumn(speech);
+            flowingColumns.add(flowColumn);
         }
         return flowingColumns;
     }
@@ -79,27 +82,84 @@ public abstract class FlowingColumn extends VBox implements Bindable<Speech> {
      * is designed so that on the user hitting enter, the text entered into the flowing region writer
      * would be used to create a flowing region representing what the user typed.
      */
-    public abstract void addFlowingRegionWriter(boolean createNewOne, Consumer<String> postEnterAction);
+    public void addFlowingRegionWriter(boolean createNewOne, boolean refMode, Consumer<String> postEnterAction) {
+        if (refMode)
+            addReactiveFlowingRegionWriter(createNewOne, postEnterAction);
+        else
+            addProactiveFlowingRegionWriter(createNewOne, postEnterAction);
+    }
+
+    private TextArea generateInputTextArea() {
+        TextArea textArea = new TextArea();
+        textArea.prefWidthProperty().bind(this.widthProperty());
+        textArea.setWrapText(true);
+        textArea.setFont(Configuration.FONT);
+
+        return textArea;
+    }
+
+    private final KeyCodeCombination TEXTAREA_SUBMIT = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
+
+    private EventHandler<KeyEvent> generateHandler(TextArea textArea, Node removedNode, boolean createNewOne, boolean refMode, Consumer<String> postEnterAction) {
+        return (KeyEvent keyEvent) -> {
+            if (TEXTAREA_SUBMIT.match(keyEvent)) {
+                postEnterAction.accept(textArea.getText());
+
+                getChildren().remove(removedNode);
+
+                if (createNewOne)
+                    addFlowingRegionWriter(true, refMode, postEnterAction);
+            }
+        };
+    }
+
+    private void addReactiveFlowingRegionWriter(boolean createNewOne, Consumer<String> postEnterAction) {
+        TextArea textArea = generateInputTextArea();
+
+        Group group = new Group(textArea);
+        group.setManaged(false);
+        FlowingRegion firstElement = FlowingColumnsController.getFXMLInstance().getLastSelected();
+
+        // Text area is being added to the whole parent, not just
+        group.setLayoutY(firstElement.getLayoutY() + getLabel().getHeight());
+
+        textArea.addEventHandler(KeyEvent.KEY_PRESSED, generateHandler(textArea, group, createNewOne, false, postEnterAction));
+
+        this.getChildren().add(group);
+        textArea.requestFocus();
+
+        FlowingColumnsController.getFXMLInstance().addCardSelectorSupport(textArea);
+    }
+
+    private void addProactiveFlowingRegionWriter(boolean createNewOne, Consumer<String> postEnterAction) {
+        TextArea textArea = generateInputTextArea();
+
+        textArea.addEventHandler(KeyEvent.KEY_PRESSED, generateHandler(textArea, textArea, createNewOne, false, postEnterAction));
+
+        this.getChildren().add(textArea);
+        textArea.requestFocus();
+
+        FlowingColumnsController.getFXMLInstance().addCardSelectorSupport(textArea);
+    }
 
     /**
      * Defaul post-enter specification for the above method
      * @param createNewOne
      */
     public void addFlowingRegionWriter(boolean createNewOne) {
-        addFlowingRegionWriter(createNewOne, text -> {
+        addFlowingRegionWriter(createNewOne, false, text -> {
             DefensiveReasoning defensiveReasoning = new DefensiveReasoning(text);
             addDefensiveFlowingRegion(defensiveReasoning);
         });
-
     }
+
     public <T extends FlowingRegion & Offensive> void addOffensiveFlowingRegion(T offensiveRegion) {
-        addFlowingRegion(offensiveRegion);
-        drawArrow(offensiveRegion);
+        addFlowingRegion(true, offensiveRegion);
+        // drawArrow(offensiveRegion);
     }
 
     private <T extends FlowingRegion & Offensive> void drawArrow(T offensiveRegion) {
-        List<FlowingRegion> starters = offensiveRegion.getTargetRegions();
-        for (FlowingRegion starter : starters) {
+        FlowingRegion starter = offensiveRegion.getTargetRegion();
             Bounds starterBounds = starter.localToScene(starter.getLayoutBounds());
             double startX = starterBounds.getMaxX() + Configuration.ARROW_MARGIN;
             double startY = (starterBounds.getMinY() + starterBounds.getMaxY()) / 2;
@@ -110,30 +170,23 @@ public abstract class FlowingColumn extends VBox implements Bindable<Speech> {
 
             Line line = new Line(startX, startY, finishX, finishY);
 
-            starter.layoutXProperty().addListener(changeListener -> {
-                System.out.println("CHANGED");
-            });
-
             PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().getChildren().add(line);
-        }
     }
 
     public <T extends FlowingRegion & Defensive> void addDefensiveFlowingRegion(T defensiveRegion) {
-        defensiveRegion.setBackground(Utils.generateBackgroundOfColor(Color.RED));
-        addFlowingRegion(defensiveRegion);
+        addFlowingRegion(false, defensiveRegion);
     }
 
-    public <T extends FlowingRegion> void addFlowingRegion(T flowingRegion) {
+    public <T extends FlowingRegion> void addFlowingRegion(boolean refMode, T flowingRegion) {
         FlowingColumnsController.getFXMLInstance().implementListeners(flowingRegion);
         if (flowingRegion instanceof Card) {
             Card flowingCard = (Card) flowingRegion;
 
             CharacterFormatting characterFormatting = new CharacterFormatting(Arrays.asList(
-                    Configuration.SPOKEN
+                Configuration.SPOKEN
             ));
 
             String tooltipText = flowingCard.getCardContent().getContent(characterFormatting);
-            System.out.println("Tool tip text: " + tooltipText);
 
             Tooltip flowingRegionTooltip = new Tooltip(tooltipText);
 
@@ -147,31 +200,19 @@ public abstract class FlowingColumn extends VBox implements Bindable<Speech> {
         flowingRegion.setWrapText(true);
         flowingRegion.setTextFill(color);
 
-        if (isManagesOpposite())
-            getContainer().getChildren().add(flowingRegion);
-        else {
+        if (refMode) {
             Group group = new Group(flowingRegion);
 
             group.setManaged(false);
-            group.setVisible(true);
-            FlowingRegion a = ((Offensive) flowingRegion).getTargetRegions().get(0);
-            System.out.println(a.getBoundsInParent().getMinY());
-            System.out.println(a.getBoundsInLocal().getMinY());
-            System.out.println(a.getLayoutBounds().getMinY());
-            System.out.println(a.localToParent(a.getBoundsInParent()).getMinY());
-            System.out.println(a.getLayoutY());
-            group.setLayoutY(a.getLayoutY());
-            System.out.println(group.getLayoutY());
-            flowingRegion.setBackground(Utils.generateBackgroundOfColor(Color.GREEN));
+            FlowingRegion targetRegion = ((Offensive) flowingRegion).getTargetRegion();
+            group.setLayoutY(targetRegion.getLayoutY());
 
-            getContainer().getChildren().add(group);
-        }
+            getContentContainer().getChildren().add(group);
+        } else
+            getContentContainer().getChildren().add(flowingRegion);
 
         // User actions
         flowingRegion.prefWidthProperty().bind(this.widthProperty());
-
-
-        System.out.println(flowingRegion);
     }
 
 
@@ -179,8 +220,8 @@ public abstract class FlowingColumn extends VBox implements Bindable<Speech> {
         getChildren().removeIf(node -> node instanceof TextArea);
     }
 
-    public VBox getContainer() {
-        return container;
+    public ContentContainer getContentContainer() {
+        return contentContainer;
     }
 
     @Override
