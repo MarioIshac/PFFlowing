@@ -16,13 +16,14 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import me.theeninja.pfflowing.Configuration;
-import me.theeninja.pfflowing.Side;
-import me.theeninja.pfflowing.card.Card;
-import me.theeninja.pfflowing.card.CharacterFormatting;
-import me.theeninja.pfflowing.card.CharacterStyle;
-import me.theeninja.pfflowing.card.DefensiveReasoning;
+import me.theeninja.pfflowing.configuration.Configuration;
+import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.flowingregions.Card;
+import me.theeninja.pfflowing.flowingregions.CharacterFormatting;
+import me.theeninja.pfflowing.flowingregions.CharacterStyle;
+import me.theeninja.pfflowing.flowingregions.DefensiveReasoning;
 import me.theeninja.pfflowing.flowing.*;
+import me.theeninja.pfflowing.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -153,12 +154,12 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         });
     }
 
-    public <T extends FlowingRegion & Offensive> void addOffensiveFlowingRegion(T offensiveRegion) {
+    public void addOffensiveFlowingRegion(OffensiveFlowingRegion offensiveRegion) {
         addFlowingRegion(true, offensiveRegion);
         // drawArrow(offensiveRegion);
     }
 
-    private <T extends FlowingRegion & Offensive> void drawArrow(T offensiveRegion) {
+    private void drawArrow(OffensiveFlowingRegion offensiveRegion) {
         FlowingRegion starter = offensiveRegion.getTargetRegion();
             Bounds starterBounds = starter.localToScene(starter.getLayoutBounds());
             double startX = starterBounds.getMaxX() + Configuration.ARROW_MARGIN;
@@ -173,11 +174,45 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
             PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().getChildren().add(line);
     }
 
-    public <T extends FlowingRegion & Defensive> void addDefensiveFlowingRegion(T defensiveRegion) {
+    public void addDefensiveFlowingRegion(DefensiveFlowingRegion defensiveRegion) {
         addFlowingRegion(false, defensiveRegion);
     }
 
-    public <T extends FlowingRegion> void addFlowingRegion(boolean refMode, T flowingRegion) {
+    /**
+     * Calculates the overlap of the bounds of the two given nodes.
+     *
+     * @param newNode The {@link Node} that recently was added, i.e the bound challenger of the old node.
+     * @param checkedNode The node that {@code newNode} is being checked against in regards to overlap.
+     * @return the overlap as a double in the case of an existent overlap; otherwise 0.
+     */
+    private double calculateOverlap(Node newNode, Node checkedNode) {
+        Bounds newNodeBounds = newNode.getBoundsInParent();
+        Bounds checkedNodeBounds = checkedNode.getBoundsInParent();
+        if (checkedNodeBounds.getMinY() < newNodeBounds.getMaxY())
+            return newNodeBounds.getMaxY() - checkedNodeBounds.getMinY();
+        else
+            return 0;
+    }
+
+    /*
+    0
+    1-- nmin
+    2// cmin
+    3-- nmax
+    4// cmax
+    5
+    6
+    7
+    8
+    9
+     */
+
+    /**
+     *
+     * @param refMode
+     * @param flowingRegion
+     */
+    public void addFlowingRegion(boolean refMode, FlowingRegion flowingRegion) {
         FlowingColumnsController.getFXMLInstance().implementListeners(flowingRegion);
         if (flowingRegion instanceof Card) {
             Card flowingCard = (Card) flowingRegion;
@@ -208,11 +243,21 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
             group.setLayoutY(targetRegion.getLayoutY());
 
             getContentContainer().getChildren().add(group);
-        } else
+        }
+        else
             getContentContainer().getChildren().add(flowingRegion);
 
-        // User actions
         flowingRegion.prefWidthProperty().bind(this.widthProperty());
+
+        double overlap = calculateOverlap(flowingRegion, Utils.getLastElement(getContentContainer().getChildren()));
+        System.out.println("Overlap" + overlap);
+
+        if (overlap > 0) {
+            FlowingColumnsController.getFXMLInstance().getCorrelatingView().getSubFlowingRegions(flowingRegion)
+                .forEach(childFlowingRegion -> childFlowingRegion.layoutYProperty().add(overlap));
+        }
+
+        FlowingColumnsController.getFXMLInstance().getCorrelatingView().getSubFlowingRegions(flowingRegion);
     }
 
 

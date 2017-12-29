@@ -1,4 +1,4 @@
-package me.theeninja.pfflowing;
+package me.theeninja.pfflowing.speech;
 
 public enum FontWeight {
     UNDERLINE,

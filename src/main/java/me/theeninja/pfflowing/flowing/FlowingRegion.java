@@ -3,8 +3,7 @@ package me.theeninja.pfflowing.flowing;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
-import me.theeninja.pfflowing.Configuration;
+import me.theeninja.pfflowing.configuration.Configuration;
 import me.theeninja.pfflowing.gui.ContentContainer;
 import me.theeninja.pfflowing.gui.FlowingColumn;
 

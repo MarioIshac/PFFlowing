@@ -4,15 +4,8 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Stage;
-import me.theeninja.pfflowing.card.Card;
-import me.theeninja.pfflowing.card.CardsProcessor;
 import me.theeninja.pfflowing.gui.*;
 
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
 import java.util.logging.Logger;
 
 public class PFFlowing extends Application {

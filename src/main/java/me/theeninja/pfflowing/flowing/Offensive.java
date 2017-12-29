@@ -1,8 +1,6 @@
 package me.theeninja.pfflowing.flowing;
 
-import me.theeninja.pfflowing.Side;
-
-import java.util.List;
+import me.theeninja.pfflowing.speech.Side;
 
 public interface Offensive {
     Side getInitiator();

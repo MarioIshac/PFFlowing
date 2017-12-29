@@ -8,9 +8,10 @@ import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import me.theeninja.pfflowing.DependentController;
-import me.theeninja.pfflowing.Side;
-import me.theeninja.pfflowing.card.Card;
-import me.theeninja.pfflowing.card.OffensiveCard;
+import me.theeninja.pfflowing.flowingregions.DefensiveCard;
+import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.flowingregions.Card;
+import me.theeninja.pfflowing.flowingregions.OffensiveCard;
 
 import java.net.URL;
 import java.util.List;
@@ -18,9 +19,9 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class CardSelectorController implements Initializable, DependentController<TreeView<Card>, Card> {
-    public TreeView<Card> cardSelectorTreeView;
-    public TreeItem<Card> root;
+public class CardSelectorController implements Initializable, DependentController<TreeView<DefensiveCard>, DefensiveCard> {
+    public TreeView<DefensiveCard> cardSelectorTreeView;
+    public TreeItem<DefensiveCard> root;
 
     private Logger logger = Logger.getLogger(CardSelectorController.class.getSimpleName());
 
@@ -31,17 +32,17 @@ public class CardSelectorController implements Initializable, DependentControlle
     }
 
     @Override
-    public TreeView<Card> getCorrelatingView() {
+    public TreeView<DefensiveCard> getCorrelatingView() {
         return cardSelectorTreeView;
     }
 
-    private void addTreeItemCardInfo(TreeItem<Card> treeItem) {
-        Card correlatingCard = treeItem.getValue();
+    private void addTreeItemCardInfo(TreeItem<DefensiveCard> treeItem) {
+        DefensiveCard correlatingCard = treeItem.getValue();
         String authorLabel = "Author" + correlatingCard.getAuthor();
     }
 
     @Override
-    public void setDisplay(List<Card> viewParameter) {
+    public void setDisplay(List<DefensiveCard> viewParameter) {
         root.getChildren().setAll(viewParameter.stream()
                 .map(TreeItem::new)
                 .collect(Collectors.toList()));
@@ -53,25 +54,25 @@ public class CardSelectorController implements Initializable, DependentControlle
     }
 
     @Override
-    public void addToDisplay(Card viewParameter) {
+    public void addToDisplay(DefensiveCard viewParameter) {
         root.getChildren().add(new TreeItem<>(viewParameter));
     }
 
     @Override
-    public void addAllToDisplay(List<Card> viewParameter) {
+    public void addAllToDisplay(List<DefensiveCard> viewParameter) {
         root.getChildren().addAll(viewParameter.stream()
                 .map(TreeItem::new)
                 .collect(Collectors.toList()));
     }
 
     @Override
-    public void removeFromDisplay(Card viewParameter) {
+    public void removeFromDisplay(DefensiveCard viewParameter) {
         root.getChildren().remove(new TreeItem<>(viewParameter));
 
     }
 
     @Override
-    public void removeAllFromDisplay(List<Card> viewParameter) {
+    public void removeAllFromDisplay(List<DefensiveCard> viewParameter) {
         root.getChildren().removeAll(viewParameter.stream()
                 .map(TreeItem::new)
                 .collect(Collectors.toList()));
@@ -89,9 +90,9 @@ public class CardSelectorController implements Initializable, DependentControlle
         root.setExpanded(true);
     }
 
-    private class CardTreeCell extends TreeCell<Card> {
+    private class CardTreeCell extends TreeCell<DefensiveCard> {
         @Override
-        public void updateItem(Card item, boolean empty) {
+        public void updateItem(DefensiveCard item, boolean empty) {
             super.updateItem(item, empty);
             if (item != null && !empty)
                 setText(item.getRepresentation());
@@ -102,8 +103,8 @@ public class CardSelectorController implements Initializable, DependentControlle
 
     private EventHandler<KeyEvent> handler = keyEvent -> {
         if (keyEvent.getCode() == KeyCode.ENTER) {
-            TreeItem<Card> treeItem = cardSelectorTreeView.getSelectionModel().getSelectedItem();
-            OffensiveCard offensiveCard = treeItem.getValue().toOffensiveCard(Side.AFFIRMATIVE, FlowingColumnsController.getFXMLInstance().getSelectedFlowingRegions());
+            TreeItem<DefensiveCard> treeItem = cardSelectorTreeView.getSelectionModel().getSelectedItem();
+            OffensiveCard offensiveCard = Card.toOffensiveCard(treeItem.getValue(), Side.AFFIRMATIVE, FlowingColumnsController.getFXMLInstance().getLastSelected());
             FlowingColumnsController.getFXMLInstance().getSpeechListManager().getVisibleSelectedSpeech().getBinded().addOffensiveFlowingRegion(offensiveCard);
             removeCardSelectionListener();
         }

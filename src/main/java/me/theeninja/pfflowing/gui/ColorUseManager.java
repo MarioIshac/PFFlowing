@@ -2,7 +2,7 @@ package me.theeninja.pfflowing.gui;
 
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
-import me.theeninja.pfflowing.Utils;
+import me.theeninja.pfflowing.utils.Utils;
 import me.theeninja.pfflowing.utils.Pair;
 
 import java.util.Arrays;

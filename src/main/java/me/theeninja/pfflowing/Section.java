@@ -1,4 +1,0 @@
-package me.theeninja.pfflowing;
-
-public interface Section {
-}

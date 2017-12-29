@@ -4,7 +4,7 @@ import javafx.scene.Node;
 
 import java.util.List;
 
-public interface DependentController<ViewType extends Node, ViewParameterType extends Node> extends SingleViewController<ViewType> {
+public interface DependentController<ViewType extends Node, ViewParameterType> extends SingleViewController<ViewType> {
     void setDisplay(List<ViewParameterType> viewParameter);
     void clearDisplay();
     void addToDisplay(ViewParameterType viewParameter);

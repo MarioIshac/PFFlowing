@@ -1,6 +1,6 @@
 package me.theeninja.pfflowing.flowing;
 
-import me.theeninja.pfflowing.Side;
+import me.theeninja.pfflowing.speech.Side;
 
 import java.util.Arrays;
 import java.util.List;

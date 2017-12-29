@@ -1,7 +1,7 @@
-package me.theeninja.pfflowing;
+package me.theeninja.pfflowing.configuration;
 
 import javafx.scene.text.Font;
-import me.theeninja.pfflowing.card.CharacterStyle;
+import me.theeninja.pfflowing.flowingregions.CharacterStyle;
 import me.theeninja.pfflowing.flowing.DefensiveSpeech;
 
 public class Configuration {

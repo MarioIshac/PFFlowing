@@ -1,4 +1,4 @@
-package me.theeninja.pfflowing;
+package me.theeninja.pfflowing.speech;
 
 public class HTMLStyleTag {
     private final String startTag;

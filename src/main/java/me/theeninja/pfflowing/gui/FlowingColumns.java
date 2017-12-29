@@ -1,12 +1,11 @@
 package me.theeninja.pfflowing.gui;
 
 import javafx.scene.layout.HBox;
-import me.theeninja.pfflowing.Utils;
+import me.theeninja.pfflowing.utils.Utils;
 import me.theeninja.pfflowing.flowing.*;
+import org.apache.commons.collections4.ListUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class FlowingColumns extends HBox implements Bindable<SpeechListManager> {
@@ -41,7 +40,6 @@ public class FlowingColumns extends HBox implements Bindable<SpeechListManager> 
         return currentSpeechList;
     }
 
-
     public void setCurrentSpeechList(SpeechList speechList) {
         this.currentSpeechList = speechList;
     }
@@ -54,38 +52,21 @@ public class FlowingColumns extends HBox implements Bindable<SpeechListManager> 
         this.selectedDisplayShifter = selectedDisplayShifter;
     }
 
-    private List<FlowingRegion> getBaseFlowingRegions(FlowingRegion flowingRegion) {
+    public List<FlowingRegion> getSubFlowingRegions(FlowingRegion flowingRegion) {
         if (flowingRegion instanceof Defensive)
             return Collections.singletonList(flowingRegion);
-        else {
-            Offensive offensive = (Offensive) flowingRegion;
-            return offensive.getTargetRegion().stream()
-                    .map(this::getBaseFlowingRegions).flatMap(List::stream).collect(Collectors.toList());
-        }
+        else
+            return ListUtils.union(Collections.singletonList(flowingRegion),
+                    getSubFlowingRegions(((Offensive) flowingRegion).getTargetRegion()));
+    }
+
+    public DefensiveFlowingRegion getBaseFlowingRegion(FlowingRegion flowingRegion) {
+        return flowingRegion instanceof Defensive ? (DefensiveFlowingRegion) flowingRegion :
+                getBaseFlowingRegion(((Offensive) flowingRegion).getTargetRegion());
     }
 
     // O -> (A -> B, C), D, E
     // return
-
-    private void gatherFlowingRegionLinks() {
-        List<List<FlowingRegion>> flowingRegionLinkList = new ArrayList<>();
-        List<FlowingColumn> flowingColumns = getChildren().stream()
-                .map(FlowingColumn.class::cast).collect(Collectors.toList());
-
-        for (FlowingColumn flowingColumn : flowingColumns)
-            for (FlowingRegion baseFlowingRegion : flowingColumn.getContentContainer().getBaseContent())
-                flowingRegionLinkList.add(new ArrayList<>(Collections.singletonList(baseFlowingRegion)));
-
-        for (FlowingColumn flowingColumn : flowingColumns) {
-            for (FlowingRegion targetFlowingRegion : flowingColumn.getContentContainer().getRefContent())
-        }
-
-
-    }
-
-    public void validateFlowingRegionPositions() {
-
-    }
 
     public DisplayShifter getAffDisplayShifter() {
         return affDisplayShifter;

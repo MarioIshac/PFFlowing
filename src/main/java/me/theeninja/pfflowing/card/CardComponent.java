@@ -1,5 +1,7 @@
 package me.theeninja.pfflowing.card;
 
+import me.theeninja.pfflowing.flowingregions.Author;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -23,7 +25,7 @@ public class CardComponent<ComponentType> {
         }
         return null;
     });
-    public static final CardComponent<Content> CONTENT = new CardComponent<>(Arrays.asList("Content", "Body"), Content::new);
+    public static final CardComponent<CardContent> CONTENT = new CardComponent<>(Arrays.asList("CardContent", "Body"), CardContent::new);
     private final List<String> acceptedLabels;
     private final Function<String, ComponentType> function;
 
@@ -31,7 +33,7 @@ public class CardComponent<ComponentType> {
      * @param acceptedLabels
      * @param function
      */
-    CardComponent(List<String> acceptedLabels, Function<String, ComponentType> function) {
+    private CardComponent(List<String> acceptedLabels, Function<String, ComponentType> function) {
         this.acceptedLabels = acceptedLabels;
         this.function = function;
     }

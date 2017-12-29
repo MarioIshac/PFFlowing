@@ -19,12 +19,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.Utils;
-import me.theeninja.pfflowing.card.OffensiveCard;
-import me.theeninja.pfflowing.card.OffensiveReasoning;
-import me.theeninja.pfflowing.flowing.FlowingRegion;
-import me.theeninja.pfflowing.flowing.Offensive;
-import me.theeninja.pfflowing.flowing.Speech;
+import me.theeninja.pfflowing.flowing.*;
+import me.theeninja.pfflowing.utils.Utils;
+import me.theeninja.pfflowing.flowingregions.OffensiveCard;
+import me.theeninja.pfflowing.flowingregions.OffensiveReasoning;
 import me.theeninja.pfflowing.utils.Pair;
 
 import java.net.URL;
@@ -139,9 +137,9 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
         Bindable.bind(getSpeechListManager(), getCorrelatingView());
 
         // Set up the flowing pane for aff 1 speech
-        speechListManager.selectAffSpeechMap();
+        getSpeechListManager().selectAffSpeechMap();
         getCorrelatingView().initializeDisplayShifters();
-        getCorrelatingView().setSelectedDisplayShifter(flowingColumns.getAffDisplayShifter());
+        getCorrelatingView().setSelectedDisplayShifter(getCorrelatingView().getAffDisplayShifter());
 
         // To allow spacing for the arrows
         // getCorrelatingView().setSpacing(Configuration.SPEECH_SEPERATION);
@@ -185,20 +183,12 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
     }
 
     /**
-     * Serves a list of all offensive cards currently on the flowing pane. It is observable,
-     * hence when an offensive card is added, {@code colorUseManager} provides a {@link Pair}
+     * Serves a list of all offensive flowing regions currently on the flowing pane. It is observable,
+     * hence when an offensive flowing region is added, {@code colorUseManager} provides a {@link Pair}
      * of a {@link Color} and {@link Background} use to illustrate the relationship between the
-     * offensive card and its targeted flowing regions.
+     * offensive flowingregions and its targeted flowing regions.
      */
-    ObservableList<OffensiveCard> offensiveCards = FXCollections.observableArrayList();
-
-    /**
-     * Serves a list of all offensive reasonings currently on the flowing pane. It is observable,
-     * hence when an offensive card is added, {@code colorUseManager} provides a {@link Pair}
-     * of a {@link Color} and {@link Background} use to illustrate the relationship between the
-     * offensive reasonings and its targeted flowing regions.
-     */
-    ObservableList<OffensiveReasoning> offensiveReasonings = FXCollections.observableArrayList();
+    ObservableList<OffensiveFlowingRegion> offensiveFlowingRegions = FXCollections.observableArrayList();
 
     @Deprecated
     ObservableList<Line> lineLinks = FXCollections.observableArrayList();
@@ -236,31 +226,27 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
      *
      * @param offensiveFlowingRegion The offensive flowing region subject to the requested link
      *                               with its targeted flowing regions.
-     * @param <T> The type of offensive flowing region (such as an {@link OffensiveCard},
-     *           {@link OffensiveReasoning}, etc.)
      */
-    private <T extends FlowingRegion & Offensive> void link(T offensiveFlowingRegion) {
+    private void link(OffensiveFlowingRegion offensiveFlowingRegion) {
         System.out.println("calling link");
 
-        List<FlowingRegion> targetFlowingRegions = offensiveFlowingRegion.getTargetRegion();
+        FlowingRegion targetFlowingRegion = offensiveFlowingRegion.getTargetRegion();
 
         if (colorUseManager.hasNext()) {
             Pair<Color, Background> pair = colorUseManager.next();
             Color color = pair.getFirst();
             Background background = pair.getSecond();
 
-            for (FlowingRegion flowingRegion : targetFlowingRegions) {
-                styleLinkElement(flowingRegion, pair);
-                unselectedBackgrounds.put(flowingRegion, flowingRegion.getBackground());
-            }
+            styleLinkElement(targetFlowingRegion, pair);
+            unselectedBackgrounds.put(targetFlowingRegion, targetFlowingRegion.getBackground());
+
 
             // The offensive flowing region itself must be styled in addition to its targets
             styleLinkElement(offensiveFlowingRegion, pair);
             unselectedBackgrounds.put(offensiveFlowingRegion, offensiveFlowingRegion.getBackground());
         }
-        else {
+        else
             System.out.println("Ran out of colors");
-        }
     }
 
 
@@ -276,30 +262,30 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
     private boolean areSameSpeech(List<FlowingRegion> flowingRegions) {
         FlowingColumn firstFlowingColumn = ((FlowingColumn) flowingRegions.get(0).getParent());
         Speech firstElementSpeech =
-            speechListManager.getSelectedSpeechList().findFirstSpeech(speech -> speech.getBinded() == firstFlowingColumn).orElse(null);
+            getSpeechListManager().getSelectedSpeechList().findFirstSpeech(speech -> speech.getBinded() == firstFlowingColumn).orElse(null);
         return flowingRegions.stream().allMatch(flowingRegion ->
             ((FlowingColumn) flowingRegion.getParent().getParent()).getBinded() == firstElementSpeech);
     }
 
     private void merge() {
-        if (areSameSpeech(selectedFlowingRegions)) {
-            VBox baseContainer = (VBox) selectedFlowingRegions.get(0).getParent();
-            System.out.println("1st: " + selectedFlowingRegions.get(0));
+        if (areSameSpeech(getSelectedFlowingRegions())) {
+            VBox baseContainer = (VBox) getSelectedFlowingRegions().get(0).getParent();
+            System.out.println("1st: " + getSelectedFlowingRegions().get(0));
             System.out.println(baseContainer);
             StringBuilder labelTexts = new StringBuilder();
-            for (FlowingRegion flowingRegion : selectedFlowingRegions) {
+            for (FlowingRegion flowingRegion : getSelectedFlowingRegions()) {
                 labelTexts.append(flowingRegion.getText());
-                if (!Utils.isLastElement(selectedFlowingRegions, flowingRegion)) {
+                if (!Utils.isLastElement(getSelectedFlowingRegions(), flowingRegion)) {
                     labelTexts.append(System.lineSeparator());
                 }
             }
-            selectedFlowingRegions.get(0).setText(labelTexts.toString());
+            getSelectedFlowingRegions().get(0).setText(labelTexts.toString());
 
-            baseContainer.getChildren().removeAll(selectedFlowingRegions
+            baseContainer.getChildren().removeAll(getSelectedFlowingRegions()
                     .stream()
-                    .filter(element -> element != selectedFlowingRegions.get(0)).collect(Collectors.toList()));
+                    .filter(element -> element != getSelectedFlowingRegions().get(0)).collect(Collectors.toList()));
 
-            selectedFlowingRegions.removeAll(selectedFlowingRegions
+            getSelectedFlowingRegions().removeAll(selectedFlowingRegions
                     .stream()
                     .filter(element -> element != selectedFlowingRegions.get(0)).collect(Collectors.toList()));
 
@@ -387,7 +373,7 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
             if (keyCodeCombination.match(keyEvent)) {
                 getKeyCodeCombinationMap().get(keyCodeCombination).run();
                 System.out.println(keyCodeCombination);
-                // Prevents the card selector from being selected on left arrow key
+                // Prevents the flowingregions selector from being selected on left arrow key
                 keyEvent.consume();
             }
     }
@@ -398,16 +384,19 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
      * 2) constructing a visual link between the newly created offensive flowing region and the selected nodes
      */
     private void refute() {
+        if (getSelectedFlowingRegions().size() > 1)
+            return;
+
         Speech speech = getLastSelected().getFlowingColumn().getBinded();
         List<Speech> speechListSpeeches = getSpeechListManager().getSpeechList(speech).getSpeeches();
 
-        // Utils.getRelativeElement(...) will wrap around, yet you cannot refute AT-Neg4 or AT-Aff4 Content
+        // Utils.getRelativeElement(...) will wrap around, yet you cannot refute AT-Neg4 or AT-Aff4 CardContent
         if (Utils.isLastElement(speechListSpeeches, speech))
             return;
 
         FlowingColumn rightFlowingColumn = Utils.getRelativeElement(speechListSpeeches, speech, 1).getBinded();
         rightFlowingColumn.addFlowingRegionWriter(false, true, text -> {
-            OffensiveReasoning offensiveReasoning = new OffensiveReasoning(text, speech.getSide(), speech.getSide().getOpposite(), selectedFlowingRegions);
+            OffensiveReasoning offensiveReasoning = new OffensiveReasoning(text, speech.getSide(), speech.getSide().getOpposite(), getLastSelected());
             rightFlowingColumn.addOffensiveFlowingRegion(offensiveReasoning);
         });
     }
@@ -422,8 +411,8 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
 
     private void organize() {
         Speech speech = getSpeechListManager().getSelectedSpeechList().getSelectedSpeech();
-        List<FlowingRegion> base = speech.getBinded().getContentContainer().getBaseContent();
-        List<FlowingRegion> ref = speech.getBinded().getContentContainer().getRefContent();
+        List<DefensiveFlowingRegion> base = speech.getBinded().getContentContainer().getBaseContent();
+        List<OffensiveFlowingRegion> ref = speech.getBinded().getContentContainer().getRefContent();
 
         VBox vbox = new VBox();
     }
@@ -454,15 +443,7 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
             this::removeSelectionStyling
         ));
 
-        offensiveCards.addListener(Utils.generateListChangeListener(
-            this::link,
-            this::delink
-        ));
-
-        offensiveReasonings.addListener(Utils.generateListChangeListener(
-            this::link,
-            this::delink
-        ));
+        offensiveFlowingRegions.addListener(Utils.generateListChangeListener(this::link, this::delink));
     }
 
     //// Family of functions used for getting relative flowing regions through provided base flowing region

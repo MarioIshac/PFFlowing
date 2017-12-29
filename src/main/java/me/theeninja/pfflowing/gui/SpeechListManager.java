@@ -2,8 +2,7 @@ package me.theeninja.pfflowing.gui;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import me.theeninja.pfflowing.Side;
-import me.theeninja.pfflowing.flowing.DefensiveSpeech;
+import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.flowing.Speech;
 
 public class SpeechListManager implements Bindable<FlowingColumns> {
