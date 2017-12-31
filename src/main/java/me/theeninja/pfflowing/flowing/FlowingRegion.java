@@ -30,10 +30,10 @@ public class FlowingRegion extends Label implements Identifiable {
     }
 
     public FlowingColumn getFlowingColumn() {
-        return (FlowingColumn) getContainer().getParent();
+        return (FlowingColumn) getContentContainer().getParent();
     }
 
-    public ContentContainer getContainer() {
+    public ContentContainer getContentContainer() {
         Parent parent = getParent();
         if (parent instanceof Group)
             return (ContentContainer) parent.getParent();

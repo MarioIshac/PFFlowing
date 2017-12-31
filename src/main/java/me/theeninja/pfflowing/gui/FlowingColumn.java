@@ -1,11 +1,12 @@
 package me.theeninja.pfflowing.gui;
 
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -23,7 +24,6 @@ import me.theeninja.pfflowing.flowingregions.CharacterFormatting;
 import me.theeninja.pfflowing.flowingregions.CharacterStyle;
 import me.theeninja.pfflowing.flowingregions.DefensiveReasoning;
 import me.theeninja.pfflowing.flowing.*;
-import me.theeninja.pfflowing.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,18 +44,33 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         this.speech = speech;
 
         this.label = new Label(speech.getLabelText());
+        getLabel().prefWidthProperty().bind(this.widthProperty());
 
         this.contentContainer = new ContentContainer();
+        getContentContainer().prefWidthProperty().bind(this.widthProperty());
 
         Bindable.bind(this, getSpeech());
 
         getChildren().add(getLabel());
         getChildren().add(getContentContainer());
 
-        setPrefWidth(FlowingColumnsController.getFXMLInstance().getCorrelatingView().getPrefWidth() / 8);
         HBox.setHgrow(this, Priority.ALWAYS);
 
         managesOpposite = getBinded() instanceof DefensiveSpeech;
+
+        if (getBinded() == DefensiveSpeech.AFF_1) {
+            // for example
+            Label label = new Label("A");
+            label.prefWidthProperty().bind(this.widthProperty());
+            this.getContentContainer().getChildren().add(label);
+            System.out.println("This shows label exists: " + label.toString());
+            System.out.println("Width" + label.getWidth());
+            System.out.println("Pref Width" + label.getPrefWidth());
+
+            TextField textField = new TextField();
+            this.getContentContainer().getChildren().add(textField);
+            System.out.println(textField.getWidth());
+        }
     }
 
     public static List<FlowingColumn> of(SpeechList speechList) {
@@ -77,19 +92,6 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         return speech;
     }
 
-
-    /**
-     * Adds a {@link TextArea} (the flowing region writer) to the flowing column. This flowing region writer
-     * is designed so that on the user hitting enter, the text entered into the flowing region writer
-     * would be used to create a flowing region representing what the user typed.
-     */
-    public void addFlowingRegionWriter(boolean createNewOne, boolean refMode, Consumer<String> postEnterAction) {
-        if (refMode)
-            addReactiveFlowingRegionWriter(createNewOne, postEnterAction);
-        else
-            addProactiveFlowingRegionWriter(createNewOne, postEnterAction);
-    }
-
     private TextArea generateInputTextArea() {
         TextArea textArea = new TextArea();
         textArea.prefWidthProperty().bind(this.widthProperty());
@@ -101,41 +103,28 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
 
     private final KeyCodeCombination TEXTAREA_SUBMIT = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
 
-    private EventHandler<KeyEvent> generateHandler(TextArea textArea, Node removedNode, boolean createNewOne, boolean refMode, Consumer<String> postEnterAction) {
+    private EventHandler<KeyEvent> generateHandler(TextArea textArea, boolean createNewOne, Consumer<String> postEnterAction) {
         return (KeyEvent keyEvent) -> {
             if (TEXTAREA_SUBMIT.match(keyEvent)) {
                 postEnterAction.accept(textArea.getText());
 
-                getChildren().remove(removedNode);
+                getChildren().remove(textArea);
 
                 if (createNewOne)
-                    addFlowingRegionWriter(true, refMode, postEnterAction);
+                    addFlowingRegionWriter(true, postEnterAction);
             }
         };
     }
 
-    private void addReactiveFlowingRegionWriter(boolean createNewOne, Consumer<String> postEnterAction) {
+    /**
+     * Adds a {@link TextArea} (the flowing region writer) to the flowing column. This flowing region writer
+     * is designed so that on the user hitting enter, the text entered into the flowing region writer
+     * would be used to create a flowing region representing what the user typed.
+     */
+    public void addFlowingRegionWriter(boolean createNewOne, Consumer<String> postEnterAction) {
         TextArea textArea = generateInputTextArea();
 
-        Group group = new Group(textArea);
-        group.setManaged(false);
-        FlowingRegion firstElement = FlowingColumnsController.getFXMLInstance().getLastSelected();
-
-        // Text area is being added to the whole parent, not just
-        group.setLayoutY(firstElement.getLayoutY() + getLabel().getHeight());
-
-        textArea.addEventHandler(KeyEvent.KEY_PRESSED, generateHandler(textArea, group, createNewOne, false, postEnterAction));
-
-        this.getChildren().add(group);
-        textArea.requestFocus();
-
-        FlowingColumnsController.getFXMLInstance().addCardSelectorSupport(textArea);
-    }
-
-    private void addProactiveFlowingRegionWriter(boolean createNewOne, Consumer<String> postEnterAction) {
-        TextArea textArea = generateInputTextArea();
-
-        textArea.addEventHandler(KeyEvent.KEY_PRESSED, generateHandler(textArea, textArea, createNewOne, false, postEnterAction));
+        textArea.addEventHandler(KeyEvent.KEY_PRESSED, generateHandler(textArea, createNewOne, postEnterAction));
 
         this.getChildren().add(textArea);
         textArea.requestFocus();
@@ -148,34 +137,43 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
      * @param createNewOne
      */
     public void addFlowingRegionWriter(boolean createNewOne) {
-        addFlowingRegionWriter(createNewOne, false, text -> {
+        addFlowingRegionWriter(createNewOne, text -> {
             DefensiveReasoning defensiveReasoning = new DefensiveReasoning(text);
             addDefensiveFlowingRegion(defensiveReasoning);
         });
     }
 
     public void addOffensiveFlowingRegion(OffensiveFlowingRegion offensiveRegion) {
-        addFlowingRegion(true, offensiveRegion);
-        // drawArrow(offensiveRegion);
+        addFlowingRegion(offensiveRegion);
+        drawArrow(offensiveRegion);
     }
 
     private void drawArrow(OffensiveFlowingRegion offensiveRegion) {
         FlowingRegion starter = offensiveRegion.getTargetRegion();
-            Bounds starterBounds = starter.localToScene(starter.getLayoutBounds());
-            double startX = starterBounds.getMaxX() + Configuration.ARROW_MARGIN;
-            double startY = (starterBounds.getMinY() + starterBounds.getMaxY()) / 2;
+        Bounds starterBounds = starter.localToScene(starter.getLayoutBounds());
+        double startX = starterBounds.getMaxX() + Configuration.ARROW_MARGIN;
+        double startY = (starterBounds.getMinY() + starterBounds.getMaxY()) / 2;
 
-            Bounds finishBounds = offensiveRegion.localToScene(offensiveRegion.getLayoutBounds());
-            double finishX = finishBounds.getMinX() - Configuration.ARROW_MARGIN;
-            double finishY = (finishBounds.getMinY() + finishBounds.getMaxY()) / 2;
+        System.out.println(starterBounds);
 
-            Line line = new Line(startX, startY, finishX, finishY);
+        System.out.println("Text" + offensiveRegion.getText());
+        System.out.println("Width" + offensiveRegion.getWidth());
 
-            PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().getChildren().add(line);
+        System.out.println(((Label) getContentContainer().getChildren().get(0)).getText());
+        System.out.println(((Label) getContentContainer().getChildren().get(0)).getWidth());
+
+        Bounds finishBounds = offensiveRegion.localToScene(offensiveRegion.getLayoutBounds());
+        double finishX = finishBounds.getMinX() - Configuration.ARROW_MARGIN;
+        double finishY = (finishBounds.getMinY() + finishBounds.getMaxY()) / 2;
+
+        System.out.println(finishBounds);
+        Line line = new Line(startX, startY, finishX, finishY);
+
+        PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().getChildren().add(line);
     }
 
     public void addDefensiveFlowingRegion(DefensiveFlowingRegion defensiveRegion) {
-        addFlowingRegion(false, defensiveRegion);
+        addFlowingRegion(defensiveRegion);
     }
 
     /**
@@ -194,26 +192,10 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
             return 0;
     }
 
-    /*
-    0
-    1-- nmin
-    2// cmin
-    3-- nmax
-    4// cmax
-    5
-    6
-    7
-    8
-    9
-     */
-
-    /**
-     *
-     * @param refMode
-     * @param flowingRegion
-     */
-    public void addFlowingRegion(boolean refMode, FlowingRegion flowingRegion) {
+    public void addFlowingRegion(FlowingRegion flowingRegion) {
         FlowingColumnsController.getFXMLInstance().implementListeners(flowingRegion);
+
+        // Tooltip handler
         if (flowingRegion instanceof Card) {
             Card flowingCard = (Card) flowingRegion;
 
@@ -235,34 +217,11 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         flowingRegion.setWrapText(true);
         flowingRegion.setTextFill(color);
 
-        if (refMode) {
-            Group group = new Group(flowingRegion);
+        flowingRegion.prefWidthProperty().bind(flowingRegion.getContentContainer().widthProperty());
 
-            group.setManaged(false);
-            FlowingRegion targetRegion = ((Offensive) flowingRegion).getTargetRegion();
-            group.setLayoutY(targetRegion.getLayoutY());
+        System.out.println(flowingRegion.getWidth());
 
-            getContentContainer().getChildren().add(group);
-        }
-        else
-            getContentContainer().getChildren().add(flowingRegion);
-
-        flowingRegion.prefWidthProperty().bind(this.widthProperty());
-
-        double overlap = calculateOverlap(flowingRegion, Utils.getLastElement(getContentContainer().getChildren()));
-        System.out.println("Overlap" + overlap);
-
-        if (overlap > 0) {
-            FlowingColumnsController.getFXMLInstance().getCorrelatingView().getSubFlowingRegions(flowingRegion)
-                .forEach(childFlowingRegion -> childFlowingRegion.layoutYProperty().add(overlap));
-        }
-
-        FlowingColumnsController.getFXMLInstance().getCorrelatingView().getSubFlowingRegions(flowingRegion);
-    }
-
-
-    public void removeAllFlowingRegionWriters() {
-        getChildren().removeIf(node -> node instanceof TextArea);
+        getContentContainer().getChildren().add(flowingRegion);
     }
 
     public ContentContainer getContentContainer() {
@@ -287,7 +246,7 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         return speechListManager.getSpeechList(this.getBinded()).getOpposite(this.getBinded()).getBinded();
     }
 
-    public boolean isManagesOpposite() {
+    public boolean doesManageOpposite() {
         return managesOpposite;
     }
 

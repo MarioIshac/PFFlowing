@@ -93,7 +93,6 @@ public class FlowingColumns extends HBox implements Bindable<SpeechListManager> 
             setNumberOfColumns(getChildren().size() - reductionInNumOfColumns);
         }
 
-
         public void upscaleBy(int increaseInNumberOfColumns) {
             setNumberOfColumns(getChildren().size() + increaseInNumberOfColumns);
         }

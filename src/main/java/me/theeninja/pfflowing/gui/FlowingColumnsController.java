@@ -19,9 +19,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.SingleViewController;
+import me.theeninja.pfflowing.configuration.Configuration;
 import me.theeninja.pfflowing.flowing.*;
 import me.theeninja.pfflowing.utils.Utils;
-import me.theeninja.pfflowing.flowingregions.OffensiveCard;
 import me.theeninja.pfflowing.flowingregions.OffensiveReasoning;
 import me.theeninja.pfflowing.utils.Pair;
 
@@ -142,10 +142,11 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
         getCorrelatingView().setSelectedDisplayShifter(getCorrelatingView().getAffDisplayShifter());
 
         // To allow spacing for the arrows
-        // getCorrelatingView().setSpacing(Configuration.SPEECH_SEPERATION);
+        getCorrelatingView().setSpacing(Configuration.SPEECH_SEPERATION);
 
         // Must be called last
         populateKeyCodeCombinationMap();
+
     }
 
     public ObservableList<FlowingRegion> getSelectedFlowingRegions() {
@@ -188,7 +189,7 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
      * of a {@link Color} and {@link Background} use to illustrate the relationship between the
      * offensive flowingregions and its targeted flowing regions.
      */
-    ObservableList<OffensiveFlowingRegion> offensiveFlowingRegions = FXCollections.observableArrayList();
+    private ObservableList<OffensiveFlowingRegion> offensiveFlowingRegions = FXCollections.observableArrayList();
 
     @Deprecated
     ObservableList<Line> lineLinks = FXCollections.observableArrayList();
@@ -228,8 +229,6 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
      *                               with its targeted flowing regions.
      */
     private void link(OffensiveFlowingRegion offensiveFlowingRegion) {
-        System.out.println("calling link");
-
         FlowingRegion targetFlowingRegion = offensiveFlowingRegion.getTargetRegion();
 
         if (colorUseManager.hasNext()) {
@@ -297,8 +296,6 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
     }
 
     public void implementListeners(FlowingRegion flowingRegion) {
-        System.out.println("called dude");
-
         flowingRegion.setOnMousePressed(mouseEvent ->
                 handleSelection(Optional.of(flowingRegion), mouseEvent.isControlDown()));
     }
@@ -306,19 +303,13 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
     private Map<FlowingRegion, Background> unselectedBackgrounds = new HashMap<>();
 
     private void removeSelectionStyling(FlowingRegion flowingRegion) {
-        if (flowingRegion != null) {
-            logger.log(Level.INFO,
-                    "Removing selection styling of {0}", flowingRegion);
+        if (flowingRegion != null)
             flowingRegion.setBackground(unselectedBackgrounds.get(flowingRegion));
-        }
     }
 
     private void addSelectionStyling(FlowingRegion flowingRegion) {
-        if (flowingRegion != null) {
-            logger.log(Level.INFO,
-                    "Add selection styling of {0}", flowingRegion);
+        if (flowingRegion != null)
             flowingRegion.setBackground(Utils.generateBackgroundOfColor(Color.LIGHTBLUE));
-        }
     }
 
     public void select(FlowingRegion flowingRegion, boolean multiSelect) {
@@ -338,7 +329,6 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private void handleSelection(Optional<FlowingRegion> flowingRegion, boolean multiSelect) {
-        System.out.println("called dude");
         if (!flowingRegion.isPresent())
             return;
 
@@ -395,7 +385,7 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
             return;
 
         FlowingColumn rightFlowingColumn = Utils.getRelativeElement(speechListSpeeches, speech, 1).getBinded();
-        rightFlowingColumn.addFlowingRegionWriter(false, true, text -> {
+        rightFlowingColumn.addFlowingRegionWriter(false, text -> {
             OffensiveReasoning offensiveReasoning = new OffensiveReasoning(text, speech.getSide(), speech.getSide().getOpposite(), getLastSelected());
             rightFlowingColumn.addOffensiveFlowingRegion(offensiveReasoning);
         });
@@ -489,7 +479,7 @@ public class FlowingColumnsController implements Initializable, SingleViewContro
      * otherwise an empty {@link Optional}
      */
     private Optional<FlowingRegion> getHorizontallyRelativeFlowingRegion(FlowingRegion flowingRegion, int offset) {
-        ContentContainer baseContentContainer = flowingRegion.getContainer();
+        ContentContainer baseContentContainer = flowingRegion.getContentContainer();
         int indexInParent = baseContentContainer.getChildren().indexOf(flowingRegion);
         Speech baseSpeech = baseContentContainer.getFlowingColumn().getBinded();
 
