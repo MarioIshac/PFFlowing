@@ -1,6 +1,9 @@
 package me.theeninja.pfflowing.gui;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
@@ -16,7 +19,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
+import javafx.util.Duration;
+import me.theeninja.pfflowing.StringSerializable;
 import me.theeninja.pfflowing.configuration.Configuration;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.flowingregions.Card;
@@ -24,13 +28,16 @@ import me.theeninja.pfflowing.flowingregions.CharacterFormatting;
 import me.theeninja.pfflowing.flowingregions.CharacterStyle;
 import me.theeninja.pfflowing.flowingregions.DefensiveReasoning;
 import me.theeninja.pfflowing.flowing.*;
+import me.theeninja.pfflowing.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-public class FlowingColumn extends VBox implements Bindable<Speech> {
+public class FlowingColumn extends VBox implements Bindable<Speech>, StringSerializable<FlowingColumn> {
     private final Speech speech;
     private final Label label;
     private final ContentContainer contentContainer;
@@ -57,20 +64,6 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         HBox.setHgrow(this, Priority.ALWAYS);
 
         managesOpposite = getBinded() instanceof DefensiveSpeech;
-
-        if (getBinded() == DefensiveSpeech.AFF_1) {
-            // for example
-            Label label = new Label("A");
-            label.prefWidthProperty().bind(this.widthProperty());
-            this.getContentContainer().getChildren().add(label);
-            System.out.println("This shows label exists: " + label.toString());
-            System.out.println("Width" + label.getWidth());
-            System.out.println("Pref Width" + label.getPrefWidth());
-
-            TextField textField = new TextField();
-            this.getContentContainer().getChildren().add(textField);
-            System.out.println(textField.getWidth());
-        }
     }
 
     public static List<FlowingColumn> of(SpeechList speechList) {
@@ -110,8 +103,10 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
 
                 getChildren().remove(textArea);
 
-                if (createNewOne)
+                if (createNewOne) {
+                    System.out.println("duplicated");
                     addFlowingRegionWriter(true, postEnterAction);
+                }
             }
         };
     }
@@ -143,53 +138,33 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         });
     }
 
-    public void addOffensiveFlowingRegion(OffensiveFlowingRegion offensiveRegion) {
-        addFlowingRegion(offensiveRegion);
-        drawArrow(offensiveRegion);
+    private PauseTransition generatePauseTransition(Duration duration, EventHandler<ActionEvent> consumer) {
+        PauseTransition pauseTransition = new PauseTransition(duration);
+        pauseTransition.setOnFinished(consumer);
+        return pauseTransition;
     }
 
-    private void drawArrow(OffensiveFlowingRegion offensiveRegion) {
-        FlowingRegion starter = offensiveRegion.getTargetRegion();
-        Bounds starterBounds = starter.localToScene(starter.getLayoutBounds());
-        double startX = starterBounds.getMaxX() + Configuration.ARROW_MARGIN;
-        double startY = (starterBounds.getMinY() + starterBounds.getMaxY()) / 2;
+    public void addOffensiveFlowingRegion(OffensiveFlowingRegion offensiveFlowingRegion) {
+        addFlowingRegion(offensiveFlowingRegion);
 
-        System.out.println(starterBounds);
+        generatePauseTransition(Duration.seconds(0.25),
+            event -> PFFlowingApplicationController.getFXMLInstance().getCorrelatingView()
+                .addLink(new FlowingLink(offensiveFlowingRegion.getTargetRegion(), offensiveFlowingRegion)))
+        .play();
 
-        System.out.println("Text" + offensiveRegion.getText());
-        System.out.println("Width" + offensiveRegion.getWidth());
-
-        System.out.println(((Label) getContentContainer().getChildren().get(0)).getText());
-        System.out.println(((Label) getContentContainer().getChildren().get(0)).getWidth());
-
-        Bounds finishBounds = offensiveRegion.localToScene(offensiveRegion.getLayoutBounds());
-        double finishX = finishBounds.getMinX() - Configuration.ARROW_MARGIN;
-        double finishY = (finishBounds.getMinY() + finishBounds.getMaxY()) / 2;
-
-        System.out.println(finishBounds);
-        Line line = new Line(startX, startY, finishX, finishY);
-
-        PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().getChildren().add(line);
+        PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().organizeArrows();
     }
 
     public void addDefensiveFlowingRegion(DefensiveFlowingRegion defensiveRegion) {
         addFlowingRegion(defensiveRegion);
     }
 
-    /**
-     * Calculates the overlap of the bounds of the two given nodes.
-     *
-     * @param newNode The {@link Node} that recently was added, i.e the bound challenger of the old node.
-     * @param checkedNode The node that {@code newNode} is being checked against in regards to overlap.
-     * @return the overlap as a double in the case of an existent overlap; otherwise 0.
-     */
-    private double calculateOverlap(Node newNode, Node checkedNode) {
-        Bounds newNodeBounds = newNode.getBoundsInParent();
-        Bounds checkedNodeBounds = checkedNode.getBoundsInParent();
-        if (checkedNodeBounds.getMinY() < newNodeBounds.getMaxY())
-            return newNodeBounds.getMaxY() - checkedNodeBounds.getMinY();
-        else
-            return 0;
+    public void addExtensionFlowingRegion(ExtensionFlowingRegion extensionFlowingRegion) {
+        addFlowingRegion(extensionFlowingRegion);
+        generatePauseTransition(Duration.seconds(0.25),
+                event -> PFFlowingApplicationController.getFXMLInstance().getCorrelatingView()
+                        .addLink(new FlowingLink(extensionFlowingRegion.getBase(), extensionFlowingRegion)))
+        .play();
     }
 
     public void addFlowingRegion(FlowingRegion flowingRegion) {
@@ -217,11 +192,10 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
         flowingRegion.setWrapText(true);
         flowingRegion.setTextFill(color);
 
-        flowingRegion.prefWidthProperty().bind(flowingRegion.getContentContainer().widthProperty());
-
-        System.out.println(flowingRegion.getWidth());
-
         getContentContainer().getChildren().add(flowingRegion);
+
+        // Must be after previous line due to content container being parent of flowing region
+        flowingRegion.prefWidthProperty().bind(flowingRegion.getContentContainer().widthProperty());
     }
 
     public ContentContainer getContentContainer() {
@@ -252,5 +226,19 @@ public class FlowingColumn extends VBox implements Bindable<Speech> {
 
     public FlowingColumns getParentFlowingColumns() {
         return (FlowingColumns) getParent();
+    }
+
+    @Override
+    public String serialize() {
+        return getLabel()
+                + "\n\n" +
+                getContentContainer().getContent().stream()
+                        .map(StringSerializable::serialize).collect(Collectors.joining("\n"))
+                + "\n\n";
+    }
+
+    @Override
+    public FlowingColumn deserialize(String string) {
+        return null;
     }
 }

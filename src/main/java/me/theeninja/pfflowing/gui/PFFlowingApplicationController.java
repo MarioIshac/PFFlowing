@@ -12,8 +12,9 @@ import me.theeninja.pfflowing.utils.Utils;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class PFFlowingApplicationController implements Initializable, SingleViewController<BorderPane> {
-    @FXML public BorderPane pfFlowingMain;
+public class PFFlowingApplicationController implements Initializable, SingleViewController<FlowingPane> {
+    @FXML
+    public FlowingPane pfFlowingMain;
 
     private ObjectProperty<Node> currentFocusedNodeProperty = new SimpleObjectProperty<>();
 
@@ -29,7 +30,7 @@ public class PFFlowingApplicationController implements Initializable, SingleView
     } */
 
     @Override
-    public BorderPane getCorrelatingView() {
+    public FlowingPane getCorrelatingView() {
         return pfFlowingMain;
     }
 

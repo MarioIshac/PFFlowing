@@ -1,30 +1,26 @@
 package me.theeninja.pfflowing.gui;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.layout.HBox;
+import me.theeninja.pfflowing.StringSerializable;
 import me.theeninja.pfflowing.utils.Utils;
 import me.theeninja.pfflowing.flowing.*;
 import org.apache.commons.collections4.ListUtils;
+import thredds.cataloggen.CollectionLevelScanner;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FlowingColumns extends HBox implements Bindable<SpeechListManager> {
+public class FlowingColumns extends HBox implements Bindable<SpeechListManager>, StringSerializable<FlowingColumns> {
     private SpeechListManager bindedSpeechListManager;
-    private SpeechList currentSpeechList;
 
-    private DisplayShifter selectedDisplayShifter;
-    private DisplayShifter affDisplayShifter;
-    private DisplayShifter negDisplayShifter;
-
-    public void initializeDisplayShifters() {
-        affDisplayShifter = new DisplayShifter(getBinded().getAffSpeechList());
-        negDisplayShifter = new DisplayShifter(getBinded().getNegSpeechList());
-    }
-
-    public void display(SpeechList speechList) {
-        setCurrentSpeechList(speechList);
+    public void updateDisplay() {
+        System.out.println("Called with " + bindedSpeechListManager.getSelectedSpeechList().getSide());
 
         boolean firstTime = false;
+
+        SpeechList speechList = bindedSpeechListManager.getSelectedSpeechList();
 
         if (getChildren().size() == 0)
             firstTime = true;
@@ -36,20 +32,36 @@ public class FlowingColumns extends HBox implements Bindable<SpeechListManager> 
                 getChildren().set(i, speechList.getSpeeches().get(i).getBinded());
     }
 
-    public SpeechList getCurrentSpeechList() {
-        return currentSpeechList;
+    public void shift(int offset) {
+        SpeechList speechList = bindedSpeechListManager.getSelectedSpeechList();
+
+        // getChildren().size() represents the number of flowing columns
+        if (getChildren().size() == DefensiveSpeech.DEFENSIVE_SPEECH_ORDER.size())
+            return; //it is impossible to shift a updateDisplay that has no off-screen components
+
+        int numberOfFlowingColumns = getChildren().size();
+        List<FlowingColumn> children = getChildren().stream().map(FlowingColumn.class::cast).collect(Collectors.toList());
+        getChildren().clear();
+
+        for (int index = 0; index < numberOfFlowingColumns; index++)
+            getChildren().add(Utils.getRelativeElement(
+                    speechList.getSpeeches().stream().map(Bindable::getBinded).collect(Collectors.toList()),
+                    children.get(index), offset));
     }
 
-    public void setCurrentSpeechList(SpeechList speechList) {
-        this.currentSpeechList = speechList;
+    public void setNumberOfColumns(int numberOfColumns) {
+        SpeechList speechList = bindedSpeechListManager.getSelectedSpeechList();
+
+        getChildren().setAll(speechList.getSpeeches().stream()
+                .map(Bindable::getBinded).collect(Collectors.toList()).subList(0, numberOfColumns));
     }
 
-    public DisplayShifter getSelectedDisplayShifter() {
-        return selectedDisplayShifter;
+    public void narrowBy(int reductionInNumOfColumns) {
+        setNumberOfColumns(getChildren().size() - reductionInNumOfColumns);
     }
 
-    public void setSelectedDisplayShifter(DisplayShifter selectedDisplayShifter) {
-        this.selectedDisplayShifter = selectedDisplayShifter;
+    public void upscaleBy(int increaseInNumberOfColumns) {
+        setNumberOfColumns(getChildren().size() + increaseInNumberOfColumns);
     }
 
     public List<FlowingRegion> getSubFlowingRegions(FlowingRegion flowingRegion) {
@@ -65,54 +77,18 @@ public class FlowingColumns extends HBox implements Bindable<SpeechListManager> 
                 getBaseFlowingRegion(((Offensive) flowingRegion).getTargetRegion());
     }
 
-    // O -> (A -> B, C), D, E
-    // return
-
-    public DisplayShifter getAffDisplayShifter() {
-        return affDisplayShifter;
+    public List<FlowingColumn> getFlowingColumns() {
+        return getChildren().stream().map(FlowingColumn.class::cast).collect(Collectors.toList());
     }
 
-    public DisplayShifter getNegDisplayShifter() {
-        return negDisplayShifter;
+    @Override
+    public String serialize() {
+        return getFlowingColumns().stream().map(FlowingColumn::serialize).collect(Collectors.joining("\n"));
     }
 
-    public class DisplayShifter {
-        private final SpeechList speechList;
-        private final List<FlowingColumn> allFlowingColumns;
-
-        public DisplayShifter(SpeechList speechList) {
-            this.speechList = speechList;
-            this.allFlowingColumns = speechList.getSpeeches().stream().map(Speech::getBinded).collect(Collectors.toList());
-        }
-
-        public void setNumberOfColumns(int numberOfColumns) {
-            getChildren().setAll(allFlowingColumns.subList(0, numberOfColumns));
-        }
-
-        public void narrowBy(int reductionInNumOfColumns) {
-            setNumberOfColumns(getChildren().size() - reductionInNumOfColumns);
-        }
-
-        public void upscaleBy(int increaseInNumberOfColumns) {
-            setNumberOfColumns(getChildren().size() + increaseInNumberOfColumns);
-        }
-
-        public void shift(int offset) {
-            // getChildren().size() represents the number of flowing columns
-            if (getChildren().size() == DefensiveSpeech.DEFENSIVE_SPEECH_ORDER.size())
-                return; //it is impossible to shift a display that has no off-screen components
-
-            int numberOfFlowingColumns = getChildren().size();
-            List<FlowingColumn> children = getChildren().stream().map(FlowingColumn.class::cast).collect(Collectors.toList());
-            getChildren().clear();
-
-            for (int index = 0; index < numberOfFlowingColumns; index++)
-                getChildren().add(Utils.getRelativeElement(allFlowingColumns, children.get(index), offset));
-        }
-
-        public SpeechList getSpeechList() {
-            return speechList;
-        }
+    @Override
+    public FlowingColumns deserialize(String string) {
+        return null;
     }
 
     @Override

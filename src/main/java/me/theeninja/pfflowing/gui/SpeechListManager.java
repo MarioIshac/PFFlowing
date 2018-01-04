@@ -11,14 +11,6 @@ public class SpeechListManager implements Bindable<FlowingColumns> {
 
     private FlowingColumns bindedFlowingColumns;
 
-    private SpeechList getAffSpeechMap() {
-        return AFF_SPEECHES;
-    }
-
-    private SpeechList getNegSpeechMap() {
-        return NEG_SPEECHES;
-    }
-
     public SpeechListManager(FlowingColumns flowingColumns) {
         selectedSpeechList = new SimpleObjectProperty<>();
 
@@ -38,37 +30,30 @@ public class SpeechListManager implements Bindable<FlowingColumns> {
         return selectedSpeechList.get();
     }
 
-    private void setSelectedSpeechList(SpeechList selectedSpeechList) {
+    public void setSelectedSpeechList(SpeechList selectedSpeechList) {
         this.selectedSpeechList.set(selectedSpeechList);
     }
 
     public void switchSelectedSpeechMap() {
-        if (getSelectedSpeechList() == getAffSpeechMap())
-            selectNegSpeechMap();
+        System.out.println("swithced");
+        if (getSelectedSpeechList() == getAffSpeechList())
+            setSelectedSpeechList(getNegSpeechList());
         else
-            selectAffSpeechMap();
-    }
-
-    public void selectAffSpeechMap() {
-        setSelectedSpeechList(getAffSpeechMap());
-    }
-
-    public void selectNegSpeechMap() {
-        setSelectedSpeechList(getNegSpeechMap());
+            setSelectedSpeechList(getAffSpeechList());
     }
 
     public SpeechList getSpeechList(Speech speech) {
-        if (AFF_SPEECHES.getSpeeches().contains(speech))
-            return AFF_SPEECHES;
+        if (getAffSpeechList().getSpeeches().contains(speech))
+            return getAffSpeechList();
         else
-            return NEG_SPEECHES;
+            return getNegSpeechList();
     }
 
     public SpeechList getSpeechList(Side side) {
         if (side == Side.AFFIRMATIVE)
-            return getAffSpeechMap();
+            return getAffSpeechList();
         else
-            return getNegSpeechMap();
+            return getNegSpeechList();
     }
 
     public Speech getVisibleSelectedSpeech() {
@@ -78,11 +63,8 @@ public class SpeechListManager implements Bindable<FlowingColumns> {
     @Override
     public void setBinded(FlowingColumns flowingColumns) {
         this.bindedFlowingColumns = flowingColumns;
-        System.out.println("called too");
-        selectedSpeechList.addListener((observableValue, oldSpeechList, newSpeechList) -> {
-            System.out.println("called");
-            getBinded().display(newSpeechList);
-        });
+        selectedSpeechListProperty().addListener(((observableValue, oldValue, newValue) ->
+                getBinded().updateDisplay()));
     }
 
     @Override
