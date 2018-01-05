@@ -2,21 +2,33 @@ package me.theeninja.pfflowing.flowing;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.paint.Color;
+import me.theeninja.pfflowing.gui.FlowingGrid;
+import me.theeninja.pfflowing.gui.FlowingPane;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
-import me.theeninja.pfflowing.gui.Bindable;
 import me.theeninja.pfflowing.gui.FlowingColumn;
 
-public class Speech implements Bindable<FlowingColumn> {
+import java.util.ArrayList;
+import java.util.List;
+
+public class Speech {
     private final Side side;
     private final String labelText;
-    private final ObservableList<FlowingRegion> flowingRegionList;
-    private FlowingColumn bindedFlowingColumn;
+    private final FlowingGrid flowingGrid;
+    private final int gridPaneColumn;
+    private final List<FlowingRegion> flowingRegionList;
 
-    Speech(Side side, String labelText) {
+    Speech(Side side, String labelText, FlowingGrid flowingGrid, int flowingPaneColumn) {
         this.side = side;
         this.labelText = labelText;
-        this.flowingRegionList = FXCollections.observableArrayList();
+        this.flowingGrid = flowingGrid;
+        this.gridPaneColumn = flowingPaneColumn;
+        this.flowingRegionList = new ArrayList<>();
+    }
+
+    public Color getColor() {
+        return getSide() == Side.AFFIRMATIVE ? Color.BLACK : Color.RED;
     }
 
     public Side getSide() {
@@ -31,17 +43,11 @@ public class Speech implements Bindable<FlowingColumn> {
         return flowingRegionList;
     }
 
-    @Override
-    public void setBinded(FlowingColumn flowingColumn) {
-        this.bindedFlowingColumn = flowingColumn;
-        flowingRegionList.addListener(Utils.generateListChangeListener(
-                getBinded().getChildren()::add,
-                getBinded().getChildren()::remove
-        ));
+    public int getGridPaneColumn() {
+        return gridPaneColumn;
     }
 
-    @Override
-    public FlowingColumn getBinded() {
-        return bindedFlowingColumn;
+    public FlowingGrid getFlowingGrid() {
+        return flowingGrid;
     }
 }

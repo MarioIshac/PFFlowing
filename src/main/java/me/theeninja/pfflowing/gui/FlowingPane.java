@@ -21,7 +21,7 @@ public class FlowingPane extends BorderPane {
 
     // TODO: 1/4/18 - rewrite using generics
     public void organizeArrows() {
-        SpeechList speechList = FlowingColumnsController.getFXMLInstance().getSpeechListManager().getSelectedSpeechList();
+        SpeechList speechList = FlowingGridController.getFXMLInstance().getSpeechListManager().getSelectedSpeechList();
         for (Speech speech : speechList.getSpeeches()) {
 
             // No need to sort the first flowing column, as it is completely proactive

@@ -5,19 +5,19 @@ import javafx.beans.property.SimpleObjectProperty;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.flowing.Speech;
 
-public class SpeechListManager implements Bindable<FlowingColumns> {
+public class SpeechListManager implements Bindable<FlowingGrid> {
     private final SpeechList AFF_SPEECHES;
     private final SpeechList NEG_SPEECHES;
 
-    private FlowingColumns bindedFlowingColumns;
+    private FlowingGrid bindedFlowingGrid;
 
-    public SpeechListManager(FlowingColumns flowingColumns) {
+    public SpeechListManager(FlowingGrid flowingGrid) {
         selectedSpeechList = new SimpleObjectProperty<>();
 
         AFF_SPEECHES = new SpeechList(Side.AFFIRMATIVE);
         NEG_SPEECHES = new SpeechList(Side.NEGATION);
 
-        setBinded(flowingColumns);
+        setBinded(flowingGrid);
     }
 
     private ObjectProperty<SpeechList> selectedSpeechList;
@@ -61,15 +61,15 @@ public class SpeechListManager implements Bindable<FlowingColumns> {
     }
 
     @Override
-    public void setBinded(FlowingColumns flowingColumns) {
-        this.bindedFlowingColumns = flowingColumns;
+    public void setBinded(FlowingGrid flowingGrid) {
+        this.bindedFlowingGrid = flowingGrid;
         selectedSpeechListProperty().addListener(((observableValue, oldValue, newValue) ->
                 getBinded().updateDisplay()));
     }
 
     @Override
-    public FlowingColumns getBinded() {
-        return bindedFlowingColumns;
+    public FlowingGrid getBinded() {
+        return bindedFlowingGrid;
     }
 
     public SpeechList getAffSpeechList() {

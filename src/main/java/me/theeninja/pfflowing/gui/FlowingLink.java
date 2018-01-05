@@ -63,12 +63,12 @@ public class FlowingLink extends Line implements SpeechListSpecific {
 
         visibleProperty().bind(new BooleanBinding() {
             {
-                super.bind(FlowingColumnsController.getFXMLInstance().getSpeechListManager().selectedSpeechListProperty());
+                super.bind(FlowingGridController.getFXMLInstance().getSpeechListManager().selectedSpeechListProperty());
             }
 
             @Override
             protected boolean computeValue() {
-                return getBelongingSpeechList() == FlowingColumnsController.getFXMLInstance().getSpeechListManager().getSelectedSpeechList();
+                return getBelongingSpeechList() == FlowingGridController.getFXMLInstance().getSpeechListManager().getSelectedSpeechList();
             }
         });
     }
@@ -76,7 +76,7 @@ public class FlowingLink extends Line implements SpeechListSpecific {
     public FlowingLink(FlowingRegion start, FlowingRegion finish) {
         this.startID = start.getID();
         this.endID = finish.getID();
-        this.belongingSpeechList = FlowingColumnsController.getFXMLInstance().getSpeechListManager().getSpeechList(start.getFlowingColumn().getBinded());
+        this.belongingSpeechList = FlowingGridController.getFXMLInstance().getSpeechListManager().getSpeechList(start.getFlowingColumn().getBinded());
 
         rebindProperties();
     }

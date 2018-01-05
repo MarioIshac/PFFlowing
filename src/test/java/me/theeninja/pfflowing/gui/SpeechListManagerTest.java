@@ -5,16 +5,13 @@ import me.theeninja.pfflowing.flowing.RefutationSpeech;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeEach;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class SpeechListManagerTest {
     private SpeechListManager speechListManager;
 
     @Before
     public void setUp() {
-        speechListManager = new SpeechListManager(new FlowingColumns());
+        speechListManager = new SpeechListManager(new FlowingGrid());
     }
 
     @Ignore

@@ -18,16 +18,6 @@ public class PFFlowingApplicationController implements Initializable, SingleView
 
     private ObjectProperty<Node> currentFocusedNodeProperty = new SimpleObjectProperty<>();
 
-    /* private final List<Node> mainNodes = Arrays.asList(
-            pfFlowingMain.getLeft(),
-            pfFlowingMain.getCenter()
-    );
-
-    public void cycleMainNodeFocus() {
-        int baseIndex = mainNodes.indexOf(getCurrentFocusedNodeProperty());
-        int newIndex = baseIndex == mainNodes.size() - 1 ? 0 : baseIndex + 1;
-        setCurrentFocusedNodeProperty(mainNodes.get(newIndex));
-    } */
 
     @Override
     public FlowingPane getCorrelatingView() {

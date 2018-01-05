@@ -104,8 +104,8 @@ public class CardSelectorController implements Initializable, DependentControlle
     private EventHandler<KeyEvent> handler = keyEvent -> {
         if (keyEvent.getCode() == KeyCode.ENTER) {
             TreeItem<DefensiveCard> treeItem = cardSelectorTreeView.getSelectionModel().getSelectedItem();
-            OffensiveCard offensiveCard = Card.toOffensiveCard(treeItem.getValue(), Side.AFFIRMATIVE, FlowingColumnsController.getFXMLInstance().getLastSelected());
-            FlowingColumnsController.getFXMLInstance().getSpeechListManager().getVisibleSelectedSpeech().getBinded().addOffensiveFlowingRegion(offensiveCard);
+            OffensiveCard offensiveCard = Card.toOffensiveCard(treeItem.getValue(), Side.AFFIRMATIVE, FlowingGridController.getFXMLInstance().getLastSelected());
+            FlowingGridController.getFXMLInstance().getSpeechListManager().getVisibleSelectedSpeech().getBinded().addOffensiveFlowingRegion(offensiveCard);
             removeCardSelectionListener();
         }
     };
@@ -116,7 +116,7 @@ public class CardSelectorController implements Initializable, DependentControlle
     }
 
     public void removeCardSelectionListener() {
-        FlowingColumnsController.getFXMLInstance().getCorrelatingView().requestFocus();
+        FlowingGridController.getFXMLInstance().getCorrelatingView().requestFocus();
         cardSelectorTreeView.removeEventHandler(KeyEvent.KEY_PRESSED, handler);
     }
 }

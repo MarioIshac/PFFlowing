@@ -30,17 +30,17 @@ public class PFFlowing extends Application {
     public void start(Stage stage) {
         this.stage = stage;
         scene = new Scene(PFFlowingApplicationController.getFXMLInstance().getCorrelatingView());
-        // FlowingColumnsController.getFXMLInstance().generateLineLinksListener();
+        // FlowingGridController.getFXMLInstance().generateLineLinksListener();
         instance = this;
 
         stage.setScene(scene);
         stage.setTitle(APPLICATION_TITLE);
         stage.setFullScreen(true);
-        scene.setOnKeyReleased(FlowingColumnsController.getFXMLInstance());
+        scene.setOnKeyReleased(FlowingGridController.getFXMLInstance());
         stage.setFullScreenExitKeyCombination(KeyCodeCombination.NO_MATCH);
         stage.show();
 
-        FlowingColumnsController.getFXMLInstance().getCorrelatingView().requestFocus();
+        FlowingGridController.getFXMLInstance().getCorrelatingView().requestFocus();
         /* String directory = System.getProperty("user.home") + "/Desktop/DebateCards";
         System.out.println(directory);
         Path path = Paths.get(directory);
