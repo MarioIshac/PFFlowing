@@ -5,6 +5,7 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Stage;
 import me.theeninja.pfflowing.gui.*;
+import me.theeninja.pfflowing.utils.Utils;
 
 import java.util.logging.Logger;
 
@@ -26,21 +27,37 @@ public class PFFlowing extends Application {
         return instance;
     }
 
+    private AffirmativeFlowingGridController affirmativeFlowingGridController;
+    private NegationFlowingGridController negationFlowingGridController;
+
+    public void switchSpeechList() {
+        if (getAffirmativeFlowingGridController().isShown()) {
+            getAffirmativeFlowingGridController().hide();
+            getNegationFlowingGridController().show();
+        }
+        else {
+            getNegationFlowingGridController().hide();
+            getAffirmativeFlowingGridController().show();
+        }
+    }
+
     @Override
     public void start(Stage stage) {
         this.stage = stage;
         scene = new Scene(PFFlowingApplicationController.getFXMLInstance().getCorrelatingView());
-        // FlowingGridController.getFXMLInstance().generateLineLinksListener();
         instance = this;
 
         stage.setScene(scene);
         stage.setTitle(APPLICATION_TITLE);
         stage.setFullScreen(true);
-        scene.setOnKeyReleased(FlowingGridController.getFXMLInstance());
         stage.setFullScreenExitKeyCombination(KeyCodeCombination.NO_MATCH);
         stage.show();
 
-        FlowingGridController.getFXMLInstance().getCorrelatingView().requestFocus();
+        setAffirmativeFlowingGridController(Utils.getCorrelatingController("/aff_flowing_pane.fxml"));
+        setNegationFlowingGridController(Utils.getCorrelatingController("/neg_flowing_pane.fxml"));
+
+        getAffirmativeFlowingGridController().show();
+
         /* String directory = System.getProperty("user.home") + "/Desktop/DebateCards";
         System.out.println(directory);
         Path path = Paths.get(directory);
@@ -62,5 +79,21 @@ public class PFFlowing extends Application {
 
     public Stage getStage() {
         return this.stage;
+    }
+
+    public AffirmativeFlowingGridController getAffirmativeFlowingGridController() {
+        return affirmativeFlowingGridController;
+    }
+
+    public void setAffirmativeFlowingGridController(AffirmativeFlowingGridController affirmativeFlowingGridController) {
+        this.affirmativeFlowingGridController = affirmativeFlowingGridController;
+    }
+
+    public NegationFlowingGridController getNegationFlowingGridController() {
+        return negationFlowingGridController;
+    }
+
+    public void setNegationFlowingGridController(NegationFlowingGridController negationFlowingGridController) {
+        this.negationFlowingGridController = negationFlowingGridController;
     }
 }

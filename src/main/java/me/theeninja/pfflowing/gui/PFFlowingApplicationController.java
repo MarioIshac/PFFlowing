@@ -6,7 +6,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
+import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.SingleViewController;
+import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.net.URL;
@@ -39,7 +41,7 @@ public class PFFlowingApplicationController implements Initializable, SingleView
             newVal.requestFocus();
         });
     }
-
+    
     public Node getCurrentFocusedNode() {
         return currentFocusedNodeProperty.get();
     }

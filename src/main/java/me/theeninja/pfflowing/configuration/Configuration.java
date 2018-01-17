@@ -5,8 +5,6 @@ import me.theeninja.pfflowing.flowingregions.CharacterStyle;
 import me.theeninja.pfflowing.flowing.DefensiveSpeech;
 
 public class Configuration {
-    public static final DefensiveSpeech MY_SPEECH = DefensiveSpeech.NEG_2;
-
     public static final CharacterStyle SPOKEN = CharacterStyle.BOLD;
 
     public static final double SPEECH_SEPERATION = 30;

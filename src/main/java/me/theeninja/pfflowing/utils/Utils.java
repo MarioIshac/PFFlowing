@@ -1,6 +1,7 @@
 package me.theeninja.pfflowing.utils;
 
 import javafx.collections.ListChangeListener;
+import javafx.collections.MapChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -55,6 +57,15 @@ public final class Utils {
                 else if (change.wasRemoved())
                     change.getRemoved().forEach(removeFunction);
             }
+        };
+    }
+
+    public static <K, V> MapChangeListener<? super K, ? super V> generateMapChangeListener(BiConsumer<K, V> addFunction, BiConsumer<K, V> removeFunction) {
+        return change -> {
+            if (change.wasAdded())
+                addFunction.accept(change.getKey(), change.getValueAdded());
+            if (change.wasRemoved())
+                removeFunction.accept(change.getKey(), change.getValueRemoved());
         };
     }
 

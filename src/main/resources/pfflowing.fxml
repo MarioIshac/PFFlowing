@@ -12,7 +12,4 @@
     <left>
         <fx:include source="card_selector.fxml" />
     </left>
-    <center>
-        <fx:include source="aff_flowing_pane.fxml" />
-    </center>
 </FlowingPane>

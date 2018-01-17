@@ -1,30 +1,44 @@
 package me.theeninja.pfflowing.gui;
 
+import javafx.animation.PauseTransition;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextBoundsType;
+import javafx.util.Duration;
 import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.configuration.Configuration;
 import me.theeninja.pfflowing.flowing.*;
+import me.theeninja.pfflowing.flowingregions.*;
 import me.theeninja.pfflowing.utils.Utils;
-import me.theeninja.pfflowing.flowingregions.OffensiveReasoning;
 import me.theeninja.pfflowing.utils.Pair;
+import org.apache.commons.collections4.ListUtils;
 
 import java.net.URL;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,6 +64,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         if (!isShown())
             return;
         PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().setCenter(null);
+        PFFlowing.getInstance().getScene().setOnKeyReleased(null);
         setShown(false);
     }
 
@@ -61,6 +76,8 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         if (isShown())
             return;
         PFFlowingApplicationController.getFXMLInstance().getCorrelatingView().setCenter(getCorrelatingView());
+        PFFlowing.getInstance().getScene().setOnKeyReleased(this);
+        getCorrelatingView().requestFocus();
         setShown(true);
     }
 
@@ -79,10 +96,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
      */
     private ColorUseManager colorUseManager;
 
-    /**
-     *
-     */
-    private SpeechListManager speechListManager;
 
     /**
      * Houses a list of all flowing regions that are currently selected. This serves
@@ -118,34 +131,37 @@ public class FlowingGridController implements Initializable, SingleViewControlle
     }
 
     private void populateKeyCodeCombinationMap() {
+        keyCodeCombinationMap.put(MERGE, this::merge);
         keyCodeCombinationMap.put(REFUTE, this::refute);
         keyCodeCombinationMap.put(EXTEND, this::extend);
-        keyCodeCombinationMap.put(NARROW_BY_1, () -> getCorrelatingView().narrowBy(1));
+        keyCodeCombinationMap.put(NARROW_BY_1, () -> narrowBy(1));
         keyCodeCombinationMap.put(EDIT, this::edit);
-        keyCodeCombinationMap.put(UPSCALE_BY_1, () -> getCorrelatingView().upscaleBy(1));
-        keyCodeCombinationMap.put(SHIFT_DISPLAY_RIGHT, () -> getCorrelatingView().shift(1));
-        keyCodeCombinationMap.put(SHIFT_DISPLAY_LEFT, () -> getCorrelatingView().shift(-1));
-        keyCodeCombinationMap.put(SELECT_LEFT_ONLY, () -> handleSelection(this::getLeft, getLastSelected(), false));
-        keyCodeCombinationMap.put(SELECT_RIGHT_ONLY, () -> handleSelection(this::getRight, getLastSelected(), false));
-        keyCodeCombinationMap.put(SELECT_DOWN_ONLY, () -> handleSelection(this::getDown, getLastSelected(), false));
-        keyCodeCombinationMap.put(SELECT_UP_ONLY, () -> handleSelection(this::getUp, getLastSelected(), false));
-        keyCodeCombinationMap.put(SELECT_LEFT_TOO, () -> handleSelection(this::getLeft, getLastSelected(), true));
-        keyCodeCombinationMap.put(SELECT_RIGHT_TOO, () -> handleSelection(this::getRight, getLastSelected(), true));
-        keyCodeCombinationMap.put(SELECT_DOWN_TOO, () -> handleSelection(this::getDown, getLastSelected(), true));
-        keyCodeCombinationMap.put(SELECT_UP_TOO, () -> handleSelection(this::getUp, getLastSelected(), true));
+        keyCodeCombinationMap.put(UPSCALE_BY_1, () -> upscaleBy(1));
+        keyCodeCombinationMap.put(SHIFT_DISPLAY_RIGHT, () -> shift(1));
+        keyCodeCombinationMap.put(SHIFT_DISPLAY_LEFT, () -> shift(-1));
+        keyCodeCombinationMap.put(SELECT_LEFT_ONLY, () -> handleSelection(getCorrelatingView()::getLeft, getLastSelected(), false));
+        keyCodeCombinationMap.put(SELECT_RIGHT_ONLY, () -> handleSelection(getCorrelatingView()::getRight, getLastSelected(), false));
+        keyCodeCombinationMap.put(SELECT_DOWN_ONLY, () -> handleSelection(getCorrelatingView()::getBelow, getLastSelected(), false));
+        keyCodeCombinationMap.put(SELECT_UP_ONLY, () -> handleSelection(getCorrelatingView()::getAbove, getLastSelected(), false));
+        keyCodeCombinationMap.put(SELECT_LEFT_TOO, () -> handleSelection(getCorrelatingView()::getLeft, getLastSelected(), true));
+        keyCodeCombinationMap.put(SELECT_RIGHT_TOO, () -> handleSelection(getCorrelatingView()::getRight, getLastSelected(), true));
+        keyCodeCombinationMap.put(SELECT_DOWN_TOO, () -> handleSelection(getCorrelatingView()::getBelow, getLastSelected(), true));
+        keyCodeCombinationMap.put(SELECT_UP_TOO, () -> handleSelection(getCorrelatingView()::getAbove, getLastSelected(), true));
         keyCodeCombinationMap.put(UNFOCUS, () -> flowingGrid.requestFocus());
-        keyCodeCombinationMap.put(SWITCH_SPEECHLIST, () -> getSpeechListManager().switchSelectedSpeechMap());
-        keyCodeCombinationMap.put(SELECT_RIGHT_SPEECH, () -> speechListManager.getSelectedSpeechList().selectSpeech(1));
-        keyCodeCombinationMap.put(SELECT_LEFT_SPEECH, () -> speechListManager.getSelectedSpeechList().selectSpeech(-1));
-        keyCodeCombinationMap.put(WRITE, () -> {
-           speechListManager.getSelectedSpeechList().getSelectedSpeech().getBinded().addFlowingRegionWriter(false);
-        });
+        keyCodeCombinationMap.put(SWITCH_SPEECHLIST, PFFlowing.getInstance()::switchSpeechList);
+        keyCodeCombinationMap.put(SELECT_RIGHT_SPEECH, () -> getSpeechList().selectSpeech(1));
+        keyCodeCombinationMap.put(SELECT_LEFT_SPEECH, () -> getSpeechList().selectSpeech(-1));
+        keyCodeCombinationMap.put(WRITE, () -> addProactiveFlowingRegionWriter(getSpeechList().getSelectedSpeech(), false));
         keyCodeCombinationMap.put(TOGGLE_FULLSCREEN, this::toggleFullscreen);
-        /* keyCodeCombinationMap.put(new KeyCodeCombination(KeyCode.L), () -> {
-            getCorrelatingView().getCurrentSpeechList().getSpeeches().get(0).getBinded().add();
-        }); */
     }
 
+    public void addLabels() {
+        System.out.println("Is speech list null: " + getSpeechList());
+        for (Speech speech : getSpeechList().getSpeeches())
+            getCorrelatingView().add(new Label(speech.getLabelText()) {{
+                GridPane.setHgrow(this, Priority.ALWAYS);
+            }}, speech.getGridPaneColumn(), 0);
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -154,18 +170,25 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         initializeListeners();
 
         colorUseManager = new ColorUseManager();
-        speechListManager = new SpeechListManager(getCorrelatingView());
 
-
-
-        // Set up the flowing pane for aff 1 speech
-        getSpeechListManager().setSelectedSpeechList(getSpeechListManager().getAffSpeechList());
-
-        // To allow spacing for the arrows
-        getCorrelatingView().setSpacing(Configuration.SPEECH_SEPERATION);
+        setShown(false);
 
         // Must be called last
         populateKeyCodeCombinationMap();
+
+        startingColumnProperty().addListener(this::onStartingColumnChanged);
+        finishingColumnProperty().addListener(this::onFinishingColumnChanged);
+
+        getCorrelatingView().getColumnConstraints().addAll(Collections.nCopies(Speech.SPEECH_SIZE, new ColumnConstraints() {{
+            setPercentWidth((100d / Speech.SPEECH_SIZE));
+        }}));
+
+        getSpeechList().selectedSpeechProperty().addListener(((observable, oldValue, newValue) -> {
+            Label oldSpeechHeader = (Label) getCorrelatingView().getNode(oldValue.getGridPaneColumn(), 0).get();
+            oldSpeechHeader.setStyle("");
+            Label newSpeechHeader = (Label) getCorrelatingView().getNode(newValue.getGridPaneColumn(), 0).get();
+            newSpeechHeader.setStyle("-fx-font-weight: bold;");
+        }));
     }
 
     public ObservableList<FlowingRegion> getSelectedFlowingRegions() {
@@ -269,51 +292,64 @@ public class FlowingGridController implements Initializable, SingleViewControlle
 
     }
 
-    private <K, V> Map<V, K> reverseMap(Map<K, V> map) {
-        return map.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-    }
-
     private boolean areSameSpeech(List<FlowingRegion> flowingRegions) {
-        FlowingColumn firstFlowingColumn = flowingRegions.get(0).getFlowingColumn();
-        Speech firstElementSpeech =
-            getSpeechListManager().getSelectedSpeechList().findFirstSpeech(speech -> speech.getBinded() == firstFlowingColumn).orElse(null);
-        return flowingRegions.stream().allMatch(flowingRegion ->
-            flowingRegion.getFlowingColumn().getBinded() == firstElementSpeech);
+        return flowingRegions.stream()
+                .allMatch(flowingRegion -> GridPane.getColumnIndex(flowingRegions.get(0)).equals(GridPane.getColumnIndex(flowingRegion)));
     }
 
     private void merge() {
         if (areSameSpeech(getSelectedFlowingRegions())) {
-            VBox baseContainer = (VBox) getSelectedFlowingRegions().get(0).getParent();
-            System.out.println("1st: " + getSelectedFlowingRegions().get(0));
-            System.out.println(baseContainer);
-            StringBuilder labelTexts = new StringBuilder();
+            Speech speech = getSpeechList().getSpeech(getLastSelected());
+
+            // Ensures that the first flowing region is the top-most, which allows the later algorithm to function correctly
+            getSelectedFlowingRegions().sort(Comparator.comparingInt(FlowingGrid::getRowIndex));
+
+            FlowingRegion firstFlowingRegion = getSelectedFlowingRegions().get(0);
+            StringBuilder labelDefenceTexts = new StringBuilder();
+            StringBuilder labelOffenceTexts = new StringBuilder();
+            StringBuilder labelExtensionTexts = new StringBuilder();
+
+            List<FlowingRegion> flowingRegionsToRemove = new ArrayList<>();
+
+            // There are 3 merging tasks: Merge defensive flowing regions, merge their respective refutations, and merge their respective extensions
             for (FlowingRegion flowingRegion : getSelectedFlowingRegions()) {
-                labelTexts.append(flowingRegion.getText());
-                if (!Utils.isLastElement(getSelectedFlowingRegions(), flowingRegion)) {
-                    labelTexts.append(System.lineSeparator());
-                }
+                // Task 1: Merge defensive flowing region
+                labelDefenceTexts.append(flowingRegion.getText());
+                if (flowingRegion != firstFlowingRegion)
+                    flowingRegionsToRemove.add(flowingRegion);
+
+                /* // Note that only one of possibleOffender or possibleExtension will be present, not both
+                // Task 2: Merge offender, if it is existent
+                Optional<OffensiveFlowingRegion> possibleOffender = getSpeechList().getOffendor(flowingRegion);
+                possibleOffender.ifPresent(offender -> {
+                    labelOffenceTexts.append(offender.getText());
+                    if (firstOffender.isPresent()) {
+
+                    }
+                    if (flowingRegion != firstFlowingRegion)
+                        flowingGrid.getChildren().add(offender);
+                });
+
+                // Task 3: Merge extension, if it is existent
+                Optional<ExtensionFlowingRegion> possibleExtension = getSpeechList().getExtension(flowingRegion);
+                possibleExtension.ifPresent(extension -> labelExtensionTexts.append(extension.getText())); */
             }
-            getSelectedFlowingRegions().get(0).setText(labelTexts.toString());
+            firstFlowingRegion.setText(labelDefenceTexts.toString());
 
-            baseContainer.getChildren().removeAll(getSelectedFlowingRegions()
-                    .stream()
-                    .filter(element -> element != getSelectedFlowingRegions().get(0)).collect(Collectors.toList()));
+            flowingGrid.getChildren().removeAll(flowingRegionsToRemove);
 
-            getSelectedFlowingRegions().removeAll(selectedFlowingRegions
-                    .stream()
-                    .filter(element -> element != selectedFlowingRegions.get(0)).collect(Collectors.toList()));
+            // this ensures that within the memory, the old flowing regions are no longer stored as selected
+            getSelectedFlowingRegions().clear();
 
-            setLastSelected(selectedFlowingRegions.get(0));
-        }
-        else {
-            System.out.println("not same speech");
+            setLastSelected(firstFlowingRegion);
         }
     }
 
     public void implementListeners(FlowingRegion flowingRegion) {
-        flowingRegion.setOnMousePressed(mouseEvent ->
-                handleSelection(Optional.of(flowingRegion), mouseEvent.isControlDown()));
+        flowingRegion.setOnMousePressed(mouseEvent -> {
+            handleSelection(Optional.of(flowingRegion), mouseEvent.isControlDown());
+            System.out.println("clicked");
+        });
     }
 
     private Map<FlowingRegion, Background> unselectedBackgrounds = new HashMap<>();
@@ -393,39 +429,30 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         if (getSelectedFlowingRegions().size() > 1)
             return;
 
-        Speech speech = getLastSelected().getFlowingColumn().getBinded();
-        List<Speech> speechListSpeeches = getSpeechListManager().getSpeechList(speech).getSpeeches();
+        Speech speech = getSpeech(getLastSelected());
+        List<Speech> speechListSpeeches = getSpeechList().getSpeeches();
 
         // Utils.getRelativeElement(...) will wrap around, yet you cannot refute AT-Neg4 or AT-Aff4 CardContent
         if (Utils.isLastElement(speechListSpeeches, speech))
             return;
 
-        FlowingColumn rightFlowingColumn = Utils.getRelativeElement(speechListSpeeches, speech, 1).getBinded();
-        rightFlowingColumn.addFlowingRegionWriter(false, text -> {
+        Speech rightSpeech = Utils.getRelativeElement(speechListSpeeches, speech, 1);
+        addProactiveFlowingRegionWriter(rightSpeech, false, text -> {
             OffensiveReasoning offensiveReasoning = new OffensiveReasoning(text, speech.getSide(), speech.getSide().getOpposite(), getLastSelected());
-            rightFlowingColumn.addOffensiveFlowingRegion(offensiveReasoning);
-        });
+            addOffensiveFlowingRegion(rightSpeech, offensiveReasoning);
+        }, FlowingGrid.getRowIndex(getLastSelected()));
     }
 
     private void extend() {
         if (!areSameSpeech(getSelectedFlowingRegions()))
             return;
+
+        Speech speech = getSpeechList().getSpeech(getLastSelected()); // speech guaranteed to be the same for all selected
+
         for (FlowingRegion flowingRegion : getSelectedFlowingRegions()) {
-            FlowingColumn flowingColumn = flowingRegion.getFlowingColumn();
-            Speech speech = flowingColumn.getBinded();
-
             ExtensionFlowingRegion extension = new ExtensionFlowingRegion(flowingRegion.getText(), speech.getSide(), flowingRegion);
-            Utils.getRelativeElement(getSpeechListManager().getSelectedSpeechList().getSpeeches(), speech, 2).getBinded()
-                .addExtensionFlowingRegion(extension);
+            addExtensionFlowingRegion(Utils.getRelativeElement(getSpeechList().getSpeeches(), speech, 2), extension);
         }
-    }
-
-    private void organize() {
-        Speech speech = getSpeechListManager().getSelectedSpeechList().getSelectedSpeech();
-        List<DefensiveFlowingRegion> base = speech.getBinded().getContentContainer().getBaseContent();
-        List<OffensiveFlowingRegion> ref = speech.getBinded().getContentContainer().getRefContent();
-
-        VBox vbox = new VBox();
     }
 
     /**
@@ -447,142 +474,281 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         offensiveFlowingRegions.addListener(Utils.generateListChangeListener(this::link, this::delink));
     }
 
-    //// Family of functions used for getting relative flowing regions through provided base flowing region
-
-    // Internal functions
-
-    /**
-     *
-     * @param flowingRegion The flowing region to base all directions upon.
-     * @param offset How far the relative flowing region is in the up/down direction (+ -> up, - -> down)
-     * @return Thee flowing region assuming the offset is within the currently utilized part of the flowing pane,
-     * otherwise an empty {@link Optional}
-     */
-    private Optional<FlowingRegion> getVerticallyRelativeFlowingRegion(FlowingRegion flowingRegion, int offset) {
-        if (flowingRegion == null)
-            return Optional.empty();
-
-        ContentContainer contentContainer = flowingRegion.getContentContainer();
-
-        System.out.println(flowingRegion.getParent());
-
-        int baseIndex = contentContainer.getChildren().indexOf(flowingRegion);
-
-        // It makes more sense to the user for a positive offset to yield a higher node rather than
-        // a lower node, hence the subtraction rather than the addition.
-        int finalIndex = baseIndex - offset;
-
-        if (finalIndex >= contentContainer.getChildren().size() || finalIndex < 0)
-            return Optional.empty();
-
-        Node node =  contentContainer.getChildren().get(finalIndex);
-
-        if (node == null)
-            return Optional.empty();
-
-        if (!(node instanceof FlowingRegion))
-            return Optional.empty();
-
-        return Optional.of((FlowingRegion) node);
-    }
-
-    /**
-     * @param flowingRegion The flowing region to base all directions upon.
-     * @param offset How far the relative flowing region is in the right/left direction (+ -> right, - -> left)
-     * @return Thee flowing region assuming the offset is within the currently utilized part of the flowing pane,
-     * otherwise an empty {@link Optional}
-     */
-    private Optional<FlowingRegion> getHorizontallyRelativeFlowingRegion(FlowingRegion flowingRegion, int offset) {
-        if (flowingRegion == null)
-            return Optional.empty();
-
-        ContentContainer baseContentContainer = flowingRegion.getContentContainer();
-        int indexInParent = baseContentContainer.getChildren().indexOf(flowingRegion);
-        Speech baseSpeech = baseContentContainer.getFlowingColumn().getBinded();
-
-        Speech relativeSpeech;
-
-        try {
-            relativeSpeech = Utils.getRelativeElement(getSpeechListManager().getSelectedSpeechList().getSpeeches(), baseSpeech, offset);
-        } catch (IllegalArgumentException e) {
-            return Optional.empty();
-        }
-
-        ContentContainer relativeContentContainer = relativeSpeech.getBinded().getContentContainer();
-
-        if (relativeContentContainer.getChildren().size() == 0)
-            return Optional.empty();
-
-        /*
-        By now the parent of the flowing region the user seeks relative to the parent of the
-        base flowing region exists. However, the node itself may not exist at the same index,
-        as the parents' children have different sizes. Therefore, we adjust the index of the node
-        to be the last element in the relative parent if it exceeds or equals the children's size.
-         */
-        if (indexInParent >= relativeContentContainer.getChildren().size())
-            indexInParent  = relativeContentContainer.getChildren().size() - 1;
-
-        Node node = relativeContentContainer.getChildren().get(indexInParent);
-
-        if (!(node instanceof FlowingRegion))
-            throw new Error("Unexpected error here. Node in this case should always be a flowing region.");
-
-        return Optional.of((FlowingRegion) node);
-    }
-
-    // External functions
-
-    /**
-     * @param flowingRegion The flowing region to base all directions upon.
-     * @return The flowing region located directly above the parameter (hence in
-     * the same flowing column/speech).
-     */
-    private Optional<FlowingRegion> getUp(FlowingRegion flowingRegion) {
-        return getVerticallyRelativeFlowingRegion(flowingRegion, 1);
-    }
-
-    /**
-     * @param flowingRegion The flowing region to base all directions upon.
-     * @return The flowing region located directly below the parameter (hence in
-     * the same flowing column/speech).
-     */
-    private Optional<FlowingRegion> getDown(FlowingRegion flowingRegion) {
-        return getVerticallyRelativeFlowingRegion(flowingRegion, -1);
-    }
-
-    /**
-     * @param flowingRegion The flowing region to base all directions upon.
-     * @return The flowing region located directly to the right of the parameter (hence in
-     * the right flowing column/speech). If the base flowing region is in the right-most column,
-     * an empty {@link Optional} is returned.
-     */
-    private Optional<FlowingRegion> getRight(FlowingRegion flowingRegion) {
-        return getHorizontallyRelativeFlowingRegion(flowingRegion, 1);
-    }
-
-    /**
-     * @param flowingRegion The flowing region to base all directions upon.
-     * @return The flowing region located directly to the left of the parameter (hence in
-     * the left flowing column/speech). If the base flowing region is in the left-most column,
-     * an empty {@link Optional} is returned.
-     */
-    private Optional<FlowingRegion> getLeft(FlowingRegion flowingRegion) {
-        return getHorizontallyRelativeFlowingRegion(flowingRegion, -1);
-    }
-
-    /**
-     * @return The speech list manager that houses essential data such as selected speech,
-     * selected speech list, etc.
-     */
-    public SpeechListManager getSpeechListManager() {
-        return speechListManager;
-    }
-
     public boolean isShown() {
         return isShown;
     }
 
     public void setShown(boolean shown) {
         isShown = shown;
+    }
+
+    boolean first = true;
+    Text text;
+
+    private class TextAreaGenerator {
+        Text textHolder = new Text();
+
+        private final TextArea textArea;
+
+        TextAreaGenerator() {
+            textArea = new TextArea();
+            textArea.setWrapText(true);
+            textArea.setFont(Configuration.FONT);
+            textArea.prefWidthProperty().bind(textArea.maxWidthProperty());
+            textArea.setPrefHeight(12);
+
+            textArea.addEventHandler(KeyEvent.KEY_TYPED, keyEvent -> {
+                if (textArea.getScrollTop() > 0) {
+                    textArea.setPrefHeight(textArea.getPrefHeight() + 12);
+                    textArea.setScrollTop(0);
+                }
+            });
+        }
+
+        public TextArea getTextArea() {
+            return textArea;
+        }
+    }
+
+    /**
+     *
+     */
+    private SpeechList speechList;
+
+    /**
+     * Represents the keyboard combination required to submit a text area (and thus generate a flowing region).
+     * This differs from the {@code ENTER} {@link KeyCode} because that is used for creating a newline within
+     * the textarea, not for submission.
+     */
+    private static final KeyCodeCombination TEXTAREA_SUBMIT = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
+
+    /**
+     *
+     * @param textArea The text area that {@code postEnterAction} will receive the text from.
+     * @param createNewOne Represents whether a new text area should be generated upon submission of the
+     *                     current text area.
+     * @param postEnterAction Represents any post-submission action that should be called upon using the text of
+     *                        {@code textArea}.
+     * @return An handler, upon execution, will:
+     * <ol>
+     *      <li>Determines whether {@code TEXTAREA_SUBMIT} matches the keyboard combination entered.</li>
+     *      <li>If above is true, will feed {@code postEnterAction} with the text of {@code textArea}.</li>
+     *      <li>Removes {@code textArea} from the grid (as submission has been handled).</li>
+     *      <li>If {@code createNewOne} add a new text area in the subsequent position, designed for further
+     *      submission by the user.</li>
+     * </ol>
+     */
+    private EventHandler<KeyEvent> generateHandler(Speech speech, TextArea textArea, boolean createNewOne, Consumer<String> postEnterAction, int rowIndex) {
+        return (KeyEvent keyEvent) -> {
+            if (TEXTAREA_SUBMIT.match(keyEvent)) {
+                postEnterAction.accept(textArea.getText());
+
+                getCorrelatingView().getChildren().remove(textArea);
+
+                if (createNewOne)
+                    addProactiveFlowingRegionWriter(speech, true, postEnterAction, rowIndex);
+            }
+        };
+    }
+
+    /**
+     * Adds a {@link TextArea} (the flowing region writer) to the flowing column. This flowing region writer
+     * is designed so that on user submission, the text entered into the flowing region writer
+     * would be used to create a flowing region representing what the user typed.
+     */
+    public void addProactiveFlowingRegionWriter(Speech speech, boolean createNewOne, Consumer<String> postEnterAction, int rowIndex) {
+        TextArea textArea = new TextAreaGenerator().getTextArea();
+
+        textArea.addEventHandler(KeyEvent.KEY_PRESSED, generateHandler(speech, textArea, createNewOne, postEnterAction, rowIndex));
+
+        System.out.println((speech.getGridPaneColumn() + " " + rowIndex));
+
+        getCorrelatingView().add(textArea, speech.getGridPaneColumn(), rowIndex);
+        textArea.requestFocus();
+
+        FlowingGridController.getFXMLInstance().addCardSelectorSupport(textArea);
+    }
+
+    /**
+     * Defaul post-enter specification for the above method
+     * @param createNewOne
+     */
+    public void addProactiveFlowingRegionWriter(Speech speech, boolean createNewOne) {
+        addProactiveFlowingRegionWriter(speech, createNewOne, text -> {
+            DefensiveReasoning defensiveReasoning = new DefensiveReasoning(text);
+            addDefensiveFlowingRegion(speech, defensiveReasoning);
+        }, speech.getNextAvailableRow());
+    }
+
+    /**
+     * @param duration The duration of the pause, before {@code consumer} is executed.
+     * @param consumer The event handler to be executed after the duration is up.
+     * @return Upon PauseTransition#play(), the timer is started until the duration is met, in which
+     * {@code consumer} is executed.
+     */
+    private PauseTransition generatePauseTransition(Duration duration, EventHandler<ActionEvent> consumer) {
+        PauseTransition pauseTransition = new PauseTransition(duration);
+        pauseTransition.setOnFinished(consumer);
+        return pauseTransition;
+    }
+
+    public Speech getSpeech(FlowingRegion flowingRegion) {
+        return getSpeechList().getSpeeches().get(GridPane.getColumnIndex(flowingRegion));
+    }
+
+    public void addOffensiveFlowingRegion(Speech speech, OffensiveFlowingRegion offensiveFlowingRegion) {
+        int rowIndex = GridPane.getRowIndex(offensiveFlowingRegion.getTargetRegion());
+        addFlowingRegion(speech, offensiveFlowingRegion, rowIndex);
+        speech.getChildren().put(rowIndex, offensiveFlowingRegion);
+
+    }
+
+    public void addDefensiveFlowingRegion(Speech speech, DefensiveFlowingRegion defensiveRegion) {
+        int rowIndex = speech.getNextAvailableRow();
+        addFlowingRegion(speech, defensiveRegion, rowIndex);
+        speech.getChildren().put(rowIndex, defensiveRegion);
+        if (getSpeechList().get(0).getFirst() == speech) { // is the first speech
+            // the first speech is the speech whose proactive end we directly modify
+            speech.setProactiveEnd(speech.getProactiveEnd() + 1);
+        }
+    }
+
+    public void addExtensionFlowingRegion(Speech speech, ExtensionFlowingRegion extensionFlowingRegion) {
+        int rowIndex = GridPane.getRowIndex(extensionFlowingRegion.getBase());
+        addFlowingRegion(speech, extensionFlowingRegion, rowIndex);
+        speech.getChildren().put(rowIndex, extensionFlowingRegion);
+    }
+
+
+
+    public void addFlowingRegion(Speech speech, FlowingRegion flowingRegion, int row) {
+        System.out.println("called ad");
+
+        implementListeners(flowingRegion);
+
+        // Tooltip handler
+        if (flowingRegion instanceof Card) {
+            Card flowingCard = (Card) flowingRegion;
+
+            CharacterFormatting characterFormatting = new CharacterFormatting(Arrays.asList(
+                    Configuration.SPOKEN
+            ));
+
+            String tooltipText = flowingCard.getCardContent().getContent(characterFormatting);
+
+            Tooltip flowingRegionTooltip = new Tooltip(tooltipText);
+
+            characterFormatting.getCharacterStyles().stream()
+                    .map(CharacterStyle::getCssClass)
+                    .forEach(flowingRegionTooltip.getStyleClass()::add);
+
+            Tooltip.install(flowingRegion, flowingRegionTooltip);
+        }
+
+        flowingRegion.setWrapText(true);
+        flowingRegion.setTextFill(speech.getColor());
+
+        getCorrelatingView().add(flowingRegion, speech.getGridPaneColumn(), row);
+    }
+
+    private final IntegerProperty startingColumn = new SimpleIntegerProperty();
+    private final IntegerProperty finishingColumn = new SimpleIntegerProperty();
+    private final List<Node> originalChildren = new ArrayList<>();
+
+    public List<Node> getOriginalChildren() {
+        return originalChildren;
+    }
+
+    private void onStartingColumnChanged(ObservableValue<? extends Number> observableValue, Number oldNumber, Number newNumber) {
+        onColumnBoundsChanged(newNumber.intValue(), finishingColumn.get());
+    }
+
+    private void onFinishingColumnChanged(ObservableValue<? extends Number> observableValue, Number oldNumber, Number newNumber) {
+        onColumnBoundsChanged(startingColumn.get(), newNumber.intValue());
+    }
+
+    private void onColumnBoundsChanged(int newStart, int newFinish) {
+        getCorrelatingView().getChildren().setAll(originalChildren.stream().filter(node -> {
+            // Refers to whether the node is inside column bounds that don't wrap, such as start: 5 and finish: 7,
+            // which refer to the columns of 5 6 7
+            boolean insideNonWrap = newStart <= GridPane.getColumnIndex(node) && GridPane.getColumnIndex(node) <= newFinish;
+
+            // Refers to whether the node is inside column bounds that do wrap, such as start: 7 and finish: 3,
+            // which refer to the columns of 7 0 1 2 3 (wrapping around the last index, 7)
+            boolean insideWrap    = newStart >= GridPane.getColumnIndex(node) && GridPane.getColumnIndex(node) >= newFinish;
+
+            // Given that the column bounds could either wrap or not, only one of the conditions above should be true
+            return insideNonWrap || insideWrap;
+        }).collect(Collectors.toList()));
+    }
+
+    public void shift(int offset) {
+        setStartingColumn(getStartingColumn() + offset);
+        setFinishingColumn(getStartingColumn() + offset);
+    }
+
+    public void setNumberOfColumns(int numberOfColumns) {
+        setFinishingColumn(getFinishingColumn() - numberOfColumns);
+    }
+
+    public void narrowBy(int reductionInNumOfColumns) {
+        setNumberOfColumns(getCorrelatingView().getChildren().size() - reductionInNumOfColumns);
+    }
+
+    public void upscaleBy(int increaseInNumberOfColumns) {
+        setNumberOfColumns(getCorrelatingView().getChildren().size() + increaseInNumberOfColumns);
+    }
+
+    public List<FlowingRegion> getSubFlowingRegions(FlowingRegion flowingRegion) {
+        if (flowingRegion instanceof Defensive)
+            return Collections.singletonList(flowingRegion);
+        else
+            return ListUtils.union(Collections.singletonList(flowingRegion),
+                    getSubFlowingRegions(((Offensive) flowingRegion).getTargetRegion()));
+    }
+
+    public DefensiveFlowingRegion getBaseFlowingRegion(FlowingRegion flowingRegion) {
+        return flowingRegion instanceof Defensive ? (DefensiveFlowingRegion) flowingRegion :
+                getBaseFlowingRegion(((Offensive) flowingRegion).getTargetRegion());
+    }
+
+    public int getFinishingColumn() {
+        return finishingColumn.get();
+    }
+
+    public IntegerProperty finishingColumnProperty() {
+        return finishingColumn;
+    }
+
+    public int wrap(int columnNumber) {
+        while (columnNumber < 0)
+            columnNumber += Speech.SPEECH_SIZE;
+        while (columnNumber >= Speech.SPEECH_SIZE)
+            columnNumber -= Speech.SPEECH_SIZE;
+        return columnNumber;
+    }
+
+    public void setFinishingColumn(int finishingColumn) {
+        this.finishingColumn.set(wrap(finishingColumn));
+    }
+
+    public int getStartingColumn() {
+        return startingColumn.get();
+    }
+
+    public IntegerProperty startingColumnProperty() {
+        return startingColumn;
+    }
+
+    public void setStartingColumn(int startingColumn) {
+        this.startingColumn.set(wrap(startingColumn));
+    }
+
+    public SpeechList getSpeechList() {
+        return speechList;
+    }
+
+    public void setSpeechList(SpeechList speechList) {
+        this.speechList = speechList;
     }
 }

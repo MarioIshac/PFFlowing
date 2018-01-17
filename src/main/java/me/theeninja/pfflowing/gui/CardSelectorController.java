@@ -105,7 +105,7 @@ public class CardSelectorController implements Initializable, DependentControlle
         if (keyEvent.getCode() == KeyCode.ENTER) {
             TreeItem<DefensiveCard> treeItem = cardSelectorTreeView.getSelectionModel().getSelectedItem();
             OffensiveCard offensiveCard = Card.toOffensiveCard(treeItem.getValue(), Side.AFFIRMATIVE, FlowingGridController.getFXMLInstance().getLastSelected());
-            FlowingGridController.getFXMLInstance().getSpeechListManager().getVisibleSelectedSpeech().getBinded().addOffensiveFlowingRegion(offensiveCard);
+           // FlowingGridController.getFXMLInstance().addOffensiveFlowingRegion(offensiveCard);
             removeCardSelectionListener();
         }
     };

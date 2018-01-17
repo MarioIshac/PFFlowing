@@ -5,8 +5,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import me.theeninja.pfflowing.StringSerializable;
 import me.theeninja.pfflowing.configuration.Configuration;
-import me.theeninja.pfflowing.gui.ContentContainer;
-import me.theeninja.pfflowing.gui.FlowingColumn;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -43,18 +41,6 @@ public class FlowingRegion extends Label implements Identifiable, StringSerializ
 
     public String getRepresentation() {
         return representation;
-    }
-
-    public FlowingColumn getFlowingColumn() {
-        return (FlowingColumn) getContentContainer().getParent();
-    }
-
-    public ContentContainer getContentContainer() {
-        Parent parent = getParent();
-        if (parent instanceof Group)
-            return (ContentContainer) parent.getParent();
-        else
-            return (ContentContainer) parent;
     }
 
     @Override
