@@ -4,7 +4,11 @@ import javafx.scene.text.Font;
 import me.theeninja.pfflowing.flowingregions.CharacterStyle;
 import me.theeninja.pfflowing.flowing.DefensiveSpeech;
 
-public class Configuration {
+/**
+ * Holds constants or options specified by the user. These constants will apply to all projects, and thus
+ * are not project-specific.
+ */
+public class GlobalConfiguration {
     public static final CharacterStyle SPOKEN = CharacterStyle.BOLD;
 
     public static final double SPEECH_SEPERATION = 30;

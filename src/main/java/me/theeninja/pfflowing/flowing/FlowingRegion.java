@@ -1,12 +1,9 @@
 package me.theeninja.pfflowing.flowing;
 
-import javafx.scene.Group;
-import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import me.theeninja.pfflowing.StringSerializable;
-import me.theeninja.pfflowing.configuration.Configuration;
+import me.theeninja.pfflowing.configuration.GlobalConfiguration;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +26,7 @@ public class FlowingRegion extends Label implements Identifiable, StringSerializ
         super(representation);
         this.representation = representation;
         this.id = currentID++;
-        this.setFont(Configuration.FONT);
+        this.setFont(GlobalConfiguration.FONT);
 
         idMap.put(getID(), this);
     }

@@ -18,6 +18,8 @@ public class PFFlowing extends Application {
         PFFlowing.launch(PFFlowing.class);
     }
 
+    private ActionManager actionManager;
+
     private Scene scene;
     private Stage stage;
 
@@ -58,6 +60,8 @@ public class PFFlowing extends Application {
 
         getAffirmativeFlowingGridController().show();
 
+        setActionManager(new ActionManager());
+
         /* String directory = System.getProperty("user.home") + "/Desktop/DebateCards";
         System.out.println(directory);
         Path path = Paths.get(directory);
@@ -95,5 +99,13 @@ public class PFFlowing extends Application {
 
     public void setNegationFlowingGridController(NegationFlowingGridController negationFlowingGridController) {
         this.negationFlowingGridController = negationFlowingGridController;
+    }
+
+    public ActionManager getActionManager() {
+        return actionManager;
+    }
+
+    private void setActionManager(ActionManager actionManager) {
+        this.actionManager = actionManager;
     }
 }

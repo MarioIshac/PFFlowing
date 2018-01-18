@@ -3,13 +3,12 @@ package me.theeninja.pfflowing;
 /**
  * Represents an action that is both undoable and redoable.
  */
-public interface Action {
-
+public abstract class Action {
 
     /**
      * Executions the procedure outlined in the Action through this method.
      */
-    void execute();
+    public abstract void execute();
 
     /**
      * Performs the exact opposite of the above procedure, restoring the previous
@@ -18,5 +17,10 @@ public interface Action {
      * to the implementor to make sure that unexecution of an Action guarantees
      * exact reversal of execution.
      */
-    void unexecute();
+    public abstract void unexecute();
+
+    /**
+     * @return The name of this action, which it goes by.
+     */
+    public abstract String getName();
 }
