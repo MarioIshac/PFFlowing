@@ -2,6 +2,7 @@ package me.theeninja.pfflowing.configuration;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 public class Specification<T> {
 
@@ -9,11 +10,11 @@ public class Specification<T> {
     private final String identifier;
     private T value;
 
-    protected Specification(String identifier) {
-        this(Collections.emptyList(), identifier);
+    protected Specification(String identifier, Function<String, T> fromString>) {
+        this(Collections.emptyList(), identifier, fromString);
     }
 
-    protected Specification(List<T> defaults, String identifier) {
+    protected Specification(List<T> defaults, String identifier, Function<String, T> fromString) {
         this.defaults = defaults;
         this.identifier = identifier;
     }
