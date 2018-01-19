@@ -8,15 +8,17 @@ public class Specification<T> {
 
     private final List<T> defaults;
     private final String identifier;
+    private final Function<String, T> fromString;
     private T value;
 
-    protected Specification(String identifier, Function<String, T> fromString>) {
+    protected Specification(String identifier, Function<String, T> fromString) {
         this(Collections.emptyList(), identifier, fromString);
     }
 
     protected Specification(List<T> defaults, String identifier, Function<String, T> fromString) {
         this.defaults = defaults;
         this.identifier = identifier;
+        this.fromString = fromString;
     }
 
     public List<T> getDefaults() {
@@ -37,5 +39,9 @@ public class Specification<T> {
 
     public String getIdentifier() {
         return identifier;
+    }
+
+    public Function<String, T> getFromString() {
+        return fromString;
     }
 }

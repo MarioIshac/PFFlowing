@@ -11,5 +11,5 @@ public class LocalConfiguration {
     public Specification<Speaker> SPEAKER = new Specification<>(List.of(Speaker.values()), "Speaker", Speaker::valueOf);
     public Specification<String> TOPIC = new Specification<>("Topic", string -> string);
 
-    public List<Specification<?>> ALL = List.of(SPEAKER, TOPIC);
+
 }

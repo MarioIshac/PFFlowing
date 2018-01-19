@@ -49,6 +49,8 @@ import static me.theeninja.pfflowing.gui.KeyCodeCombinationUtils.*;
 public class FlowingGridController implements Initializable, SingleViewController<FlowingGrid>, EventHandler<KeyEvent> {
 
    private class Merge extends Action {
+       private Map<
+
        @Override
        public void execute() {
            if (areSameSpeech(getSelectedFlowingRegions())) {
@@ -117,13 +119,13 @@ public class FlowingGridController implements Initializable, SingleViewControlle
    private class Refute extends Action {
 
        private final FlowingRegion baseFlowingRegion;
+       private FlowingRegion refFlowingRegion;
+       private Speech rightSpeech;
+       private int rowIndex;
 
        public Refute(FlowingRegion baseFlowingRegion) {
            this.baseFlowingRegion = baseFlowingRegion;
-       }
 
-       @Override
-       public void execute() {
            if (getSelectedFlowingRegions().size() > 1)
                return;
 
@@ -134,24 +136,32 @@ public class FlowingGridController implements Initializable, SingleViewControlle
            if (Utils.isLastElement(speechListSpeeches, speech))
                return;
 
-           int rowIndex = FlowingGrid.getRowIndex(getBaseFlowingRegion());
+           this.rowIndex = FlowingGrid.getRowIndex(getBaseFlowingRegion());
+           this.rightSpeech = Utils.getRelativeElement(speechListSpeeches, speech, 1);
+       }
 
-           Speech rightSpeech = Utils.getRelativeElement(speechListSpeeches, speech, 1);
+       @Override
+       public void execute() {
            addProactiveFlowingRegionWriter(rightSpeech, false, text -> {
-               OffensiveReasoning offensiveReasoning = new OffensiveReasoning(text, speech.getSide(), speech.getSide().getOpposite(), getBaseFlowingRegion());
+               OffensiveReasoning offensiveReasoning = new OffensiveReasoning(text, rightSpeech.getSide().getOpposite(), rightSpeech.getSide(), getBaseFlowingRegion());
                addOffensiveFlowingRegion(rightSpeech, offensiveReasoning);
            }, rowIndex);
        }
 
        @Override
        public void unexecute() {
-            Node refNode = getCorrelatingView().getNode(FlowingGrid.getColumnIndex(getBaseFlowingRegion()) + 1, FlowingGrid.getRowIndex(getBaseFlowingRegion())).get();
+            this.refFlowingRegion = getCorrelatingView().getFlowingRegion(FlowingGrid.getColumnIndex(getBaseFlowingRegion()) + 1, FlowingGrid.getRowIndex(getBaseFlowingRegion())).get();
 
             /*
             The user can either unexecute this refutation in the flowing writer stage or ost-writer, where the actual refutation is put. In both cases, unexecution
             of this actions depends on removal of that node, hence this suffices.
              */
-            getCorrelatingView().getChildren().remove(refNode);
+            getCorrelatingView().getChildren().remove(refFlowingRegion);
+       }
+
+       @Override
+       public void reexecute() {
+            getCorrelatingView().getChildren().add(refFlowingRegion);
        }
 
        @Override
@@ -159,7 +169,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
            return "Refute";
        }
 
-        public FlowingRegion getBaseFlowingRegion() {
+       public FlowingRegion getBaseFlowingRegion() {
             return baseFlowingRegion;
         }
     }

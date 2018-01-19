@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 public class FlowCreator {
     private final LocalConfiguration localConfiguration;
 
+
+
     private Label getConfigurationLabel(Specification specification) {
         return new Label(specification.getIdentifier());
     }
@@ -35,6 +37,9 @@ public class FlowCreator {
 
     public void generateLocalConfigPopup() {
         Popup localConfigPopup = new Popup();
+
+        getLocalConfiguration().SPEAKER
+
         for (Specification<?> specification : getLocalConfiguration().ALL) {
             HBox specificationHBox = new HBox();
             specificationHBox.getChildren().add(getConfigurationChoiceBox(specification));
@@ -44,7 +49,7 @@ public class FlowCreator {
             if (specification.getDefaults().isEmpty()){
                 TextField textField = getConfigurationTextField();
                 textField.setOnAction(actionEvent -> {
-                    specification.setValue();
+                    specification.setValue(specification.getFromString().apply(textField.getText()));
                 });
                 specificationHBox.getChildren().add();
             }
