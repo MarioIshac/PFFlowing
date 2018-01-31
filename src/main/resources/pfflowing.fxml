@@ -12,4 +12,10 @@
     <left>
         <fx:include source="card_selector.fxml" />
     </left>
+    <!-- <right>
+        <fx:include source="card_display.fxml" />
+    </right> -->
+    <bottom>
+        <fx:include source="notification_display.fxml" />
+    </bottom>
 </FlowingPane>

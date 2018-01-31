@@ -82,12 +82,11 @@ public class CardProcessor {
                 url.isPresent() &&
                 content.isPresent() &&
                 calendar.isPresent()) {
-            return new DefensiveCard(
+            return new Card(
                     author.get(),
                     url.get(),
                     calendar.get(),
-                    content.get(),
-                    Side.AFFIRMATIVE);
+                    content.get());
         }
         return null;
     }

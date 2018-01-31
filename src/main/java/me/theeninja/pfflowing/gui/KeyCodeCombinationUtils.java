@@ -47,4 +47,6 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination REDO = new KeyCodeCombination(KeyCode.Z, KeyCodeCombination.CONTROL_DOWN, KeyCodeCombination.SHIFT_DOWN);
 
     public static final KeyCodeCombination DELETE = new KeyCodeCombination(KeyCode.DELETE, KeyCodeCombination.CONTROL_DOWN);
+
+    public static final KeyCodeCombination BOLD = new KeyCodeCombination(KeyCode.B, KeyCombination.CONTROL_DOWN);
 }

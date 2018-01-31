@@ -10,4 +10,5 @@ module PFFlowing {
     requires java.xml;
     requires guava;
     requires javafx.controls;
+    requires javafx.web;
 }

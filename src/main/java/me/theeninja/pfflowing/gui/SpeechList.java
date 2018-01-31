@@ -1,6 +1,7 @@
 package me.theeninja.pfflowing.gui;
 
 import com.google.common.collect.ImmutableList;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -54,20 +55,6 @@ public class SpeechList extends ArrayList<SpeechPair> {
                 new RefutationSpeech(defensiveSpeech, getSide().getOpposite(), refHead, subround * 2 + 1);
             add(new SpeechPair(defensiveSpeech, refutationSpeech));
         }
-
-        for (int speechIndex = 1; speechIndex < NUMBER_OF_SUBROUNDS * 2; speechIndex++) {
-            Speech leftSpeech = getSpeeches().get(speechIndex - 1);
-            Speech currentSpeech = getSpeeches().get(speechIndex);
-            currentSpeech.proactiveStartProperty().bind(leftSpeech.proactiveEndProperty()
-                    .add(1)); // Increment to get gridpane row below last proactive flowing region of previous speech
-        }
-
-        Speech firstSpeech = get(0).getFirst();
-
-        setSelectedSpeech(firstSpeech);
-
-        firstSpeech.setProactiveStart(0);
-        firstSpeech.setProactiveEnd(0);
     }
 
     public Speech getOpposite(Speech speech) {
@@ -127,8 +114,9 @@ public class SpeechList extends ArrayList<SpeechPair> {
     }
 
     public Speech getSpeech(FlowingRegion flowingRegion) {
+        System.out.println("Yo" + FlowingGrid.getColumnIndex(flowingRegion));
         for (Speech speech : getSpeeches())
-            if (speech.getChildren().containsValue(flowingRegion))
+            if (speech.getGridPaneColumn() == FlowingGrid.getColumnIndex(flowingRegion))
                 return speech;
         return null;
     }
@@ -143,33 +131,5 @@ public class SpeechList extends ArrayList<SpeechPair> {
 
     public Side getSide() {
         return side;
-    }
-
-    public Optional<OffensiveFlowingRegion> getOffendor(FlowingRegion flowingRegion) {
-        Speech baseSpeech = this.getSpeech(flowingRegion);
-        Speech refSpeech  = Utils.getRelativeElement(getSpeeches(), baseSpeech, 1);
-
-        int rowIndex = FlowingGrid.getRowIndex(flowingRegion);
-
-        OffensiveFlowingRegion offendor = (OffensiveFlowingRegion) refSpeech.getChildren().get(rowIndex);
-
-        if (offendor == null) // flowing region has not been refuted yet
-            return Optional.empty();
-
-        return Optional.of(offendor);
-    }
-
-    public Optional<ExtensionFlowingRegion> getExtension(FlowingRegion flowingRegion) {
-        Speech baseSpeech = this.getSpeech(flowingRegion);
-        Speech nextDefendingSpeech = Utils.getRelativeElement(getSpeeches(), baseSpeech, 2);
-
-        int rowIndex = FlowingGrid.getRowIndex(flowingRegion);
-
-        ExtensionFlowingRegion extension = (ExtensionFlowingRegion) nextDefendingSpeech.getChildren().get(rowIndex);
-
-        if (flowingRegion == null) // flowingRegion has not been extended yet
-            return Optional.empty();
-
-        return Optional.of(extension);
     }
 }

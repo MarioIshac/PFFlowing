@@ -6,6 +6,7 @@ import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.flowing.*;
 
 import java.util.*;
+import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
 
 public class FlowingGrid extends GridPane {
@@ -76,5 +77,44 @@ public class FlowingGrid extends GridPane {
 
     public Optional<FlowingRegion> getBelow(FlowingRegion node) {
         return getRelativeFlowingRegion(node, 0, 1);
+    }
+
+    public Optional<OffensiveFlowingRegion> getRefutation(FlowingRegion flowingRegion) {
+        Optional<FlowingRegion> rightFlowingRegion = getFlowingRegion(FlowingGrid.getColumnIndex(flowingRegion) + REF_COL_OFFSET,
+                FlowingGrid.getRowIndex(flowingRegion));
+
+        if (rightFlowingRegion.isPresent() && rightFlowingRegion.get() instanceof OffensiveFlowingRegion)
+            return Optional.of((OffensiveFlowingRegion) rightFlowingRegion.get());
+        return Optional.empty();
+    }
+
+    public Optional<ExtensionFlowingRegion> getExtension(FlowingRegion flowingRegion) {
+        Optional<FlowingRegion> rightFlowingRegion = getFlowingRegion(FlowingGrid.getColumnIndex(flowingRegion) + EXT_COL_OFFSET,
+                FlowingGrid.getRowIndex(flowingRegion));
+
+        if (rightFlowingRegion.isPresent() && rightFlowingRegion.get() instanceof ExtensionFlowingRegion)
+            return Optional.of((ExtensionFlowingRegion) rightFlowingRegion.get());
+        return Optional.empty();
+    }
+
+    public List<FlowingRegion> getPostLink(FlowingRegion flowingRegion) {
+        return getChildren().stream().filter(node -> {
+            // Verifies that this node is somehow part of the link
+            boolean isSameRow = FlowingGrid.getRowIndex(node).equals(FlowingGrid.getRowIndex(flowingRegion));
+
+            // Verifies that the node only appears post-deleted node in the link
+            boolean isPastColumn = FlowingGrid.getColumnIndex(node) >= (FlowingGrid.getColumnIndex(flowingRegion));
+
+            return node instanceof FlowingRegion && isSameRow && isPastColumn;
+        }).map(FlowingRegion.class::cast).collect(Collectors.toList());
+    }
+
+    public List<FlowingRegion> getWholeLink(FlowingRegion flowingRegion) {
+        return getChildren().stream().filter(node -> {
+            // Verifies that this node is somehow part of the link
+            boolean isSameRow = FlowingGrid.getRowIndex(node).equals(FlowingGrid.getRowIndex(flowingRegion));
+
+            return node instanceof FlowingRegion && isSameRow;
+        }).map(FlowingRegion.class::cast).collect(Collectors.toList());
     }
 }

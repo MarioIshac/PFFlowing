@@ -5,8 +5,6 @@ package me.theeninja.pfflowing;
  */
 public abstract class Action {
 
-
-
     /**
      * Executions the procedure outlined in the Action through this method.
      */
@@ -19,13 +17,7 @@ public abstract class Action {
      * to the implementor to make sure that unexecution of an Action guarantees
      * exact reversal of execution.
      */
-    public void unexecute() {
-
-    }
-
-    public void reexecute() {
-        execute();
-    }
+    public abstract void unexecute();
 
     /**
      * @return The name of this action, which it goes by.

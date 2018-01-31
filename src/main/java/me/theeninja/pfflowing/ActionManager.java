@@ -1,15 +1,11 @@
 package me.theeninja.pfflowing;
 
-import java.util.Stack;
+import javax.xml.namespace.QName;
+import java.util.*;
 
 public class ActionManager {
-    private final Stack<Action> doneActions;
-    private final Stack<Action> undoneActions;
-
-    ActionManager() {
-        doneActions = new Stack<>();
-        undoneActions = new Stack<>();
-    }
+    private final LinkedList<Action> doneActions = new LinkedList<>();
+    private final LinkedList<Action> undoneActions = new LinkedList<>();
 
     public void perform(Action action) {
         action.execute();
@@ -17,7 +13,7 @@ public class ActionManager {
     }
 
     public void undo() {
-        if (getDoneActions().empty())
+        if (getDoneActions().isEmpty())
             return;
 
         Action action = getDoneActions().pop();
@@ -26,7 +22,7 @@ public class ActionManager {
     }
 
     public void redo() {
-        if (getUndoneActions().empty())
+        if (getUndoneActions().isEmpty())
             return;
 
         Action action = getUndoneActions().pop();
@@ -34,11 +30,11 @@ public class ActionManager {
         getDoneActions().push(action);
     }
 
-    public Stack<Action> getDoneActions() {
+    public LinkedList<Action> getDoneActions() {
         return this.doneActions;
     }
 
-    public Stack<Action> getUndoneActions() {
+    public LinkedList<Action> getUndoneActions() {
         return undoneActions;
     }
 }

@@ -27,6 +27,9 @@ import java.util.stream.Collectors;
  */
 public final class Utils {
 
+    public static final String ZERO_LENGTH_STRING = "";
+
+
     /**
      * Generates a background of the given color.
      *

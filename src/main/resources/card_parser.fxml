@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.web.WebView?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="me.theeninja.pfflowing.gui.cardparser.CardParserController"
+            prefHeight="400.0" prefWidth="600.0"
+            fx:id="cardParserArea">
+    <top>
+        <HBox fx:id="parsedCardsDispaly">
+
+        </HBox>
+    </top>
+    <left>
+        <HBox>
+            <VBox fx:id="authorRequest">
+                <Label text="Author: " />
+                <VBox fx:id="authorOptions" />
+            </VBox>
+            <VBox fx:id="sourceRequest">
+                <Label text="Source: " />
+                <VBox fx:id="sourceOptions" />
+            </VBox>
+            <VBox fx:id="dateRequest">
+                <VBox fx:id="dateOptions" />
+            </>
+            <WebView fx:id="contentSelection" />
+        </HBox>
+    </left>
+    <right>
+        <VBox fx:id="documentSectionDisplay">
+
+        </VBox>
+        <ProgressBar fx:id="progressBar">
+
+        </ProgressBar>
+        <HBox fx:id="cardOptions">
+            <Button text="Shrink" onAction="#truncateSelected" />
+            <Button text="Expand" onAction="#appendToSelected" />
+            <Button text="Skip"   onAction="#skip"   />
+            <Button text="Finish" onAction="#finish" />
+        </HBox>
+    </right>
+</BorderPane>

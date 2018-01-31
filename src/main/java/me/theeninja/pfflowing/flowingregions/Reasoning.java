@@ -1,5 +1,9 @@
 package me.theeninja.pfflowing.flowingregions;
 
-public interface Reasoning {
+import me.theeninja.pfflowing.flowing.DefensiveFlowingRegion;
 
+public class Reasoning extends FlowingText {
+    public Reasoning(String representation) {
+        super(representation);
+    }
 }

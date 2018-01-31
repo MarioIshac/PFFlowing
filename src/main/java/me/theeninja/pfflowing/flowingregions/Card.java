@@ -3,25 +3,57 @@ package me.theeninja.pfflowing.flowingregions;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.card.CardContent;
+import me.theeninja.pfflowing.flowing.DefensiveFlowingRegion;
 
 import java.util.Calendar;
 
-public interface Card {
-    String getSource();
-    CardContent getCardContent();
-    Author getAuthor();
-    Side getInitiator();
-    Calendar getDate();
+public class Card extends FlowingText {
+    private Author author;
+    private String source;
+    private Calendar date;
+    private CardContent cardContnet;
 
-    default String getRepresentation() {
-        return Card.generateRepresentation(getAuthor(), getDate());
+    public Card(Author author, String source, Calendar date, CardContent cardContnet) {
+        super(Card.generateRepresentation(author, date));
+        this.author = author;
+        this.source = source;
+        this.date = date;
+        this.cardContnet = cardContnet;
     }
 
-    static OffensiveCard toOffensiveCard(DefensiveCard dc, Side targetSide, FlowingRegion targetFlowingRegion) {
-        return new OffensiveCard(dc.getAuthor(), dc.getSource(), dc.getDate(), dc.getCardContent(), dc.getInitiator(), targetSide, targetFlowingRegion);
+    public String getSource() {
+        return source;
     }
 
-    static String generateRepresentation(Author author, Calendar date) {
+    public CardContent getCardContent() {
+        return cardContnet;
+    }
+
+    public Author getAuthor() {
+        return author;
+    }
+
+    public Calendar getDate() {
+        return date;
+    }
+
+    private static String generateRepresentation(Author author, Calendar date) {
         return author.getLastName() + " " + date.get(Calendar.YEAR) % 100;
+    }
+
+    public void setAuthor(Author author) {
+        this.author = author;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public void setDate(Calendar date) {
+        this.date = date;
+    }
+
+    public void setCardContnet(CardContent cardContnet) {
+        this.cardContnet = cardContnet;
     }
 }

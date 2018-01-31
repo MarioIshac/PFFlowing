@@ -37,27 +37,6 @@ public class FlowCreator {
 
     public void generateLocalConfigPopup() {
         Popup localConfigPopup = new Popup();
-
-        getLocalConfiguration().SPEAKER
-
-        for (Specification<?> specification : getLocalConfiguration().ALL) {
-            HBox specificationHBox = new HBox();
-            specificationHBox.getChildren().add(getConfigurationChoiceBox(specification));
-
-            List<?> defaults = specification.getDefaults();
-            // indicates that the user must type the configuration value
-            if (specification.getDefaults().isEmpty()){
-                TextField textField = getConfigurationTextField();
-                textField.setOnAction(actionEvent -> {
-                    specification.setValue(specification.getFromString().apply(textField.getText()));
-                });
-                specificationHBox.getChildren().add();
-            }
-            // indicates that the user must select the configuration value
-            else {
-
-            }
-        }
     }
 
     public void getSpecifications() {
