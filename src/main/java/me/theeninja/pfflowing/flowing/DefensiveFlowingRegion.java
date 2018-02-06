@@ -1,10 +1,11 @@
 package me.theeninja.pfflowing.flowing;
 
-import me.theeninja.pfflowing.flowingregions.FlowingText;
+import me.theeninja.pfflowing.configuration.GlobalConfiguration;
 import me.theeninja.pfflowing.gui.FlowingGridController;
+import me.theeninja.pfflowing.gui.LengthLimitType;
 
 public class DefensiveFlowingRegion extends FlowingRegion implements Defensive {
-    public DefensiveFlowingRegion(FlowingText flowingText, FlowingGridController instance) {
-        super(flowingText, instance);
+    public DefensiveFlowingRegion(String fullText, FlowingGridController instance, LengthLimitType lengthLimitType, int limit) {
+        super(fullText, instance, lengthLimitType, limit);
     }
 }

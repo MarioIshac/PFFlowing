@@ -1,7 +1,7 @@
 package me.theeninja.pfflowing.flowing;
 
-import me.theeninja.pfflowing.flowingregions.FlowingText;
 import me.theeninja.pfflowing.gui.FlowingGridController;
+import me.theeninja.pfflowing.gui.LengthLimitType;
 import me.theeninja.pfflowing.speech.Side;
 
 public class OffensiveFlowingRegion extends FlowingRegion implements Offensive {
@@ -9,8 +9,8 @@ public class OffensiveFlowingRegion extends FlowingRegion implements Offensive {
     private final Side targetSide;
     private final FlowingRegion targetFlowingRegino;
 
-    public OffensiveFlowingRegion(FlowingText flowingText, Side initiator, FlowingRegion targetFlowingRegino, FlowingGridController instance) {
-        super(flowingText, instance);
+    public OffensiveFlowingRegion(String fullText, LengthLimitType lengthLimitType, int limit, Side initiator, FlowingRegion targetFlowingRegino, FlowingGridController instance) {
+        super(fullText, instance, lengthLimitType, limit);
         this.initiator = initiator;
         this.targetSide = getInitiator().getOpposite();
         this.targetFlowingRegino = targetFlowingRegino;

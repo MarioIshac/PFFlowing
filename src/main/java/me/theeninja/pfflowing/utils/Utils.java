@@ -12,9 +12,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -26,6 +24,12 @@ import java.util.stream.Collectors;
  * @author TheeNinja
  */
 public final class Utils {
+
+    public static Calendar calendarOf(String yearString) {
+        Calendar calendar = new GregorianCalendar();
+        calendar.set(Calendar.YEAR, Integer.parseInt(yearString));
+        return calendar;
+    }
 
     public static final String ZERO_LENGTH_STRING = "";
 
@@ -89,6 +93,14 @@ public final class Utils {
 
     public static <T> T getNextElement(List<T> list, T element) {
         return Utils.getRelativeElement(list, element, 1);
+    }
+
+    public static String toString(char[] chars) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (char c : chars) {
+            stringBuilder.append(c);
+        }
+        return stringBuilder.toString();
     }
 
     public static <T> T getRelativeElement(List<T> list, T baseElement, int offset) {

@@ -56,11 +56,41 @@ public class FlowingGridController implements Initializable, SingleViewControlle
      */
     private class Merge extends Action {
 
-        private final List<FlowingRegion> flowingRegions;
+        private Map<FlowingRegion, Pair<Integer, Integer>> flowingRegionsToAdd = new HashMap<>();
+        private List<FlowingRegion> flowingRegionsToRemove = new ArrayList<>();
 
         Merge(List<FlowingRegion> flowingRegions) {
-            this.flowingRegions = flowingRegions.stream().map(FlowingRegion::duplicate).collect(Collectors.toList());
-            getFlowingRegions().sort(Comparator.comparingInt(FlowingGrid::getRowIndex));
+            flowingRegions = flowingRegions.stream().map(FlowingRegion::duplicate).collect(Collectors.toList());
+
+            // This ensures that the top flowing region is first in the list
+            flowingRegions.sort(Comparator.comparingInt(FlowingGrid::getRowIndex));
+
+            FlowingRegion firstFlowingRegion = flowingRegions.get(0);
+
+            int targetRow = FlowingGrid.getRowIndex(firstFlowingRegion);
+
+            // Not to be confused with linked list
+            List<List<FlowingRegion>> linksList = new ArrayList<>();
+            flowingRegions.stream().map(getCorrelatingView()::getWholeLink).forEach(linksList::add);
+
+            int maxLinkLength = linksList.stream().map(List::size).reduce(Integer::max).get();
+
+            // Transposes links list
+            List<List<FlowingRegion>> i_thFlowingRegions = IntStream.range(0, maxLinkLength).mapToObj(
+                    value -> linksList.stream().map(
+                            list -> list.get(value)).collect(Collectors.toList()
+                    )
+            ).collect(Collectors.toList());
+
+            // Obtains the left-most column number
+            int minColumn = FlowingGrid.getColumnIndex(i_thFlowingRegions.get(0).get(0));
+
+            for (int column = minColumn; column < i_thFlowingRegions.size(); column++) {
+                FlowingRegion condensedFlowingRegion = this.condense(i_thFlowingRegions.get(column));
+                this.flowingRegionsToAdd.put(condensedFlowingRegion, new Pair<>(column, targetRow));
+            }
+
+            linksList.stream().flatMap(List::stream).forEach(flowingRegionsToRemove::add);
         }
 
         private FlowingRegion condense(List<FlowingRegion> flowingRegions) {
@@ -68,55 +98,36 @@ public class FlowingGridController implements Initializable, SingleViewControlle
                 return flowingRegions.get(0).duplicate();
             }
 
-            FlowingRegion condensedFlowingRegion = new FlowingRegion(flowingRegions.get(0).getInstance());
-            flowingRegions.stream().map(FlowingRegion::duplicate).forEach(flowingRegion -> {
-                condensedFlowingRegion.getChildren().addAll(flowingRegion.getChildren());
-                if (!Utils.isLastElement(flowingRegions, flowingRegion))
-                    condensedFlowingRegion.getChildren().add(new Text(GlobalConfiguration.MERGE_SEPERATOR));
-            });
-            return condensedFlowingRegion;
+            String condensedText =
+                    flowingRegions.stream().map(FlowingRegion::getFullText).collect(Collectors.joining("-"));
+
+            return new FlowingRegion(
+                    condensedText,
+                    FlowingGridController.this,
+                    GlobalConfiguration.LENGTH_LIMIT_TYPE,
+                    GlobalConfiguration.LENGTH_LIMIT);
         }
 
         @Override
         public void execute() {
-            FlowingRegion firstFlowingRegion = getFlowingRegions().get(0);
-            int row = FlowingGrid.getRowIndex(firstFlowingRegion);
-
-            List<List<FlowingRegion>> linksList = new ArrayList<>();
-            getFlowingRegions().stream().map(getCorrelatingView()::getWholeLink).forEach(linksList::add);
-
-            int maxLinkLength = linksList.stream().map(List::size).reduce(Integer::max).get();
-
-            System.out.println(maxLinkLength);
-
-            List<List<FlowingRegion>> i_thFlowingRegions = IntStream.range(0, maxLinkLength).mapToObj(value -> linksList.stream().map(
-                    list -> list.get(value)).collect(Collectors.toList())
-            ).collect(Collectors.toList());
-
-            int minColumn = FlowingGrid.getColumnIndex(i_thFlowingRegions.get(0).get(0));
-
-            for (int column = minColumn; column < i_thFlowingRegions.size(); column++) {
-                FlowingRegion condensedFlowingRegion = this.condense(i_thFlowingRegions.get(column));
-                addFlowingRegion(condensedFlowingRegion, column, row);
+            for (Map.Entry<FlowingRegion, Pair<Integer, Integer>> entry : flowingRegionsToAdd.entrySet()) {
+                getCorrelatingView().add(
+                        entry.getKey(),
+                        entry.getValue().getFirst(),
+                        entry.getValue().getSecond());
             }
-
-            List<FlowingRegion> flowingRegionsToRemove = linksList.stream().flatMap(List::stream).collect(Collectors.toList());
-
             getCorrelatingView().getChildren().removeAll(flowingRegionsToRemove);
         }
 
         @Override
         public void unexecute() {
-
+            getCorrelatingView().getChildren().removeAll(flowingRegionsToAdd.keySet());
+            getCorrelatingView().getChildren().addAll(flowingRegionsToRemove);
         }
 
         @Override
         public String getName() {
             return "Merge";
-        }
-
-        public List<FlowingRegion> getFlowingRegions() {
-            return flowingRegions;
         }
     }
 
@@ -138,7 +149,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
             if (Utils.isLastElement(getSpeechList().getSpeeches(), baseSpeech))
                 return;
 
-            this.refFlowingRegion = new OffensiveFlowingRegion(new Reasoning(text), baseSpeech.getSide(), getBaseFlowingRegion(), FlowingGridController.this);
+            this.refFlowingRegion = new OffensiveFlowingRegion(text, GlobalConfiguration.LENGTH_LIMIT_TYPE, GlobalConfiguration.LENGTH_LIMIT, baseSpeech.getSide(), getBaseFlowingRegion(), FlowingGridController.this);
         }
 
         @Override
@@ -173,7 +184,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
             System.out.println(baseFlowingRegions.size());
             this.speech = getSpeechList().getSpeech(baseFlowingRegions.get(0)); // speech guaranteed to be the same for all selected
             this.extendFlowingRegions = this.baseFlowingRegions.stream().map(FlowingRegion::duplicate).map(baseFlowingRegion ->
-                    new ExtensionFlowingRegion(Utils.getOfType(baseFlowingRegion.getChildren(), FlowingText.class), speech.getSide(), baseFlowingRegion, FlowingGridController.this)
+                    new ExtensionFlowingRegion(GlobalConfiguration.LENGTH_LIMIT_TYPE, GlobalConfiguration.LENGTH_LIMIT, speech.getSide(), baseFlowingRegion, FlowingGridController.this)
             ).collect(Collectors.toList());
         }
 
@@ -339,6 +350,21 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         keyCodeCombinationMap.put(UNDO, () -> PFFlowing.getInstance().getActionManager().undo());
         keyCodeCombinationMap.put(REDO, () -> PFFlowing.getInstance().getActionManager().redo());
         keyCodeCombinationMap.put(DELETE, () -> PFFlowing.getInstance().getActionManager().perform(new Delete(getSelectedFlowingRegions())));
+        keyCodeCombinationMap.put(EXPAND, () -> {
+            if (getSelectedFlowingRegions().isEmpty()) {
+                NotificationDisplayController.getFXMLInstance().warn("No selections to expand.");
+                return;
+            }
+            for (FlowingRegion flowingRegion : getSelectedFlowingRegions()) {
+                flowingRegion.setExpanded(!flowingRegion.getExpanded());
+            }
+        });
+        keyCodeCombinationMap.put(new KeyCodeCombination(KeyCode.T, KeyCombination.CONTROL_DOWN), () -> {
+            FlowingRegion flowingRegion = new FlowingRegion("a b c d e f g h i j k l m n o p q r s t u v w x y z", this, GlobalConfiguration.LENGTH_LIMIT_TYPE, GlobalConfiguration.LENGTH_LIMIT);
+            System.out.println(flowingRegion.getText());
+            System.out.println(flowingRegion.getFullText());
+            System.out.println(flowingRegion.getShortenedText());
+        });
     }
 
     public boolean isAnySelected() {
@@ -487,10 +513,9 @@ public class FlowingGridController implements Initializable, SingleViewControlle
 
     public void edit() {
         FlowingRegion editedFlowingRegion = getLastSelected();
-        addFlowingRegionWriter(getSpeechList().getSpeech(editedFlowingRegion), false, text -> {
-            editedFlowingRegion.getChildren().clear();
-            editedFlowingRegion.getChildren().add(new FlowingText(text));
-        }, FlowingGrid.getRowIndex(editedFlowingRegion), editedFlowingRegion.getUnformattedText());
+        addFlowingRegionWriter(getSpeechList().getSpeech(editedFlowingRegion), false,
+                editedFlowingRegion::setFullText,
+                FlowingGrid.getRowIndex(editedFlowingRegion), editedFlowingRegion.getFullText());
     }
 
     private static FlowingGridController fxmlInstance;
@@ -523,6 +548,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
     }
 
     public void implementListeners(FlowingRegion flowingRegion) {
+        // implement selection listeners regarding mouse presses
         flowingRegion.setOnMousePressed(mouseEvent -> {
             handleSelection(Optional.of(flowingRegion), mouseEvent.isControlDown());
             System.out.println("Tres" + getSelectedFlowingRegions());
@@ -770,8 +796,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
      */
     public void addProactiveFlowingRegionWriter(Speech speech, boolean createNewOne) {
         addFlowingRegionWriter(speech, createNewOne, text -> {
-            Reasoning reasoning = new Reasoning(text);
-            addDefensiveFlowingRegion(speech, new DefensiveFlowingRegion(reasoning, this));
+            addDefensiveFlowingRegion(speech, new DefensiveFlowingRegion(text, this, GlobalConfiguration.LENGTH_LIMIT_TYPE, GlobalConfiguration.LENGTH_LIMIT));
         }, speech.getAvailableRow() + 1);
     }
 

@@ -8,6 +8,8 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import me.theeninja.pfflowing.SingleViewController;
+import me.theeninja.pfflowing.configuration.GlobalConfiguration;
+import me.theeninja.pfflowing.utils.Pair;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.net.URL;
@@ -39,18 +41,11 @@ public class NotificationDisplayController implements SingleViewController<HBox>
 
     private void notify(String text, Level level) {
         Label notificationLabel = new Label(text);
-        notificationLabel.setTextFill(Color.WHITE);
         notificationLabel.prefWidthProperty().bind(getCorrelatingView().widthProperty());
 
-        if (level == Level.INFO) {
-            notificationLabel.setBackground(Utils.generateBackgroundOfColor(Color.LIGHTGREY));
-        }
-        else if (level == Level.WARNING) {
-            notificationLabel.setBackground(Utils.generateBackgroundOfColor(Color.YELLOW));
-        }
-        else if (level == Level.SEVERE) {
-            notificationLabel.setBackground(Utils.generateBackgroundOfColor(Color.RED));
-        }
+        Pair<Color, Color> colorPair = GlobalConfiguration.LEVEL_COLORS.get(level);
+        notificationLabel.setTextFill(colorPair.getFirst());
+        notificationLabel.setBackground(Utils.generateBackgroundOfColor(colorPair.getSecond()));
 
         this.reset();
         getCorrelatingView().getChildren().add(notificationLabel);

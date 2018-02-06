@@ -11,4 +11,5 @@ module PFFlowing {
     requires guava;
     requires javafx.controls;
     requires javafx.web;
+    requires stanford.corenlp;
 }

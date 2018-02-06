@@ -12,6 +12,7 @@
         <MenuItem text="Save As..."  onAction="#saveFlowAs"/>
         <MenuItem text="Print"  onAction="#printFlow"/>
         <MenuItem text="Email" onAction="#emailFlow"/>
+        <MenuItem text="Parse" onAction="#openParserPopup" />
     </Menu>
     <Menu text="Edit">
         <MenuItem text="Undo" onAction="#undo"/>

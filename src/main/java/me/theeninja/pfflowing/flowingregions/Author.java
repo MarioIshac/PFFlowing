@@ -9,17 +9,16 @@ public class Author {
     private final String fullName;
     private static final List<String> AUTHOR_LABELS = Arrays.asList("Author", "Authors", "Author(s)");
 
-    Author(String firstName, String lastName) {
+    public Author(String firstName, String lastName) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.fullName = firstName + " " + lastName;
     }
 
-    public Author(String fullName) {
-        String[] partsOfName = fullName.split(" ");
-        this.firstName = partsOfName[0];
-        this.lastName = partsOfName[1];
-        this.fullName = fullName;
+    public Author(String lastName) {
+        this.firstName = null;
+        this.lastName = lastName;
+        this.fullName = getLastName();
     }
 
     public String getFirstName() {

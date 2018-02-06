@@ -93,7 +93,7 @@ public class CardSelectorController implements Initializable, DependentControlle
         public void updateItem(Card item, boolean empty) {
             super.updateItem(item, empty);
             if (item != null && !empty)
-                setText(item.getText());
+                setText(item.getCardContent().toString());
             else
                 setText("");
         }

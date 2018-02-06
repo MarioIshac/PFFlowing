@@ -18,33 +18,30 @@
         </HBox>
     </top>
     <left>
-        <HBox>
-            <VBox fx:id="authorRequest">
+        <GridPane fx:id="optionsPane">
+            <VBox fx:id="authorRequest" GridPane.columnIndex="0" GridPane.rowIndex="0">
                 <Label text="Author: " />
                 <VBox fx:id="authorOptions" />
             </VBox>
-            <VBox fx:id="sourceRequest">
+            <VBox fx:id="sourceRequest" GridPane.columnIndex="0" GridPane.rowIndex="1">
                 <Label text="Source: " />
                 <VBox fx:id="sourceOptions" />
             </VBox>
-            <VBox fx:id="dateRequest">
+            <VBox fx:id="dateRequest" GridPane.columnIndex="1" GridPane.rowIndex="0">
                 <VBox fx:id="dateOptions" />
-            </>
-            <WebView fx:id="contentSelection" />
-        </HBox>
+            </VBox>
+        </GridPane>
     </left>
     <right>
-        <VBox fx:id="documentSectionDisplay">
-
+        <VBox fx:id="rightContainer">
+            <ProgressBar fx:id="progressBar" />
+            <WebView fx:id="documentDisplay" />
+            <HBox fx:id="cardOptions">
+                <Button text="Shrink" />
+                <Button text="Expand" />
+                <Button text="Skip"   onAction="#skip"   />
+                <Button text="Finish" onAction="#finish" />
+            </HBox>
         </VBox>
-        <ProgressBar fx:id="progressBar">
-
-        </ProgressBar>
-        <HBox fx:id="cardOptions">
-            <Button text="Shrink" onAction="#truncateSelected" />
-            <Button text="Expand" onAction="#appendToSelected" />
-            <Button text="Skip"   onAction="#skip"   />
-            <Button text="Finish" onAction="#finish" />
-        </HBox>
     </right>
 </BorderPane>

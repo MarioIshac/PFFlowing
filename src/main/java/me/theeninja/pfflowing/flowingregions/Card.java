@@ -7,14 +7,17 @@ import me.theeninja.pfflowing.flowing.DefensiveFlowingRegion;
 
 import java.util.Calendar;
 
-public class Card extends FlowingText {
+public class Card {
     private Author author;
     private String source;
     private Calendar date;
     private CardContent cardContnet;
 
+    public Card() {
+
+    }
+
     public Card(Author author, String source, Calendar date, CardContent cardContnet) {
-        super(Card.generateRepresentation(author, date));
         this.author = author;
         this.source = source;
         this.date = date;
@@ -53,7 +56,7 @@ public class Card extends FlowingText {
         this.date = date;
     }
 
-    public void setCardContnet(CardContent cardContnet) {
+    public void setCardContent(CardContent cardContnet) {
         this.cardContnet = cardContnet;
     }
 }
