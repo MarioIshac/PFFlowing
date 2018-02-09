@@ -11,65 +11,58 @@ import me.theeninja.pfflowing.flowingregions.Author;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class CardPossibilitiesTask extends Task {
+public class CardPossibilitiesPopulatorTask extends Task<CardPossibilities> {
+
+    public CardPossibilitiesPopulatorTask(StanfordCoreNLP pipeline, String text) {
+        this.pipeline = pipeline;
+        this.text = text;
+        this.cardPossibilities = new CardPossibilities(
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>()
+        );
+    }
 
     private final String text;
-    private CardPossibilities cp;
-    private void handle(String string) {
-    }
+    private final CardPossibilities cardPossibilities;
+    private final StanfordCoreNLP pipeline;
 
-    private StanfordCoreNLP pipeline;
+    private static final int MAX_LOOKUP_LENGTH = 3;
 
-    private void initializePipeline() {
-        Properties props = new Properties();
-        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
-        props.setProperty("ner.useSUTime", "0");
-        setPipeline(new StanfordCoreNLP(props));
-    }
+    private static final Map<List<Predicate<CoreLabel>>, BiConsumer<List<String>, CardPossibilities>> PREDICATE_MAPPER = ImmutableMap.of(
+            List.of(Testers::person,
+                    Testers::person,
+                    Testers::shortDate),
 
-    private boolean isPerson(CoreLabel coreLabel) {
-        return coreLabel.ner().equals("PERSON");
-    }
+            (strs, cp) -> {
+                cp.getAuthors().add(new Author(strs.get(0), strs.get(1)));
+                cp.getDates().add(Utils.calendarOf(strs.get(2)));
+            },
 
-    private static final String SHORT_DATE_MATCH = "^([1-2][0-9])?[0-9][0-9]$";
+            List.of(Testers::person,
+                    Testers::person),
 
-    public boolean isValidShortDate(CoreLabel coreLabel) {
-        Pattern pattern = Pattern.compile(SHORT_DATE_MATCH);
-        Matcher matcher = pattern.matcher(coreLabel.word());
-        return matcher.find();
-    }
+            (strs, cp) ->
+                cp.getAuthors().add(new Author(strs.get(0), strs.get(1))),
 
-    private static int i(String string) {
-        return Integer.parseInt(string);
-    }
+            List.of(Testers::person, Testers::shortDate),
 
-    private final int MAX_LOOKUP_LENGTH = 3;
+            (strs, cp) -> {
 
-    private final Map<List<Predicate<CoreLabel>>, Consumer<List<String>>> PREDICATE_MAPPER = ImmutableMap.of(
-        List.of(this::isPerson, this::isPerson, this::isValidShortDate), strs -> {
-            getCp().getAuthors().add(new Author(strs.get(0), strs.get(1)));
-            getCp().getDates().add(Utils.calendarOf(strs.get(2)));
-        },
-        List.of(this::isPerson, this::isPerson), strs -> {
-            getCp().getAuthors().add(new Author(strs.get(0), strs.get(1)));
-        },
-        List.of(this::isPerson, this::isValidShortDate), strs -> {
-            getCp().getAuthors().add(new Author(strs.get(0)));
-            getCp().getDates().add(Utils.calendarOf(strs.get(1)));
-        },
-        List.of(this::isPerson), strs -> {
-            getCp().getAuthors().add(new Author(strs.get(0)));
-        }
+                cp.getAuthors().add(new Author(strs.get(0)));
+                cp.getDates().add(Utils.calendarOf(strs.get(1)));
+            },
+
+            List.of(Testers::person), (strs, cp) ->
+                cp.getAuthors().add(new Author(strs.get(0)))
     );
 
-    private void populateCardPossibilitiesd(String text) {
+    private void populateCardPossibilties(String text) {
         // create an empty Annotation just with the given text
         Annotation document = new Annotation(text);
 
@@ -104,11 +97,7 @@ public class CardPossibilitiesTask extends Task {
             for (int index = 0; index < requiredEndIndex; index++) {
                 updateProgress(index, requiredEndIndex);
 
-                /*CoreLabel currentToken = tokens.get(index);
-                CoreLabel oneTokenAhead = tokens.get(index + 1);
-                CoreLabel twoTokensAhead = tokens.get(index + 2);*/
-
-                for (Map.Entry<List<Predicate<CoreLabel>>, Consumer<List<String>>> entry : PREDICATE_MAPPER.entrySet()) {
+                for (Map.Entry<List<Predicate<CoreLabel>>, BiConsumer<List<String>, CardPossibilities>> entry : PREDICATE_MAPPER.entrySet()) {
                     // The maximum portion of tokens that we are going to be testing against
                     // We must take the max as we must be ready to supply the largest collection
                     // of predicates in the PREDICATE_MAPPER with its necessary testing arguments
@@ -118,7 +107,6 @@ public class CardPossibilitiesTask extends Task {
 
                     List<Predicate<CoreLabel>> predicates = entry.getKey();
 
-                    //
                     boolean passesTest = true;
 
                     // This for-loop stops iterating once there are no more predicates despite a possibility
@@ -135,9 +123,9 @@ public class CardPossibilitiesTask extends Task {
 
                     if (passesTest) {
                         List<String> coreLabelStrings = coreLabels.stream()
-                                    .map(CoreLabel::word)
-                                    .collect(Collectors.toList());
-                        entry.getValue().accept(coreLabelStrings);
+                                .map(CoreLabel::word)
+                                .collect(Collectors.toList());
+                        entry.getValue().accept(coreLabelStrings, getCardPossibilities());
 
                         index += entry.getKey().size() - 1;
 
@@ -146,27 +134,8 @@ public class CardPossibilitiesTask extends Task {
                         break;
                     }
                 }
-
-                /*if (!isPerson(currentToken))
-                    continue;
-                if (isPerson(oneTokenAhead)) {
-                    if (isValidShortDate(twoTokensAhead)) {
-                        getCp().getDates().add(Utils.calendarOf(i("20" + twoTokensAhead.word())));
-                        index++;
-                    }
-
-                    getCp().getAuthors().add(new Author(currentToken.word(), oneTokenAhead.word()));
-                } else if (isValidShortDate(oneTokenAhead)) {
-                    getCp().add(Utils.calendarOf(i(oneTokenAhead.word())));
-                    getCp().getAuthors().add(new Author(currentToken.word()));
-                }
-                index++;*/
             }
         }
-    }
-
-    public CardPossibilitiesTask(String text) {
-        this.text = text;
     }
 
     /**
@@ -174,30 +143,16 @@ public class CardPossibilitiesTask extends Task {
      */
     @Override
     protected CardPossibilities call() {
-        initializePipeline();
-        setCp(new CardPossibilities(
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>()
-        ));
-        populateCardPossibilitiesd("Bernstein 17 finds that 80% of the wealth created in the stock market is owned by the 1%. Only the wealthy are alrgely imapcted by the capital gains tax");
-        return getCp();
+        populateCardPossibilties(getText());
+        return cardPossibilities;
     }
 
     public StanfordCoreNLP getPipeline() {
         return pipeline;
     }
 
-    public void setPipeline(StanfordCoreNLP pipeline) {
-        this.pipeline = pipeline;
-    }
-
-    public CardPossibilities getCp() {
-        return cp;
-    }
-
-    public void setCp(CardPossibilities cp) {
-        this.cp = cp;
+    public CardPossibilities getCardPossibilities() {
+        return cardPossibilities;
     }
 
     public String getText() {

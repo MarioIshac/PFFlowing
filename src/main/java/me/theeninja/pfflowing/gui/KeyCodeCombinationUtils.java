@@ -17,6 +17,7 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination EXTEND = new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination ORGANIZE = new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination WRITE = new KeyCodeCombination(KeyCode.W, KeyCombination.CONTROL_DOWN);
+    public static final KeyCodeCombination TOGGLE_CASE_WRITE = new KeyCodeCombination(KeyCode.W, KeyCombination.CONTROL_DOWN, KeyCombination.ALT_DOWN);
     public static final KeyCodeCombination DROP = new KeyCodeCombination(KeyCode.D, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination MERGE = new KeyCodeCombination(KeyCode.M, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination QUESTION = new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN);

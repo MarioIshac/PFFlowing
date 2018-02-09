@@ -40,7 +40,7 @@ public class Card {
         return date;
     }
 
-    private static String generateRepresentation(Author author, Calendar date) {
+    public static String generateRepresentation(Author author, Calendar date) {
         return author.getLastName() + " " + date.get(Calendar.YEAR) % 100;
     }
 

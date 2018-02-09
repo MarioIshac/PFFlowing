@@ -13,28 +13,16 @@
             prefHeight="400.0" prefWidth="600.0"
             fx:id="cardParserArea">
     <top>
-        <HBox fx:id="parsedCardsDispaly">
-
-        </HBox>
+        <fx:include source="parsed_cards_display.fxml" />
     </top>
     <left>
-        <GridPane fx:id="optionsPane">
-            <VBox fx:id="authorRequest" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                <Label text="Author: " />
-                <VBox fx:id="authorOptions" />
-            </VBox>
-            <VBox fx:id="sourceRequest" GridPane.columnIndex="0" GridPane.rowIndex="1">
-                <Label text="Source: " />
-                <VBox fx:id="sourceOptions" />
-            </VBox>
-            <VBox fx:id="dateRequest" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                <VBox fx:id="dateOptions" />
-            </VBox>
-        </GridPane>
+        <!-- Card Parser will be added each parse -->
     </left>
     <right>
         <VBox fx:id="rightContainer">
+            <Label text="Hello"/>
             <ProgressBar fx:id="progressBar" />
+            <Label text="Hello"/>
             <WebView fx:id="documentDisplay" />
             <HBox fx:id="cardOptions">
                 <Button text="Shrink" />

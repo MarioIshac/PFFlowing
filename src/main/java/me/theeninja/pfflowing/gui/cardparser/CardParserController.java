@@ -1,6 +1,8 @@
 package me.theeninja.pfflowing.gui.cardparser;
 
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import javafx.collections.ObservableSet;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -27,6 +29,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 public class CardParserController implements SingleViewController<BorderPane>, Initializable {
@@ -36,16 +39,11 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     private String cardSelectionCSS;
     private String contentSelectionCSS;
 
+    private StanfordCoreNLP pipeline;
+
     public GridPane optionsPane;
 
-    @FXML public HBox parsedCardsDispaly;
-    @FXML public VBox authorRequest;
-    @FXML public VBox sourceRequest;
-    @FXML public VBox dateRequest;
     @FXML public BorderPane cardParserArea;
-    @FXML public VBox dateOptions;
-    @FXML public VBox sourceOptions;
-    @FXML public VBox authorOptions;
     @FXML public HBox cardOptions;
     @FXML public WebView documentDisplay;
     @FXML public ProgressBar progressBar;
@@ -71,11 +69,24 @@ public class CardParserController implements SingleViewController<BorderPane>, I
                     entry.getValue().run();
         });
 
+        documentDisplay.getEngine().loadContent("<b>Hello</b>");
+
+        VBox.setVgrow(documentDisplay, Priority.ALWAYS);
+
         // Splits border pane width equally between left and right components (no center is used)
         rightContainer.prefWidthProperty().bind(getCorrelatingView().widthProperty().divide(2));
-        optionsPane.prefWidthProperty().bind(getCorrelatingView().widthProperty().divide(2));
 
-        parseNextCard();
+        PipelineItitializerTask pipelineItitializerTask = new PipelineItitializerTask();
+        pipelineItitializerTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, event -> {
+            setPipeline(pipelineItitializerTask.getValue());
+        });
+
+        new Thread(pipelineItitializerTask).start();
+    }
+
+    public void loadWebEngine() {
+        this.documentDisplay.getEngine().loadContent("Hello");
+        //addRequestParseListener();
     }
 
     private void useCardSelectionStyling() {
@@ -96,31 +107,19 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     }
 
     private Map<KeyCodeCombination, Runnable> PARSER_ACTIONS = Map.of(
-        LOAD_FILE, () -> {
-                try {
-                    startParseProcess(askForFile());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+
     );
 
-    private String askForFile() throws IOException {
+    private String askForFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select File to Parse");
         Path selectedFile = fileChooser.showOpenDialog(getAssociatedStage()).toPath();
-        return new String(Files.readAllBytes(selectedFile));
-    }
-
-    private void primeInputBoxes(String cardText) {
-        CardPossibilitiesTask cardPossibilitiesTask = new CardPossibilitiesTask(cardText);
-        CardPossibilities cardPossibilities = cardPossibilitiesTask.call();
-        cardPossibilities.getAuthors().forEach(author -> {
-            System.out.println(author.getFullName());
-        });
-        cardPossibilities.getDates().forEach(calendar -> {
-            System.out.println(calendar.get(Calendar.YEAR));
-        });
+        try {
+            return new String(Files.readAllBytes(selectedFile));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private void setOnKeySubmission(Node node, EventHandler<KeyEvent> eventHandler) {
@@ -134,13 +133,18 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         documentDisplay.getEngine().executeScript("window.getSelection().removeAllRanges()");
     }
 
-    private void parseNextCard() {
+    private void addRequestParseListener() {
         useCardSelectionStyling();
         setOnKeySubmission(documentDisplay, cardParseKeyEvent -> {
             Card toBeParsedCard = new Card();
 
-            // use the stanford api + selected text here
-            primeInputBoxes(getSelectedText());
+            CardPossibilitiesPopulatorTask cppt = new CardPossibilitiesPopulatorTask(getPipeline(), getSelectedText());
+            cppt.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, event -> {
+                // use the stanford api + selected text here
+                CardPossibilityPrompterController cppc = new CardPossibilityPrompterController();
+                getCorrelatingView().setLeft(cppc.getCorrelatingView());
+            });
+            progressBar.progressProperty().bind(cppt.progressProperty());
 
             // Clear selection so the user can reselect the card content
             clearSelection();
@@ -150,6 +154,8 @@ public class CardParserController implements SingleViewController<BorderPane>, I
                 toBeParsedCard.setCardContent(new CardContent(getSelectedText()));
             });
         });
+
+
     }
 
     public static final KeyCodeCombination LOAD_FILE = new KeyCodeCombination(KeyCode.L, KeyCombination.CONTROL_DOWN);
@@ -172,10 +178,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
             Label label = new Label(String.valueOf(index));
             HBox viableOptionContainer = new HBox();
         }
-    }
-
-    public void startParseProcess(String htmlString) {
-        documentDisplay.getEngine().loadContent(htmlString);
     }
 
     private void resetRequests() {
@@ -254,4 +256,11 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         this.associatedStage = associatedStage;
     }
 
+    public StanfordCoreNLP getPipeline() {
+        return pipeline;
+    }
+
+    public void setPipeline(StanfordCoreNLP pipeline) {
+        this.pipeline = pipeline;
+    }
 }

@@ -49,6 +49,16 @@ import static me.theeninja.pfflowing.gui.KeyCodeCombinationUtils.*;
  * @author TheeNinja
  */
 public class FlowingGridController implements Initializable, SingleViewController<FlowingGrid>, EventHandler<KeyEvent> {
+    private boolean caseWriteMode = true;
+
+    public boolean isCaseWriteMode() {
+        return caseWriteMode;
+    }
+
+    public void setCaseWriteMode(boolean caseWriteMode) {
+        this.caseWriteMode = caseWriteMode;
+    }
+
     /**
      * Merging action. The process of merging involves collecting all the contents in the rows of all the flowing regions
      * into the row belonging to the top-most (determined by lowest row index) flowing region.
@@ -345,7 +355,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         keyCodeCombinationMap.put(SWITCH_SPEECHLIST, PFFlowing.getInstance()::switchSpeechList);
         keyCodeCombinationMap.put(SELECT_RIGHT_SPEECH, () -> getSpeechList().selectSpeech(1));
         keyCodeCombinationMap.put(SELECT_LEFT_SPEECH, () -> getSpeechList().selectSpeech(-1));
-        keyCodeCombinationMap.put(WRITE, () -> addProactiveFlowingRegionWriter(getSpeechList().getSelectedSpeech(), true));
+        keyCodeCombinationMap.put(WRITE, () -> addProactiveFlowingRegionWriter(getSpeechList().getSelectedSpeech()));
         keyCodeCombinationMap.put(TOGGLE_FULLSCREEN, this::toggleFullscreen);
         keyCodeCombinationMap.put(UNDO, () -> PFFlowing.getInstance().getActionManager().undo());
         keyCodeCombinationMap.put(REDO, () -> PFFlowing.getInstance().getActionManager().redo());
@@ -359,12 +369,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
                 flowingRegion.setExpanded(!flowingRegion.getExpanded());
             }
         });
-        keyCodeCombinationMap.put(new KeyCodeCombination(KeyCode.T, KeyCombination.CONTROL_DOWN), () -> {
-            FlowingRegion flowingRegion = new FlowingRegion("a b c d e f g h i j k l m n o p q r s t u v w x y z", this, GlobalConfiguration.LENGTH_LIMIT_TYPE, GlobalConfiguration.LENGTH_LIMIT);
-            System.out.println(flowingRegion.getText());
-            System.out.println(flowingRegion.getFullText());
-            System.out.println(flowingRegion.getShortenedText());
-        });
+        keyCodeCombinationMap.put(TOGGLE_CASE_WRITE, () -> setCaseWriteMode(!isCaseWriteMode()));
     }
 
     public boolean isAnySelected() {
@@ -762,13 +767,13 @@ public class FlowingGridController implements Initializable, SingleViewControlle
                 getCorrelatingView().getChildren().remove(textArea);
 
                 if (createNewOne)
-                    addFlowingRegionWriter(speech, true, postEnterAction, rowIndex + 1);
+                    addFlowingRegionWriter(speech, isCaseWriteMode(), postEnterAction, rowIndex + 1);
             }
         };
     }
 
     public void addFlowingRegionWriter(Speech speech, boolean createNewOne, Consumer<String> postEnterAction, int rowIndex) {
-        addFlowingRegionWriter(speech, createNewOne, postEnterAction, rowIndex, "");
+        addFlowingRegionWriter(speech, isCaseWriteMode(), postEnterAction, rowIndex, "");
     }
 
     /**
@@ -792,10 +797,14 @@ public class FlowingGridController implements Initializable, SingleViewControlle
 
     /**
      * Defaul post-enter specification for the above method
-     * @param createNewOne
      */
-    public void addProactiveFlowingRegionWriter(Speech speech, boolean createNewOne) {
-        addFlowingRegionWriter(speech, createNewOne, text -> {
+    public void addProactiveFlowingRegionWriter(Speech speech) {
+        // Indicates that the user is in the middle of writing
+        if (getCorrelatingView().getNode(speech.getGridPaneColumn(), speech.getAvailableRow() + 1).isPresent()) {
+            return; // do not add two text fields in one location
+        }
+
+        addFlowingRegionWriter(speech, isCaseWriteMode(), text -> {
             addDefensiveFlowingRegion(speech, new DefensiveFlowingRegion(text, this, GlobalConfiguration.LENGTH_LIMIT_TYPE, GlobalConfiguration.LENGTH_LIMIT));
         }, speech.getAvailableRow() + 1);
     }
