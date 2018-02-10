@@ -5,6 +5,8 @@ import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.time.TimeAnnotations;
+import edu.stanford.nlp.time.TimeExpression;
 import edu.stanford.nlp.util.CoreMap;
 import javafx.concurrent.Task;
 import me.theeninja.pfflowing.flowingregions.Author;

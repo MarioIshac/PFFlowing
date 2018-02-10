@@ -64,7 +64,7 @@ public class NotificationDisplayController implements SingleViewController<HBox>
     private static NotificationDisplayController fxmlInstance;
 
     /**
-     * Called to initialize a controller after its root element has been
+     * Called to start a controller after its root element has been
      * completely processed.
      *
      * @param location  The location used to resolve relative paths for the root object, or

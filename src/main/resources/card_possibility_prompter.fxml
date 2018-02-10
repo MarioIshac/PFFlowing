@@ -13,13 +13,6 @@
       fx:controller="me.theeninja.pfflowing.gui.cardparser.CardPossibilityPrompterController"
       fx:id="optionsPane"
       stylesheets="@card_possibility_prompter.css">
-    <Label text="Author: " fx:id="authorLabel" />
-    <ChoosePane fx:id="authorOptions" />
-    <Label text="Date: " fx:id="dateLabel" />
-    <ChoosePane fx:id="dateOptions" />
-    <Label text="Source: " fx:id="sourceLabel" />
-    <ChoosePane fx:id="sourceOptions" />
-
     <stylesheets>
         <URL value="@card_possibility_prompter.css" />
     </stylesheets>

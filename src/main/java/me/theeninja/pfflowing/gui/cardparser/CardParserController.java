@@ -166,17 +166,16 @@ public class CardParserController implements SingleViewController<BorderPane>, I
                 // use the stanford api + selected text here
                 CardPossibilityPrompterController cppc = Utils.getCorrelatingController("/card_possibility_prompter.fxml");
 
-                cppc.setCardPossibilities(cardPossibilities);
                 getCorrelatingView().setLeft(cppc.getCorrelatingView());
 
                 cppc.getCorrelatingView().maxWidthProperty().bind(getCorrelatingView().widthProperty().divide(2));
 
                 cppc.setManagedCard(toBeParsedCard);
-                cppc.initialize(cardPossibilities);
-
-                cppc.addChoosePaneChildren();
+                cppc.start(cardPossibilities);
 
                 cppc.setOnParse(card -> {
+                    System.out.println("parse has been called");
+
                     documentDisplay.requestFocus();
 
                     // Clear selection so the user can reselect the card content
