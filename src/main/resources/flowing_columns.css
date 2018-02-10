@@ -1,4 +1,5 @@
-VBox .label {
+
+Box .label {
 
 }
 
@@ -9,4 +10,10 @@ VBox .label {
 
 .selectedFlowingRegion {
     -fx-background-color: dodgerblue;
+}
+
+
+.marked {
+    -fx-background-color: yellow;
+    -fx-border-color: black;
 }

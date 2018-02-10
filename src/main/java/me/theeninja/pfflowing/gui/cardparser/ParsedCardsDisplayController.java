@@ -5,15 +5,14 @@ import javafx.collections.ObservableList;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ResourceBundle;
 
-public class ParsedCardsDisplayController implements Initializable {
+public class ParsedCardsDisplayController implements Initializable, SingleViewController<HBox> {
     public HBox parsedCardsView;
     public Label percentParsedIndicator;
 
@@ -24,15 +23,20 @@ public class ParsedCardsDisplayController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        getParsedCards().addListener(Utils.generateListChangeListener(this::addParsedCard, eh -> {}));
+        getParsedCards().addListener(Utils.generateListChangeListener(this::addDisplayOfParsedCard, eh -> {}));
     }
 
-    public void addParsedCard(Card card) {
+    public void addDisplayOfParsedCard(Card card) {
         Label parsedCardRepresentation = new Label(Card.generateRepresentation(card.getAuthor(), card.getDate()));
         parsedCardsView.getChildren().add(parsedCardRepresentation);
     }
 
     public ObservableList<Card> getParsedCards() {
         return parsedCards;
+    }
+
+    @Override
+    public HBox getCorrelatingView() {
+        return parsedCardsView;
     }
 }

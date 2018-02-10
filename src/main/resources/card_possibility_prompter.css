@@ -1,0 +1,10 @@
+.ChoosePane {
+    -fx-background-color: red;
+    -fx-padding: 5px;
+}
+
+.ChoosePane * {
+    -fx-background-color: white;
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+}

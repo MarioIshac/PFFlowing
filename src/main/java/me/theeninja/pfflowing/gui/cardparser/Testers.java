@@ -21,4 +21,12 @@ public class Testers {
         Matcher matcher = pattern.matcher(coreLabel.word());
         return matcher.find();
     }
+
+    private static final String URL_MATCH = "/((([A-Za-z]{3,9}:(?://)?)(?:[-;:&=+$,\\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\\+\\$,\\w]+@)[A-Za-z0-9.-]+)((?:\\/[\\+~%\\/.\\w-_]*)?\\??(?:[-\\+=&;%@.\\w_]*)#?(?:[\\w]*))?)/";
+
+    public static boolean url(CoreLabel coreLabel) {
+        Pattern pattern = Pattern.compile(URL_MATCH);
+        Matcher matcher = pattern.matcher(coreLabel.word());
+        return matcher.find();
+    }
 }

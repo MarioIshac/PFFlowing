@@ -41,7 +41,7 @@ public class Card {
     }
 
     public static String generateRepresentation(Author author, Calendar date) {
-        return author.getLastName() + " " + date.get(Calendar.YEAR) % 100;
+        return author.getLastName() + (date != null ? " " + date.get(Calendar.YEAR) % 100 : " ");
     }
 
     public void setAuthor(Author author) {

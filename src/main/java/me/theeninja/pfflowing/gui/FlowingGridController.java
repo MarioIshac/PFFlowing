@@ -183,6 +183,29 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         }
     }
 
+    private class Question extends Action {
+        private final FlowingRegion baseFlowingRegion;
+
+        Question(FlowingRegion baseFlowingRegion, String questionMessage) {
+            this.baseFlowingRegion = baseFlowingRegion;
+        }
+
+        @Override
+        public void execute() {
+
+        }
+
+        @Override
+        public void unexecute() {
+
+        }
+
+        @Override
+        public String getName() {
+            return "Mark for Questioning";
+        }
+    }
+
     private class Extend extends Action {
         private List<FlowingRegion> baseFlowingRegions;
         private Speech speech;

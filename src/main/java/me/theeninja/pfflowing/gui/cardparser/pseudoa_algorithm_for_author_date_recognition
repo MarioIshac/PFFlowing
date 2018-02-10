@@ -1,6 +1,0 @@
-for (i = 0 -> sentence.wordcount() - 2) {
-    a = sentence.words()[i]
-    b = sentence.words()[i + 1]
-    c = sentence.words()[i + 2]
-    if (!
-}

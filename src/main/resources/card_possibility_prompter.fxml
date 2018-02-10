@@ -6,14 +6,21 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import me.theeninja.pfflowing.gui.cardparser.ChoosePane?>
+<?import java.net.URL?>
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="me.theeninja.pfflowing.gui.cardparser.CardPossibilityPrompterController"
-      fx:id="optionsPane">
-    <Label text="Author: " />
-    <HBox fx:id="authorOptions" />
-    <Label text="Date: " />
-    <HBox fx:id="dateOptions" />
-    <Label text="Source: " />
-    <VBox fx:id="sourceOptions" />
+      fx:id="optionsPane"
+      stylesheets="@card_possibility_prompter.css">
+    <Label text="Author: " fx:id="authorLabel" />
+    <ChoosePane fx:id="authorOptions" />
+    <Label text="Date: " fx:id="dateLabel" />
+    <ChoosePane fx:id="dateOptions" />
+    <Label text="Source: " fx:id="sourceLabel" />
+    <ChoosePane fx:id="sourceOptions" />
+
+    <stylesheets>
+        <URL value="@card_possibility_prompter.css" />
+    </stylesheets>
 </VBox>

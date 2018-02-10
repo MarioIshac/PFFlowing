@@ -53,26 +53,42 @@ public class CardPossibilitiesPopulatorTask extends Task<CardPossibilities> {
             List.of(Testers::person, Testers::shortDate),
 
             (strs, cp) -> {
-
                 cp.getAuthors().add(new Author(strs.get(0)));
                 cp.getDates().add(Utils.calendarOf(strs.get(1)));
             },
 
-            List.of(Testers::person), (strs, cp) ->
-                cp.getAuthors().add(new Author(strs.get(0)))
+            List.of(Testers::url), (str, cp) -> {
+                cp.getSources().add(str.get(0));
+            },
+
+            List.of(Testers::person),
+
+            (strs, cp) -> cp.getAuthors().add(new Author(strs.get(0)))
     );
 
     private void populateCardPossibilties(String text) {
         // create an empty Annotation just with the given text
         Annotation document = new Annotation(text);
 
+        updateMessage("Annotating the document...");
         // run all Annotators on this text
         getPipeline().annotate(document);
 
-        List<CoreMap> coreMaps =  document.get(CoreAnnotations.SentencesAnnotation.class);
+        updateMessage("Splitting document into sentences...");
+        List<CoreMap> coreMaps = document.get(CoreAnnotations.SentencesAnnotation.class);
 
-        for(CoreMap sentence : coreMaps) {
+        int numberOfSentences = coreMaps.size();
+        updateMessage("Searching each sentence for relevant tokens...");
+        for (int sentenceIndex = 0; sentenceIndex < coreMaps.size(); sentenceIndex++) {
+            CoreMap sentence = coreMaps.get(sentenceIndex);
+            updateProgress(sentenceIndex + 1, numberOfSentences);
             List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);
+
+            System.out.println();
+            tokens.forEach(coreLabel -> {
+                System.out.println("`" + coreLabel.word() + "`" + coreLabel.ner());
+            });
+            System.out.println();
 
             /*
             1) <person> /token/ /token/
@@ -95,7 +111,9 @@ public class CardPossibilitiesPopulatorTask extends Task<CardPossibilities> {
             int requiredEndIndex = tokens.size() - MAX_LOOKUP_LENGTH + 1;
 
             for (int index = 0; index < requiredEndIndex; index++) {
-                updateProgress(index, requiredEndIndex);
+                double portionOfSentenceCompleted = index / requiredEndIndex;
+
+                updateProgress(sentenceIndex + portionOfSentenceCompleted, numberOfSentences);
 
                 for (Map.Entry<List<Predicate<CoreLabel>>, BiConsumer<List<String>, CardPossibilities>> entry : PREDICATE_MAPPER.entrySet()) {
                     // The maximum portion of tokens that we are going to be testing against
@@ -114,8 +132,10 @@ public class CardPossibilitiesPopulatorTask extends Task<CardPossibilities> {
                     // the PREDICATE_MAPPER, not all lists of predicates will test for a list of arguments
                     // with length of MAX_LOOKUP_LENGTH. If we do not test a token, it is implicitly true
                     // i.e it is irrelevant to whether the whole test passes as a whole or not.
+
                     for (int i = 0; i < predicates.size(); i++) {
                         CoreLabel targetToken = coreLabels.get(i);
+
                         Predicate<CoreLabel> targetPredicate = predicates.get(i);
                         if (!targetPredicate.test(targetToken))
                             passesTest = false;
@@ -136,6 +156,8 @@ public class CardPossibilitiesPopulatorTask extends Task<CardPossibilities> {
                 }
             }
         }
+
+        updateMessage("Finished possibility population.");
     }
 
     /**

@@ -13,16 +13,14 @@
             prefHeight="400.0" prefWidth="600.0"
             fx:id="cardParserArea">
     <top>
-        <fx:include source="parsed_cards_display.fxml" />
+        <!-- -->
     </top>
     <left>
         <!-- Card Parser will be added each parse -->
     </left>
     <right>
         <VBox fx:id="rightContainer">
-            <Label text="Hello"/>
             <ProgressBar fx:id="progressBar" />
-            <Label text="Hello"/>
             <WebView fx:id="documentDisplay" />
             <HBox fx:id="cardOptions">
                 <Button text="Shrink" />

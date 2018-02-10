@@ -10,10 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.web.WebView;
@@ -23,13 +20,15 @@ import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.card.CardContent;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.utils.Utils;
+import org.apache.tika.io.IOUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 public class CardParserController implements SingleViewController<BorderPane>, Initializable {
@@ -40,8 +39,7 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     private String contentSelectionCSS;
 
     private StanfordCoreNLP pipeline;
-
-    public GridPane optionsPane;
+    private ParsedCardsDisplayController pcdc;
 
     @FXML public BorderPane cardParserArea;
     @FXML public HBox cardOptions;
@@ -55,11 +53,28 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
     private List<HBox> requests;
 
+    private String snapSelectionToWordJS;
+
+    // https://stackoverflow.com/questions/13765349/multi-term-named-entities-in-stanford-named-entity-recognizer
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        InputStream inputStream = getClass().getResourceAsStream("snap_selection_to_word.js");
+        try {
+            setSnapSelectionToWordJS(IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(getSnapSelectionToWordJS());
+        documentDisplay.addEventHandler(MouseEvent.MOUSE_RELEASED, mouseEvent -> {
+            System.out.println("Mouse has been released");
+            documentDisplay.getEngine().executeScript(getSnapSelectionToWordJS());
+        });
+
         progressBar.prefWidthProperty().bind(rightContainer.widthProperty());
 
         // Allows keyboard shortcuts to be used in order to navigate the document/fill the input boxes
@@ -69,8 +84,7 @@ public class CardParserController implements SingleViewController<BorderPane>, I
                     entry.getValue().run();
         });
 
-        documentDisplay.getEngine().loadContent("<b>Hello</b>");
-
+        // Essential that the user is able to reach as much of the to-be-parsed document as possible
         VBox.setVgrow(documentDisplay, Priority.ALWAYS);
 
         // Splits border pane width equally between left and right components (no center is used)
@@ -79,14 +93,23 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         PipelineItitializerTask pipelineItitializerTask = new PipelineItitializerTask();
         pipelineItitializerTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, event -> {
             setPipeline(pipelineItitializerTask.getValue());
+            System.out.println("Done");
+            addRequestParseListener();
         });
 
         new Thread(pipelineItitializerTask).start();
+
+        setPcdc(Utils.getCorrelatingController("/parsed_cards_display.fxml"));
+        getCorrelatingView().setTop(getPcdc().getCorrelatingView());
     }
 
-    public void loadWebEngine() {
-        this.documentDisplay.getEngine().loadContent("Hello");
-        //addRequestParseListener();
+    public void loadPath(Path path) {
+        try {
+            String string = new String(Files.readAllBytes(path));
+            this.documentDisplay.getEngine().loadContent(string);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void useCardSelectionStyling() {
@@ -110,16 +133,10 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
     );
 
-    private String askForFile() {
+    public Path askForFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select File to Parse");
-        Path selectedFile = fileChooser.showOpenDialog(getAssociatedStage()).toPath();
-        try {
-            return new String(Files.readAllBytes(selectedFile));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return fileChooser.showOpenDialog(getAssociatedStage()).toPath();
     }
 
     private void setOnKeySubmission(Node node, EventHandler<KeyEvent> eventHandler) {
@@ -134,28 +151,58 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     }
 
     private void addRequestParseListener() {
+        clearSelection();
         useCardSelectionStyling();
         setOnKeySubmission(documentDisplay, cardParseKeyEvent -> {
             Card toBeParsedCard = new Card();
 
             CardPossibilitiesPopulatorTask cppt = new CardPossibilitiesPopulatorTask(getPipeline(), getSelectedText());
             cppt.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, event -> {
+                System.out.println("possiblity populator task done");
+
+                CardPossibilities cardPossibilities = cppt.getValue();
+                System.out.println(cardPossibilities.toString());
+
                 // use the stanford api + selected text here
-                CardPossibilityPrompterController cppc = new CardPossibilityPrompterController();
+                CardPossibilityPrompterController cppc = Utils.getCorrelatingController("/card_possibility_prompter.fxml");
+
+                cppc.setCardPossibilities(cardPossibilities);
                 getCorrelatingView().setLeft(cppc.getCorrelatingView());
+
+                cppc.getCorrelatingView().maxWidthProperty().bind(getCorrelatingView().widthProperty().divide(2));
+
+                cppc.setManagedCard(toBeParsedCard);
+                cppc.initialize(cardPossibilities);
+
+                cppc.addChoosePaneChildren();
+
+                cppc.setOnParse(card -> {
+                    documentDisplay.requestFocus();
+
+                    // Clear selection so the user can reselect the card content
+                    clearSelection();
+
+                    useContentSelectionStyling();
+
+                    setOnKeySubmission(documentDisplay, contentParseKeyEvent -> {
+                        toBeParsedCard.setCardContent(new CardContent(getSelectedText()));
+
+                        getPcdc().addDisplayOfParsedCard(toBeParsedCard);
+
+                        addRequestParseListener();
+                    });
+                });
+
+                cppc.getChoosePanes().get(0).requestFocus();
             });
+
+            new Thread(cppt).start();
+
+            Label label = new Label();
+            label.textProperty().bind(cppt.messageProperty());
+            getCorrelatingView().setBottom(label);
             progressBar.progressProperty().bind(cppt.progressProperty());
-
-            // Clear selection so the user can reselect the card content
-            clearSelection();
-
-            useContentSelectionStyling();
-            setOnKeySubmission(documentDisplay, contentParseKeyEvent -> {
-                toBeParsedCard.setCardContent(new CardContent(getSelectedText()));
-            });
         });
-
-
     }
 
     public static final KeyCodeCombination LOAD_FILE = new KeyCodeCombination(KeyCode.L, KeyCombination.CONTROL_DOWN);
@@ -262,5 +309,21 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
     public void setPipeline(StanfordCoreNLP pipeline) {
         this.pipeline = pipeline;
+    }
+
+    public ParsedCardsDisplayController getPcdc() {
+        return pcdc;
+    }
+
+    public void setPcdc(ParsedCardsDisplayController pcdc) {
+        this.pcdc = pcdc;
+    }
+
+    public String getSnapSelectionToWordJS() {
+        return snapSelectionToWordJS;
+    }
+
+    public void setSnapSelectionToWordJS(String snapSelectionToWordJS) {
+        this.snapSelectionToWordJS = snapSelectionToWordJS;
     }
 }

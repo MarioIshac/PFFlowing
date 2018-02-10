@@ -10,6 +10,7 @@ import me.theeninja.pfflowing.gui.cardparser.CardParserController;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ResourceBundle;
 
 public class NavigatorController implements Initializable {
@@ -80,9 +81,8 @@ public class NavigatorController implements Initializable {
         stage.setScene(scene);
         stage.show();
         cardParserController.setAssociatedStage(stage);
-        cardParserController.loadWebEngine();
-        System.out.println(cardParserController.documentDisplay.getParent());
-        System.out.println("1) " + cardParserController.documentDisplay.getLayoutBounds());
-        System.out.println("2) " + cardParserController.progressBar.getLayoutBounds());
+
+        Path path = cardParserController.askForFile();
+        cardParserController.loadPath(path);
     }
 }
