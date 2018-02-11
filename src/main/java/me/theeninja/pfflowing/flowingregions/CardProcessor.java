@@ -73,7 +73,7 @@ public class CardProcessor {
     }
 
     public Card generateCard() {
-        Optional<Author> author = findCardComponent(CardComponent.AUTHOR);
+        Optional<String> author = findCardComponent(CardComponent.AUTHOR);
         Optional<String> url = findCardComponent(CardComponent.SOURCE);
         Optional<CardContent> content = findCardComponent(CardComponent.CONTENT);
         Optional<Calendar> calendar = findCardComponent(CardComponent.DATE);
@@ -85,7 +85,7 @@ public class CardProcessor {
             return new Card(
                     author.get(),
                     url.get(),
-                    calendar.get(),
+                    calendar.get().toString(),
                     content.get());
         }
         return null;

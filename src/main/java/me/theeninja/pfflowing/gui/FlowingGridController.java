@@ -36,6 +36,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -49,7 +50,7 @@ import static me.theeninja.pfflowing.gui.KeyCodeCombinationUtils.*;
  * @author TheeNinja
  */
 public class FlowingGridController implements Initializable, SingleViewController<FlowingGrid>, EventHandler<KeyEvent> {
-    private boolean caseWriteMode = true;
+    private boolean caseWriteMode = false;
 
     public boolean isCaseWriteMode() {
         return caseWriteMode;
@@ -366,14 +367,14 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         keyCodeCombinationMap.put(UPSCALE_BY_1, () -> upscaleBy(1));
         keyCodeCombinationMap.put(SHIFT_DISPLAY_RIGHT, () -> shift(1));
         keyCodeCombinationMap.put(SHIFT_DISPLAY_LEFT, () -> shift(-1));
-        keyCodeCombinationMap.put(SELECT_LEFT_ONLY, () -> handleSelection(getCorrelatingView()::getLeft, getLastSelected(), false));
-        keyCodeCombinationMap.put(SELECT_RIGHT_ONLY, () -> handleSelection(getCorrelatingView()::getRight, getLastSelected(), false));
-        keyCodeCombinationMap.put(SELECT_DOWN_ONLY, () -> handleSelection(getCorrelatingView()::getBelow, getLastSelected(), false));
-        keyCodeCombinationMap.put(SELECT_UP_ONLY, () -> handleSelection(getCorrelatingView()::getAbove, getLastSelected(), false));
-        keyCodeCombinationMap.put(SELECT_LEFT_TOO, () -> handleSelection(getCorrelatingView()::getLeft, getLastSelected(), true));
-        keyCodeCombinationMap.put(SELECT_RIGHT_TOO, () -> handleSelection(getCorrelatingView()::getRight, getLastSelected(), true));
-        keyCodeCombinationMap.put(SELECT_DOWN_TOO, () -> handleSelection(getCorrelatingView()::getBelow, getLastSelected(), true));
-        keyCodeCombinationMap.put(SELECT_UP_TOO, () -> handleSelection(getCorrelatingView()::getAbove, getLastSelected(), true));
+        keyCodeCombinationMap.put(SELECT_LEFT_ONLY, () -> handleSelection(getCorrelatingView()::getLeft,false));
+        keyCodeCombinationMap.put(SELECT_RIGHT_ONLY, () -> handleSelection(getCorrelatingView()::getRight, false));
+        keyCodeCombinationMap.put(SELECT_DOWN_ONLY, () -> handleSelection(getCorrelatingView()::getBelow, false));
+        keyCodeCombinationMap.put(SELECT_UP_ONLY, () -> handleSelection(getCorrelatingView()::getAbove, false));
+        keyCodeCombinationMap.put(SELECT_LEFT_TOO, () -> handleSelection(getCorrelatingView()::getLeft, true));
+        keyCodeCombinationMap.put(SELECT_RIGHT_TOO, () -> handleSelection(getCorrelatingView()::getRight, true));
+        keyCodeCombinationMap.put(SELECT_DOWN_TOO, () -> handleSelection(getCorrelatingView()::getBelow, true));
+        keyCodeCombinationMap.put(SELECT_UP_TOO, () -> handleSelection(getCorrelatingView()::getAbove,true));
         keyCodeCombinationMap.put(UNFOCUS, () -> flowingGrid.requestFocus());
         keyCodeCombinationMap.put(SWITCH_SPEECHLIST, PFFlowing.getInstance()::switchSpeechList);
         keyCodeCombinationMap.put(SELECT_RIGHT_SPEECH, () -> getSpeechList().selectSpeech(1));
@@ -578,7 +579,7 @@ public class FlowingGridController implements Initializable, SingleViewControlle
     public void implementListeners(FlowingRegion flowingRegion) {
         // implement selection listeners regarding mouse presses
         flowingRegion.setOnMousePressed(mouseEvent -> {
-            handleSelection(Optional.of(flowingRegion), mouseEvent.isControlDown());
+            handleSelection(flowingRegion, mouseEvent.isControlDown());
             System.out.println("Tres" + getSelectedFlowingRegions());
         });
     }
@@ -610,23 +611,18 @@ public class FlowingGridController implements Initializable, SingleViewControlle
     public static FlowingGridController myInstance;
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private void handleSelection(Optional<FlowingRegion> flowingRegion, boolean multiSelect) {
-        if (!flowingRegion.isPresent())
-            return;
-
+    private void handleSelection(FlowingRegion flowingRegion, boolean multiSelect) {
         myInstance = this;
 
-        FlowingRegion handledFlowingRegion = flowingRegion.get();
+        System.out.println("Before null: " + flowingRegion);
 
-        System.out.println("Before null: " + handledFlowingRegion);
-
-        if (getSelectedFlowingRegions().contains(handledFlowingRegion)) {
+        if (getSelectedFlowingRegions().contains(flowingRegion)) {
             System.out.println("first");
-            unselect(handledFlowingRegion, multiSelect);
+            unselect(flowingRegion, multiSelect);
         }
         else {
             System.out.println("second");
-            select(handledFlowingRegion, multiSelect);
+            select(flowingRegion, multiSelect);
         }
 
         System.out.println("Dos" + getSelectedFlowingRegions());
@@ -666,11 +662,20 @@ public class FlowingGridController implements Initializable, SingleViewControlle
     /**
      *
      * @param function
-     * @param flowingRegion
      * @param isCtrlDown
      */
-    private void handleSelection(Function<FlowingRegion, Optional<FlowingRegion>> function, FlowingRegion flowingRegion, boolean isCtrlDown) {
-        handleSelection(function.apply(flowingRegion), isCtrlDown);
+    private void handleSelection(Function<FlowingRegion, Optional<FlowingRegion>> function, boolean isCtrlDown) {
+        // indicates that there are no flowing regions
+        FlowingRegion flowingRegion = getLastSelected();
+
+        if (flowingRegion == null) {
+            FlowingRegion obtFlowingRegion =
+        }
+
+        System.out.println(flowingRegion);
+
+        Optional<FlowingRegion> optionalFlowingRegion = function.apply(flowingRegion);
+        optionalFlowingRegion.ifPresent(obtFlowingRegion -> handleSelection(obtFlowingRegion, isCtrlDown));
     }
 
     private void initializeListeners() {
@@ -703,7 +708,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
             textArea.prefWidthProperty().bind(textArea.maxWidthProperty());
             textArea.setPrefHeight(12);
 
-
             textArea.addEventHandler(KeyEvent.KEY_TYPED, keyEvent -> {
                 if (isCardSelectorShown())
                     return;
@@ -733,11 +737,12 @@ public class FlowingGridController implements Initializable, SingleViewControlle
                 }
             });
 
-            textArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-               if (KeyCodeCombinationUtils.BOLD.match(keyEvent)) {
-
-               }
-            });
+            // newValue will only change to false upon loss of focus obtained from TextArea#requestFocus();
+            // even though textArea will not be focused on its creation, this does not trigger the listener
+            textArea.focusedProperty().addListener(((observable, oldValue, newValue) -> {
+               if (!newValue)
+                   getCorrelatingView().getChildren().remove(textArea);
+            }));
         }
 
         public TextArea getTextArea() {

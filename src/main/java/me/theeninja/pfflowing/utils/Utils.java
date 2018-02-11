@@ -87,7 +87,14 @@ public final class Utils {
         return list.stream().filter(type::isInstance).map(type::cast).collect(Collectors.toList());
     }
 
+    /**
+     * @param list the list to perform the operation on
+     * @param <T> The type of the elements in the list and the element to be returned.
+     * @return null if the list is empty, otherwise the last element
+     */
     public static <T> T getLastElement(List<T> list) {
+        if (list.isEmpty())
+            return null;
         return list.get(list.size() - 1);
     }
 

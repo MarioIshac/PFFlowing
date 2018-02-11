@@ -8,16 +8,16 @@ import me.theeninja.pfflowing.flowing.DefensiveFlowingRegion;
 import java.util.Calendar;
 
 public class Card {
-    private Author author;
+    private String author;
     private String source;
-    private Calendar date;
+    private String date;
     private CardContent cardContnet;
 
     public Card() {
 
     }
 
-    public Card(Author author, String source, Calendar date, CardContent cardContnet) {
+    public Card(String author, String source, String date, CardContent cardContnet) {
         this.author = author;
         this.source = source;
         this.date = date;
@@ -32,19 +32,19 @@ public class Card {
         return cardContnet;
     }
 
-    public Author getAuthor() {
+    public String getAuthor() {
         return author;
     }
 
-    public Calendar getDate() {
+    public String getDate() {
         return date;
     }
 
-    public static String generateRepresentation(Author author, Calendar date) {
-        return author.getLastName() + (date != null ? " " + date.get(Calendar.YEAR) % 100 : " ");
+    public static String generateRepresentation(String author, String date) {
+        return author + (date != null ? " " + date : " ");
     }
 
-    public void setAuthor(Author author) {
+    public void setAuthor(String author) {
         this.author = author;
     }
 
@@ -52,7 +52,7 @@ public class Card {
         this.source = source;
     }
 
-    public void setDate(Calendar date) {
+    public void setDate(String date) {
         this.date = date;
     }
 

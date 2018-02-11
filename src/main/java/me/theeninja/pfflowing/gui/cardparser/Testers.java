@@ -22,6 +22,10 @@ public class Testers {
         return matcher.find();
     }
 
+    public static boolean date(CoreLabel coreLabel) {
+        return coreLabel.ner().equals("DATE");
+    }
+
     public static boolean url(CoreLabel coreLabel) {
         return coreLabel.ner().equals("URL");
     }

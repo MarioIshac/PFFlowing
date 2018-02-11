@@ -1,7 +1,5 @@
 package me.theeninja.pfflowing.card;
 
-import me.theeninja.pfflowing.flowingregions.Author;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -12,7 +10,7 @@ import java.util.function.Function;
 // Class has to be used because java does not have generic support for enums
 public class CardComponent<ComponentType> {
 
-    public static final CardComponent<Author> AUTHOR = new CardComponent<>(Arrays.asList("Author", "Authors", "Author(s)"), Author::new);
+    public static final CardComponent<String> AUTHOR = new CardComponent<>(Arrays.asList("Author", "Authors", "Author(s)"), String::new);
     public static final CardComponent<String> SOURCE = new CardComponent<>(Arrays.asList("Source", "URL", "Website", "Web"), String::new);
     public static final CardComponent<Calendar> DATE = new CardComponent<>(Arrays.asList("Time", "Date", "Year"), string -> {
         try {

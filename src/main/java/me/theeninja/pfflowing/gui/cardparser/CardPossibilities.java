@@ -1,30 +1,29 @@
 package me.theeninja.pfflowing.gui.cardparser;
 
-import me.theeninja.pfflowing.flowingregions.Author;
-
 import java.util.Calendar;
 import java.util.List;
+import java.util.Set;
 
 public final class CardPossibilities {
-    private final List<Author> authors;
-    private final List<String> sources;
-    private final List<Calendar> dates;
+    private final Set<String> authors;
+    private final Set<String> sources;
+    private final Set<String> dates;
 
-    public CardPossibilities(List<Author> authors, List<String> sources, List<Calendar> dates) {
+    public CardPossibilities(Set<String> authors, Set<String> sources, Set<String> dates) {
         this.authors = authors;
         this.sources = sources;
         this.dates = dates;
     }
 
-    public List<Author> getAuthors() {
+    public Set<String> getAuthors() {
         return authors;
     }
 
-    public List<String> getSources() {
+    public Set<String> getSources() {
         return sources;
     }
 
-    public List<Calendar> getDates() {
+    public Set<String> getDates() {
         return dates;
     }
 
@@ -32,10 +31,10 @@ public final class CardPossibilities {
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("CardPossibilities").append("[").append("\n");
-        authors.forEach(author -> stringBuilder.append("Author").append(author.getFullName()).append("\n"));
+        authors.forEach(author -> stringBuilder.append("Author").append(author).append("\n"));
         sources.forEach(source -> stringBuilder.append("Source").append(source).append("\n"));
         dates.forEach(date -> {
-            stringBuilder.append(date.get(Calendar.YEAR)).append("\n");
+            stringBuilder.append(date).append("\n");
         });
         stringBuilder.append("\n]");
         return stringBuilder.toString();

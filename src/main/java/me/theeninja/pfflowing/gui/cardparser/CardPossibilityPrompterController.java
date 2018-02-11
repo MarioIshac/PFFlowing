@@ -1,29 +1,20 @@
 package me.theeninja.pfflowing.gui.cardparser;
 
-import javafx.beans.property.*;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.flowingregions.Author;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.utils.Utils;
 
-import java.net.URL;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.IntStream;
 
 public class CardPossibilityPrompterController implements SingleViewController<VBox> {
     public Label authorLabel;
@@ -41,16 +32,16 @@ public class CardPossibilityPrompterController implements SingleViewController<V
     private static final Background SELECTED_BACKGROUND = Utils.generateBackgroundOfColor(Color.WHITE);
     private static final Background UNSELECTED_BACKGROUND = Utils.generateBackgroundOfColor(Color.LIGHTGRAY);
 
-    private <T> void handle(List<T> list, String labelText, Function<String, T> defFunc, Consumer<T> onSelection) {
+    private <T> void handle(Set<T> set, String labelText, Function<String, T> defFunc, Consumer<T> onSelection) {
         Label label = new Label(labelText);
         getCorrelatingView().getChildren().add(label);
 
         ChoosePane<T> choosePane = new ChoosePane<>();
 
-        for (int i = 0; i < list.size(); i++) {
-            T value = list.get(i);
-            choosePane.add(new PossibilityLabel<>(value, i));
-        }
+        int index = 0;
+
+        for (T t : set)
+            choosePane.add(new PossibilityLabel<>(t, index++));
 
         choosePane.focusedProperty().addListener((observable, oldValue, newValue) ->
             choosePane.setBackground(newValue ? SELECTED_BACKGROUND : UNSELECTED_BACKGROUND)
@@ -96,17 +87,9 @@ public class CardPossibilityPrompterController implements SingleViewController<V
     public void start(CardPossibilities cardPossibilities) {
         handle(cardPossibilities.getAuthors(), "Authors", string -> {
             String[] nameTokens = string.trim().split("\\s+");
-            if (nameTokens.length == 1) {
-                return new Author(nameTokens[0]);
-            }
-            else if (nameTokens.length == 2) {
-                return new Author(nameTokens[1]);
-            }
-            else {
-                throw new Error("lol");
-            }
+            return "Mario";
         }, getManagedCard()::setAuthor);
-        handle(cardPossibilities.getDates(), "Dates", Utils::calendarOf, getManagedCard()::setDate);
+        handle(cardPossibilities.getDates(), "Dates", string -> string, getManagedCard()::setDate);
         handle(cardPossibilities.getSources(), "Sources", string -> string, getManagedCard()::setSource);
     }
 
