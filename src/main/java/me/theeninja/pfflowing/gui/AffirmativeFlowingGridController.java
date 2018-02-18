@@ -14,6 +14,5 @@ public class AffirmativeFlowingGridController extends FlowingGridController {
         setSpeechList(new SpeechList(Side.AFFIRMATIVE));
 
         super.initialize(url, resourceBundle);
-        super.addLabels();
     }
 }

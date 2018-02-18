@@ -12,4 +12,7 @@ module PFFlowing {
     requires javafx.controls;
     requires javafx.web;
     requires stanford.corenlp;
+    requires com.fasterxml.jackson.databind;
+    requires gson;
+    requires fx.gson;
 }

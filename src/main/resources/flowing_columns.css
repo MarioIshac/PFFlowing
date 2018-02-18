@@ -1,4 +1,3 @@
-
 Box .label {
 
 }
@@ -8,12 +7,21 @@ Box .label {
     -fx-border-color: sandybrown;
 }
 
-.selectedFlowingRegion {
-    -fx-background-color: dodgerblue;
+.selectedRegion {
+    -fx-background-color: lightblue !important;
 }
-
 
 .marked {
     -fx-background-color: yellow;
     -fx-border-color: black;
+}
+
+.dropped {
+    -fx-strikethrough: true;
+    /*-fx-background-color: gray;
+    -fx-border-color: red;*/
+}
+
+.dropped .text {
+    -fx-strikethrough: true;
 }

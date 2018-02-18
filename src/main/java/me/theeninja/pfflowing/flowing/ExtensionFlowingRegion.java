@@ -10,8 +10,8 @@ public class ExtensionFlowingRegion extends FlowingRegion implements Extension {
     private final Side initiator;
     private final FlowingRegion base;
 
-    public ExtensionFlowingRegion(LengthLimitType lengthLimitType, int limit, Side initiator, FlowingRegion base, FlowingGridController instance) {
-        super("Ext.", instance, lengthLimitType, limit);
+    public ExtensionFlowingRegion(Side initiator, FlowingRegion base) {
+        super("Ext.");
         setStyle("-fx-font-weight: bold");
         this.initiator = initiator;
         this.base = base;

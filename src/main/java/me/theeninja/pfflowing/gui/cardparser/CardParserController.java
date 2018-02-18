@@ -99,7 +99,7 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
         new Thread(pipelineItitializerTask).start();
 
-        setPcdc(Utils.getCorrelatingController("/parsed_cards_display.fxml"));
+        setPcdc(Utils.getCorrelatingController("/card_parser_gui/parsed_cards_display.fxml"));
         getCorrelatingView().setTop(getPcdc().getCorrelatingView());
     }
 
@@ -113,12 +113,12 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     }
 
     private void useCardSelectionStyling() {
-        String cardSelectionCSSLocation = getClass().getResource("/card_parser/card_selection.css").toExternalForm();
+        String cardSelectionCSSLocation = getClass().getResource("/card_parser_gui/card_selection.css").toExternalForm();
         documentDisplay.getEngine().setUserStyleSheetLocation(cardSelectionCSSLocation);
     }
 
     private void useContentSelectionStyling() {
-        String contentSelectionCSSLocation = getClass().getResource("/card_parser/content_selection.css").toExternalForm();
+        String contentSelectionCSSLocation = getClass().getResource("/card_parser_gui/content_selection.css").toExternalForm();
         documentDisplay.getEngine().setUserStyleSheetLocation(contentSelectionCSSLocation);
     }
 
@@ -164,7 +164,7 @@ public class CardParserController implements SingleViewController<BorderPane>, I
                 System.out.println(cardPossibilities.toString());
 
                 // use the stanford api + selected text here
-                CardPossibilityPrompterController cppc = Utils.getCorrelatingController("/card_possibility_prompter.fxml");
+                CardPossibilityPrompterController cppc = Utils.getCorrelatingController("/card_parser_gui/card_possibility_prompter.fxml");
 
                 getCorrelatingView().setLeft(cppc.getCorrelatingView());
 

@@ -3,9 +3,7 @@ package me.theeninja.pfflowing.gui;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.stage.Popup;
 import javafx.stage.Stage;
-import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.gui.cardparser.CardParserController;
 import me.theeninja.pfflowing.utils.Utils;
 
@@ -74,7 +72,7 @@ public class NavigatorController implements Initializable {
     }
 
     public void openParserPopup() {
-        CardParserController cardParserController = Utils.getCorrelatingController("/card_parser.fxml");
+        CardParserController cardParserController = Utils.getCorrelatingController("/card_parser_gui/card_parser.fxml");
         System.out.println("debug");
         Stage stage = new Stage();
         Scene scene = new Scene(cardParserController.getCorrelatingView());

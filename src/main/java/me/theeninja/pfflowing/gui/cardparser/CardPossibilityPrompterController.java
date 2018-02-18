@@ -41,7 +41,7 @@ public class CardPossibilityPrompterController implements SingleViewController<V
         int index = 0;
 
         for (T t : set)
-            choosePane.add(new PossibilityLabel<>(t, index++));
+            choosePane.add(new PossibilityLabel<T>(t, index++, "[%d]", ""));
 
         choosePane.focusedProperty().addListener((observable, oldValue, newValue) ->
             choosePane.setBackground(newValue ? SELECTED_BACKGROUND : UNSELECTED_BACKGROUND)

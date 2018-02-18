@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import me.theeninja.pfflowing.gui.FlowingPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<FlowingPane xmlns="http://javafx.com/javafx"
+             xmlns:fx="http://javafx.com/fxml"
+             fx:controller="me.theeninja.pfflowing.gui.FlowController"
+             prefHeight="400.0" prefWidth="600.0"
+             fx:id="pfFlowingMain">
+    <top>
+        <HBox>
+            <fx:include source="navigator.fxml" prefHeight="20" fx:id="navigator"/>
+        </HBox>
+    </top>
+    <left>
+        <fx:include source="card_parser_gui/card_selector.fxml" fx:id="cardselector"/>
+    </left>
+    <center>
+        <VBox>
+            
+        </VBox>
+    </center>
+    <!-- <right>
+        <fx:include source="card_display.fxml" />
+    </right> -->
+    <bottom>
+        <fx:include source="notification_display.fxml" fx:id="notificationDisplay" />
+    </bottom>
+</FlowingPane>

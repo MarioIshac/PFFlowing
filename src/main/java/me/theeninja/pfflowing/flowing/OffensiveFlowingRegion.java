@@ -9,8 +9,8 @@ public class OffensiveFlowingRegion extends FlowingRegion implements Offensive {
     private final Side targetSide;
     private final FlowingRegion targetFlowingRegino;
 
-    public OffensiveFlowingRegion(String fullText, LengthLimitType lengthLimitType, int limit, Side initiator, FlowingRegion targetFlowingRegino, FlowingGridController instance) {
-        super(fullText, instance, lengthLimitType, limit);
+    public OffensiveFlowingRegion(String fullText, Side initiator, FlowingRegion targetFlowingRegino) {
+        super(fullText);
         this.initiator = initiator;
         this.targetSide = getInitiator().getOpposite();
         this.targetFlowingRegino = targetFlowingRegino;

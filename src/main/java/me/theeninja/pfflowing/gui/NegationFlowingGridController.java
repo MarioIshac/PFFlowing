@@ -15,6 +15,5 @@ public class NegationFlowingGridController extends FlowingGridController {
         setSpeechList(new SpeechList(Side.NEGATION));
 
         super.initialize(url, resourceBundle);
-        super.addLabels();
     }
 }

@@ -3,20 +3,38 @@ package me.theeninja.pfflowing.gui.cardparser;
 import javafx.scene.control.Label;
 
 public class PossibilityLabel<T> extends Label {
-    private static final String BEFORE = "[%d] ";
-    private static final String AFTER = "";
-    private final T value;
 
-    public PossibilityLabel(T value, int index) {
-        super(
-            String.format(BEFORE, index) +
-            value.toString() +
-            AFTER
-        );
+    private final T value;
+    private final String before;
+    private final String after;
+    private final Integer index;
+
+    public PossibilityLabel(T value, String before, String after) {
+        this(value, null, before, after);
+    }
+
+    public PossibilityLabel(T value, Integer index, String before, String after) {
+
         this.value = value;
+        this.index = index;
+        this.before = before;
+        this.after = after;
+        setText(
+            String.format(getBefore(), index != null ? index : "") +
+                value.toString() +
+                getAfter()
+        );
     }
 
     public T getValue() {
         return value;
+    }
+
+    public String getBefore() {
+        return before;
+    }
+
+    public String getAfter() {
+        return after;
     }
 }
