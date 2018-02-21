@@ -27,7 +27,7 @@ public class ParsedCardsDisplayController implements Initializable, SingleViewCo
     }
 
     public void addDisplayOfParsedCard(Card card) {
-        Label parsedCardRepresentation = new Label(Card.generateRepresentation(card.getAuthor(), card.getDate()));
+        Label parsedCardRepresentation = new Label(card.getCard());
         parsedCardsView.getChildren().add(parsedCardRepresentation);
     }
 

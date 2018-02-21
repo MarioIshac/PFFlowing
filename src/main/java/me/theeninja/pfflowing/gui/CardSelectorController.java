@@ -36,7 +36,6 @@ public class CardSelectorController implements Initializable, DependentControlle
 
     private void addTreeItemCardInfo(TreeItem<Card> treeItem) {
         Card correlatingCard = treeItem.getValue();
-        String authorLabel = "Author" + correlatingCard.getAuthor();
     }
 
     @Override
@@ -86,6 +85,7 @@ public class CardSelectorController implements Initializable, DependentControlle
             return cardTreeCell;
         });
         root.setExpanded(true);
+        getCorrelatingView().setFocusTraversable(false);
     }
 
     private class CardTreeCell extends TreeCell<Card> {
@@ -93,7 +93,7 @@ public class CardSelectorController implements Initializable, DependentControlle
         public void updateItem(Card item, boolean empty) {
             super.updateItem(item, empty);
             if (item != null && !empty)
-                setText(item.getCardContent().toString());
+                setText(item.getHtmlCardContent().toString());
             else
                 setText("");
         }

@@ -12,11 +12,10 @@
             fx:controller="me.theeninja.pfflowing.gui.cardparser.CardParserController"
             prefHeight="400.0" prefWidth="600.0"
             fx:id="cardParserArea">
-    <top>
-        <!-- -->
-    </top>
     <left>
-        <!-- Card Parser will be added each parse -->
+        <VBox fx:id="parsedCardsDisplay">
+
+        </VBox>
     </left>
     <right>
         <VBox fx:id="rightContainer">
@@ -25,8 +24,6 @@
             <HBox fx:id="cardOptions">
                 <Button text="Shrink" />
                 <Button text="Expand" />
-                <Button text="Skip"   onAction="#skip"   />
-                <Button text="Finish" onAction="#finish" />
             </HBox>
         </VBox>
     </right>

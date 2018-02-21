@@ -45,7 +45,7 @@ import static me.theeninja.pfflowing.gui.KeyCodeCombinationUtils.*;
  *
  * @author TheeNinja
  */
-public class FlowingGridController implements Initializable, SingleViewController<FlowingGrid>, EventHandler<KeyEvent> {
+public class FlowingGridController implements Initializable, SingleViewController<FlowingGrid> {
     private static final String SELECTED_REGION_STYLECLASS = "selectedRegion";
     private static final String SELECTED_SPEECH_STYLECLASS = "selectedSpeech";
     private static final String MARKED_REGION_STYLECLASS = "marked";
@@ -366,36 +366,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
     }
 
     /**
-     * Represents whether the flowing grid associated with this controller is shown as the center node of
-     * the flowing pane.
-     */
-    private boolean isShown;
-
-    /**
-     * Shows the flowing grid correlating to this controller as the center node of the flowing pane. By
-     * showing said flowing grid, all speeches that belong to it
-     */
-    public void show() {
-        if (isShown())
-            return;
-
-        VBox center = (VBox) FlowController.getFXMLInstance().getCorrelatingView().getCenter();
-        center.getChildren().clear();
-
-        HBox hbox = getLabels();
-        center.getChildren().add(hbox);
-        center.getChildren().add(getCorrelatingView());
-
-        hbox.setBackground(Utils.generateBackgroundOfColor(Color.RED));
-
-        hbox.prefWidthProperty().bind(getCorrelatingView().widthProperty());
-
-        PFFlowing.getInstance().getScene().setOnKeyReleased(this);
-        getCorrelatingView().requestFocus();
-        setShown(true);
-    }
-
-    /**
      * The {@link HBox} that contains eight colums (one for each speech).
      * This provides an access bridge between multiple speeches, as this
      * is the parent of all {@link VBox}es responsible for managing their
@@ -450,14 +420,9 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         keyCodeCombinationMap.put(SELECT_DOWN_TOO, () -> handleSelection(getCorrelatingView()::getBelow, true));
         keyCodeCombinationMap.put(SELECT_UP_TOO, () -> handleSelection(getCorrelatingView()::getAbove,true));
         keyCodeCombinationMap.put(UNFOCUS, () -> flowingGrid.requestFocus());
-        keyCodeCombinationMap.put(SWITCH_SPEECHLIST, PFFlowing.getInstance()::switchSpeechList);
         keyCodeCombinationMap.put(SELECT_RIGHT_SPEECH, () -> getSpeechList().selectSpeech(1));
         keyCodeCombinationMap.put(SELECT_LEFT_SPEECH, () -> getSpeechList().selectSpeech(-1));
-        keyCodeCombinationMap.put(WRITE, () -> {
-            System.out.println("A" + getSpeechList().getSelectedSpeech());
-
-            addProactiveFlowingRegionWriter(getSpeechList().getSelectedSpeech());
-        });
+        keyCodeCombinationMap.put(WRITE, () -> addProactiveFlowingRegionWriter(getSpeechList().getSelectedSpeech()));
         keyCodeCombinationMap.put(TOGGLE_FULLSCREEN, this::toggleFullscreen);
         keyCodeCombinationMap.put(UNDO, () -> PFFlowing.getInstance().getActionManager().undo());
         keyCodeCombinationMap.put(REDO, () -> PFFlowing.getInstance().getActionManager().redo());
@@ -590,6 +555,11 @@ public class FlowingGridController implements Initializable, SingleViewControlle
             return;
         }
 
+        if (getSelectedFlowingRegions().stream().anyMatch(flowingRegion -> FlowingGrid.getColumnIndex(flowingRegion) >= Speech.SPEECH_SIZE - FlowingGrid.EXT_COL_OFFSET)) {
+            NotificationDisplayController.getFXMLInstance()
+                    .error("Atleast one selected flowing region has no room to be extended");
+        }
+
         // No need to reextend already extended flowing regions
         List<FlowingRegion> flowingRegions = getSelectedFlowingRegions().stream().filter(
             flowingRegion -> !getCorrelatingView().getExtension(flowingRegion).isPresent()
@@ -617,8 +587,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         fxmlInstance = this;
 
         initializeListeners();
-
-        setShown(false);
 
         // Must be called last
         populateKeyCodeCombinationMap();
@@ -684,6 +652,8 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         ));
 
         getSpeechList().setSelectedSpeech(getSpeechList().get(0).getFirst());
+
+        getCorrelatingView().addEventHandler(KeyEvent.KEY_PRESSED, getHandleKeyEvent());
     }
 
     private void doSomething() {
@@ -719,10 +689,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
 
             }
         });
-    }
-
-    private <T extends FlowingRegion & Offensive> void delink(T offensiveFlowingRegion) {
-
     }
 
     private boolean areSameSpeech(List<FlowingRegion> flowingRegions) {
@@ -770,22 +736,16 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         return flowingGrid;
     }
 
-    /**
-     * Processes a {@link KeyEvent} that is newly generated upon a keyboard key press. In order to implement this listener,
-     * this method fulfills the contract that being an {@link EventHandler<KeyEvent>} requires. In the main class,
-     * the fxml instance of this class handles all pressed keys.
-     *
-     * @param keyEvent The event data that provides the key pressed, key combinations used, etc.
-     */
-    @Override
-    public void handle(KeyEvent keyEvent) {
-        for (KeyCodeCombination keyCodeCombination : getKeyCodeCombinationMap().keySet())
-            if (keyCodeCombination.match(keyEvent)) {
-                getKeyCodeCombinationMap().get(keyCodeCombination).run();
-                System.out.println(keyCodeCombination);
-                // Prevents the flowingregions selector from being selected on left arrow key
-                keyEvent.consume();
-            }
+    public EventHandler<KeyEvent> getHandleKeyEvent() {
+        return keyEvent -> {
+            for (KeyCodeCombination keyCodeCombination : getKeyCodeCombinationMap().keySet())
+                if (keyCodeCombination.match(keyEvent)) {
+                    getKeyCodeCombinationMap().get(keyCodeCombination).run();
+                    System.out.println(keyCodeCombination);
+                    // Prevents the flowingregions selector from being selected on left arrow key
+                    keyEvent.consume();
+                }
+        };
     }
 
     /**
@@ -808,14 +768,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
                 node -> node.getStyleClass().add(SELECTED_REGION_STYLECLASS),
                 node -> node.getStyleClass().remove(SELECTED_REGION_STYLECLASS)
         ));
-    }
-
-    public boolean isShown() {
-        return isShown;
-    }
-
-    public void setShown(boolean shown) {
-        isShown = shown;
     }
 
     private class TextAreaGenerator {
@@ -852,7 +804,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
 
                     contextMenu.getItems().forEach(menuItem -> {
                         menuItem.addEventHandler(ActionEvent.ACTION, actionEvent -> {
-
                             setCardSelectorShown(false);
                         });
                     });
@@ -918,6 +869,10 @@ public class FlowingGridController implements Initializable, SingleViewControlle
 
                 if (createNewOne)
                     addFlowingRegionWriter(speech, isCaseWriteMode(), postEnterAction, rowIndex + 1);
+
+                keyEvent.consume();
+
+                getCorrelatingView().requestFocus();
             }
         };
     }

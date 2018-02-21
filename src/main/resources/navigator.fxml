@@ -6,7 +6,10 @@
          fx:controller="me.theeninja.pfflowing.gui.NavigatorController"
          prefHeight="400.0" prefWidth="600.0">
     <Menu text="File">
-        <MenuItem text="New..." onAction="#newFlow"/>
+        <Menu text="New...">
+            <MenuItem text="Tournament" onAction="#newTournament" />
+            <MenuItem text="Round" onAction="#newRound"/>
+        </Menu>
         <MenuItem text="Open" onAction="#openFlow"/>
         <MenuItem text="Save" onAction="#saveFlow"/>
         <MenuItem text="Save As..."  onAction="#saveFlowAs"/>

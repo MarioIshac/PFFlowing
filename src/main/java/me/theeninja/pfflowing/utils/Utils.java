@@ -2,6 +2,7 @@ package me.theeninja.pfflowing.utils;
 
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
+import javafx.collections.SetChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -61,9 +62,18 @@ public final class Utils {
             while (change.next()) {
                 if (change.wasAdded())
                     change.getAddedSubList().forEach(addFunction);
-                else if (change.wasRemoved())
+                if (change.wasRemoved())
                     change.getRemoved().forEach(removeFunction);
             }
+        };
+    }
+
+    public static <T> SetChangeListener<? super T> generateSetChangeListener(Consumer<T> addFunction, Consumer<T> removeFunction) {
+        return change -> {
+            if (change.wasAdded())
+                addFunction.accept(change.getElementAdded());
+            if (change.wasRemoved())
+                removeFunction.accept(change.getElementAdded());
         };
     }
 

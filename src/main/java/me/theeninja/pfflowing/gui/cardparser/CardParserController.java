@@ -2,11 +2,11 @@ package me.theeninja.pfflowing.gui.cardparser;
 
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import javafx.collections.ObservableSet;
+import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.concurrent.WorkerStateEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
@@ -33,25 +33,15 @@ import java.util.function.Consumer;
 
 public class CardParserController implements SingleViewController<BorderPane>, Initializable {
 
+    @FXML public VBox parsedCardsDisplay;
     private Stage associatedStage;
 
-    private String cardSelectionCSS;
-    private String contentSelectionCSS;
-
-    private StanfordCoreNLP pipeline;
     private ParsedCardsDisplayController pcdc;
 
     @FXML public BorderPane cardParserArea;
-    @FXML public HBox cardOptions;
     @FXML public WebView documentDisplay;
     @FXML public ProgressBar progressBar;
     @FXML public VBox rightContainer;
-
-    private HBox selectedRequest;
-
-    private ObservableSet<Card> parsedCards;
-
-    private List<HBox> requests;
 
     private String snapSelectionToWordJS;
 
@@ -71,7 +61,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
         System.out.println(getSnapSelectionToWordJS());
         documentDisplay.addEventHandler(MouseEvent.MOUSE_RELEASED, mouseEvent -> {
-            System.out.println("Mouse has been released");
             documentDisplay.getEngine().executeScript(getSnapSelectionToWordJS());
         });
 
@@ -90,17 +79,14 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         // Splits border pane width equally between left and right components (no center is used)
         rightContainer.prefWidthProperty().bind(getCorrelatingView().widthProperty().divide(2));
 
-        PipelineItitializerTask pipelineItitializerTask = new PipelineItitializerTask();
-        pipelineItitializerTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, event -> {
-            setPipeline(pipelineItitializerTask.getValue());
-            System.out.println("Done");
-            addRequestParseListener();
-        });
-
-        new Thread(pipelineItitializerTask).start();
-
         setPcdc(Utils.getCorrelatingController("/card_parser_gui/parsed_cards_display.fxml"));
         getCorrelatingView().setTop(getPcdc().getCorrelatingView());
+
+        ParseCardsTask task = new ParseCardsTask();
+        task.call();
+        task.addEventHandler(WorkerStateEvent.WORKER_STATE_CANCELLED, workerStateEvent -> {
+            System.out.println(task.getParsedCards());
+        });
     }
 
     public void loadPath(Path path) {
@@ -136,72 +122,7 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     public Path askForFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select File to Parse");
-        return fileChooser.showOpenDialog(getAssociatedStage()).toPath();
-    }
-
-    private void setOnKeySubmission(Node node, EventHandler<KeyEvent> eventHandler) {
-        node.setOnKeyPressed(keyEvent -> {
-            if (PARSE_SELECTED_TEXT.match(keyEvent))
-                eventHandler.handle(keyEvent);
-        });
-    }
-
-    private void clearSelection() {
-        documentDisplay.getEngine().executeScript("window.getSelection().removeAllRanges()");
-    }
-
-    private void addRequestParseListener() {
-        clearSelection();
-        useCardSelectionStyling();
-        setOnKeySubmission(documentDisplay, cardParseKeyEvent -> {
-            Card toBeParsedCard = new Card();
-
-            CardPossibilitiesPopulatorTask cppt = new CardPossibilitiesPopulatorTask(getPipeline(), getSelectedText());
-            cppt.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, event -> {
-                System.out.println("possiblity populator task done");
-
-                CardPossibilities cardPossibilities = cppt.getValue();
-                System.out.println(cardPossibilities.toString());
-
-                // use the stanford api + selected text here
-                CardPossibilityPrompterController cppc = Utils.getCorrelatingController("/card_parser_gui/card_possibility_prompter.fxml");
-
-                getCorrelatingView().setLeft(cppc.getCorrelatingView());
-
-                cppc.getCorrelatingView().maxWidthProperty().bind(getCorrelatingView().widthProperty().divide(2));
-
-                cppc.setManagedCard(toBeParsedCard);
-                cppc.start(cardPossibilities);
-
-                cppc.setOnParse(card -> {
-                    System.out.println("parse has been called");
-
-                    documentDisplay.requestFocus();
-
-                    // Clear selection so the user can reselect the card content
-                    clearSelection();
-
-                    useContentSelectionStyling();
-
-                    setOnKeySubmission(documentDisplay, contentParseKeyEvent -> {
-                        toBeParsedCard.setCardContent(new CardContent(getSelectedText()));
-
-                        getPcdc().addDisplayOfParsedCard(toBeParsedCard);
-
-                        addRequestParseListener();
-                    });
-                });
-
-                cppc.getChoosePanes().get(0).requestFocus();
-            });
-
-            new Thread(cppt).start();
-
-            Label label = new Label();
-            label.textProperty().bind(cppt.messageProperty());
-            getCorrelatingView().setBottom(label);
-            progressBar.progressProperty().bind(cppt.progressProperty());
-        });
+        return fileChooser.showOpenDialog(associatedStage).toPath();
     }
 
     public static final KeyCodeCombination LOAD_FILE = new KeyCodeCombination(KeyCode.L, KeyCombination.CONTROL_DOWN);
@@ -211,65 +132,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     public static final KeyCodeCombination SELECT_NEXT_CHARACTER = new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination UNSELECT_PREVIOUS_CHARACTER = new KeyCodeCombination(KeyCode.LEFT, KeyCombination.CONTROL_DOWN);
 
-    private String getSelectedText() {
-        return (String) documentDisplay.getEngine().executeScript("window.getSelection().toString()");
-    }
-
-    private void generateOptionContentLabel(String string) {
-
-    }
-
-    private void setOptions(VBox optionBox, List<String> viableOptions) {
-        for (int index = 0; index < viableOptions.size(); index++) {
-            Label label = new Label(String.valueOf(index));
-            HBox viableOptionContainer = new HBox();
-        }
-    }
-
-    private void resetRequests() {
-
-    }
-
-    private Label generateLabel(String string) {
-        return new Label(string);
-    }
-
-    private TextField generateTextField(Consumer<String> postActionConsumer) {
-        TextField textField = new TextField();
-        textField.setOnAction(event -> {
-            postActionConsumer.accept(textField.getText());
-            if (Utils.isLastElement(getRequests(), getSelectedRequest())) {
-                // getParsedCards().add(parsedCards);
-                resetRequests();
-            }
-            else
-                setSelectedRequest(Utils.getRelativeElement(getRequests(), getSelectedRequest(), 1));
-        });
-        return textField;
-    }
-
-    private HBox generateInputRequest(String string, Consumer<String> postActionConsumer) {
-        HBox inputHBox = new HBox();
-        inputHBox.getChildren().addAll(generateLabel(string), generateTextField(postActionConsumer));
-        return inputHBox;
-    }
-
-    public HBox getSelectedRequest() {
-        return selectedRequest;
-    }
-
-    public void setSelectedRequest(HBox selectedRequest) {
-        this.selectedRequest = selectedRequest;
-    }
-
-    public ObservableSet<Card> getParsedCards() {
-        return parsedCards;
-    }
-
-    public void setParsedCards(ObservableSet<Card> parsedCards) {
-        this.parsedCards = parsedCards;
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -278,44 +140,16 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         return cardParserArea;
     }
 
-    public void finish() {
-
-    }
-
-    public void skip() {
-
-    }
-
-    public List<HBox> getRequests() {
-        return requests;
-    }
-
-    public void setRequests(List<HBox> requests) {
-        this.requests = requests;
-    }
-
-    public Stage getAssociatedStage() {
-        return associatedStage;
-    }
-
-    public void setAssociatedStage(Stage associatedStage) {
-        this.associatedStage = associatedStage;
-    }
-
-    public StanfordCoreNLP getPipeline() {
-        return pipeline;
-    }
-
-    public void setPipeline(StanfordCoreNLP pipeline) {
-        this.pipeline = pipeline;
-    }
-
     public ParsedCardsDisplayController getPcdc() {
         return pcdc;
     }
 
     public void setPcdc(ParsedCardsDisplayController pcdc) {
         this.pcdc = pcdc;
+    }
+
+    public void setAssociatedStage(Stage associatedStage) {
+        this.associatedStage = associatedStage;
     }
 
     public String getSnapSelectionToWordJS() {

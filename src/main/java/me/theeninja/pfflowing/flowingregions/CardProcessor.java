@@ -82,11 +82,7 @@ public class CardProcessor {
                 url.isPresent() &&
                 content.isPresent() &&
                 calendar.isPresent()) {
-            return new Card(
-                    author.get(),
-                    url.get(),
-                    calendar.get().toString(),
-                    content.get());
+            return new Card("a", "b");
         }
         return null;
     }

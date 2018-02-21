@@ -16,9 +16,6 @@ public class CardDisplayController implements SingleViewController<VBox> {
 
     public void add(Card card) {
         VBox cardContainer = new VBox();
-        Text authorText = new Text(card.getAuthor());
-        Text date = new Text(GlobalConfiguration.DATE_FORMAT.format(card.getDate()));
-        cardContainer.getChildren().addAll(authorText, date);
 
     }
 

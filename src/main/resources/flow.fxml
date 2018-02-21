@@ -3,23 +3,20 @@
 <?import me.theeninja.pfflowing.gui.FlowingPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.TabPane?>
 <FlowingPane xmlns="http://javafx.com/javafx"
              xmlns:fx="http://javafx.com/fxml"
              fx:controller="me.theeninja.pfflowing.gui.FlowController"
              prefHeight="400.0" prefWidth="600.0"
              fx:id="pfFlowingMain">
     <top>
-        <HBox>
-            <fx:include source="navigator.fxml" prefHeight="20" fx:id="navigator"/>
-        </HBox>
+        <fx:include source="navigator.fxml" fx:id="navigator"/>
     </top>
     <left>
         <fx:include source="card_parser_gui/card_selector.fxml" fx:id="cardselector"/>
     </left>
     <center>
-        <VBox>
-            
-        </VBox>
+        <fx:include source="rounds_bar.fxml" fx:id="roundsBar" />
     </center>
     <!-- <right>
         <fx:include source="card_display.fxml" />

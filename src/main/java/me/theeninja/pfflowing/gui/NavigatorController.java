@@ -1,10 +1,23 @@
 package me.theeninja.pfflowing.gui;
 
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.gui.cardparser.CardParserController;
+import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.tournament.Round;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.net.URL;
@@ -82,5 +95,14 @@ public class NavigatorController implements Initializable {
 
         Path path = cardParserController.askForFile();
         cardParserController.loadPath(path);
+    }
+
+
+    public void newRound() {
+        FlowController.getFXMLInstance().addRound();
+    }
+
+    public void newTournament() {
+
     }
 }
