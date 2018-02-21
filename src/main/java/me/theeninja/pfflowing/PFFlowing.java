@@ -53,12 +53,6 @@ public class PFFlowing extends Application {
         return instance;
     }
 
-    private FileChooser fileChooser;
-
-    public FileChooser getFileChooser() {
-        return fileChooser;
-    }
-
     private static final KeyCodeCombination FINISH = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
 
     @Override
@@ -73,14 +67,7 @@ public class PFFlowing extends Application {
         stage.setFullScreenExitKeyCombination(KeyCodeCombination.NO_MATCH);
         stage.show();
 
-        setFileChooser(new FileChooser());
-
-        FileChooser.ExtensionFilter eflowExtensionFilter = new FileChooser.ExtensionFilter("EFlow files (*.eflow)", "*.eflow");
-        getFileChooser().getExtensionFilters().add(eflowExtensionFilter);
-
         setActionManager(new ActionManager());
-
-        initializeGSON();
 
         FlowController.getFXMLInstance().addRound();
     }
@@ -101,73 +88,5 @@ public class PFFlowing extends Application {
         this.actionManager = actionManager;
     }
 
-    private void initializeGSON() {
-        setGson(
-                FxGson.coreBuilder()
-                        .excludeFieldsWithoutExposeAnnotation()
-                        .registerTypeAdapter(FlowingRegion.class, new FlowingRegionAdapter())
-                        .registerTypeAdapter(FlowingGrid.class, new FlowingGridAdapter())
-                        .setPrettyPrinting()
-                        .create()
-        );
-    }
 
-    private Gson gson;
-
-    private void setGson(Gson gson) {
-        this.gson = gson;
-    }
-
-    private static final String FILE_EXTENSION = "eflow";
-    private static final String SAVE_TITLE = "Save an EFlow";
-
-    private File getEFlowTypeFile(File file) {
-        System.out.println(file.getAbsolutePath());
-        if (!file.getAbsolutePath().endsWith("." + FILE_EXTENSION))
-            return new File(file.getAbsoluteFile() + "." + FILE_EXTENSION);
-        else
-            return file;
-    }
-
-    public void saveAs() throws IOException {
-        getFileChooser().setTitle(SAVE_TITLE);
-        File file = getFileChooser().showSaveDialog(this.getStage());
-
-        // no file chosen
-        if (file == null)
-            return; // assume that user cancelled saving
-
-        File eflowFile = getEFlowTypeFile(file);
-
-        Path path = eflowFile.toPath();
-    }
-
-    private static final String OPEN_TITLE = "Open an EFlow";
-
-    private static final Type LIST_TYPE = new TypeToken<List<String>>(){}.getType();
-
-
-    public void open() throws IOException {
-        getFileChooser().setTitle(OPEN_TITLE);
-        File file = getFileChooser().showOpenDialog(this.getStage());
-
-        // no file chosen
-        if (file == null)
-            return; // assume that user cancelled opening
-
-        File eflowFile = getEFlowTypeFile(file);
-
-        Path path = eflowFile.toPath();
-        byte[] jsonBytes = Files.readAllBytes(path);
-        String json = new String(jsonBytes);
-        FlowingGrid flowingGrids = getGSON().fromJson(json, FlowingGrid.class);
-    }
-
-    public Gson getGSON() {
-        return gson;
-    }
-
-    public void setFileChooser(FileChooser fileChooser) {
-        this.fileChooser = fileChooser;
-    }
 }

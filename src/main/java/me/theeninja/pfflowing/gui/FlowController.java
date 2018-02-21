@@ -1,5 +1,6 @@
 package me.theeninja.pfflowing.gui;
 
+import com.google.gson.Gson;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -10,14 +11,23 @@ import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.SingleViewController;
+import me.theeninja.pfflowing.flowing.FlowingRegion;
+import me.theeninja.pfflowing.flowing.FlowingRegionAdapter;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.tournament.Round;
 import me.theeninja.pfflowing.tournament.Tournament;
 import me.theeninja.pfflowing.utils.Utils;
+import org.hildan.fxgson.FxGson;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ResourceBundle;
 
 public class FlowController implements Initializable, SingleViewController<FlowingPane> {
@@ -58,7 +68,13 @@ public class FlowController implements Initializable, SingleViewController<Flowi
             if (newValue) {
                 roundsBar.getSelectionModel().getSelectedItem().getContent().requestFocus();
             }
+            System.out.println("focus received");
         }));
+
+        FileChooser.ExtensionFilter eflowExtensionFilter = new FileChooser.ExtensionFilter("EFlow files (*.eflow)", "*.eflow");
+        getFileChooser().getExtensionFilters().add(eflowExtensionFilter);
+
+        initializeGSON();
     }
 
     private static final KeyCodeCombination FINISH = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
@@ -165,7 +181,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     private void onSelectedControllerChanged(ObservableValue<? extends FlowingGridController> observableController, FlowingGridController oldController, FlowingGridController newController) {
         System.out.println("Controller switched for " + newController.getCorrelatingView().getChildren());
-        //roundsBar.setOnKeyPressed(newController.getHandleKeyEvent());
         newController.getCorrelatingView().requestFocus();
     }
 
@@ -184,7 +199,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         newRoundTab.getRound().selectedControllerProperty().addListener(this::onSelectedControllerChanged);
 
         newRoundTab.getContent().requestFocus();
-        //roundsBar.setOnKeyPressed(newRoundTab.getRound().getSelectedController().getHandleKeyEvent());
     }
 
     private void addRoundToTournament(String roundName, Side side) {
@@ -208,5 +222,77 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         ));
 
         return tournament;
+    }
+
+    private void initializeGSON() {
+        setGson(
+                FxGson.coreBuilder()
+                        .excludeFieldsWithoutExposeAnnotation()
+                        .registerTypeAdapter(FlowingRegion.class, new FlowingRegionAdapter())
+                        .registerTypeAdapter(FlowingGrid.class, new FlowingGridAdapter())
+                        .setPrettyPrinting()
+                        .create()
+        );
+    }
+
+    private Gson gson;
+
+    private void setGson(Gson gson) {
+        this.gson = gson;
+    }
+
+    private static final String FILE_EXTENSION = "eflow";
+    private static final String SAVE_TITLE = "Save an EFlow";
+
+    private File getEFlowTypeFile(File file) {
+        if (!file.getAbsolutePath().endsWith("." + FILE_EXTENSION))
+            return new File(file.getAbsoluteFile() + "." + FILE_EXTENSION);
+        else
+            return file;
+    }
+
+    public void saveAs() throws IOException {
+        getFileChooser().setTitle(SAVE_TITLE);
+        File file = getFileChooser().showSaveDialog(PFFlowing.getInstance().getStage());
+
+        // no file chosen
+        if (file == null)
+            return; // assume that user cancelled saving
+
+        File eflowFile = getEFlowTypeFile(file);
+
+        Path path = eflowFile.toPath();
+    }
+
+    private static final String OPEN_TITLE = "Open an EFlow";
+
+    public void open() throws IOException {
+        getFileChooser().setTitle(OPEN_TITLE);
+        File file = getFileChooser().showOpenDialog(PFFlowing.getInstance().getStage());
+
+        // no file chosen
+        if (file == null)
+            return; // assume that user cancelled opening
+
+        File eflowFile = getEFlowTypeFile(file);
+
+        Path path = eflowFile.toPath();
+        byte[] jsonBytes = Files.readAllBytes(path);
+        String json = new String(jsonBytes);
+        FlowingGrid flowingGrids = getGSON().fromJson(json, FlowingGrid.class);
+    }
+
+    public Gson getGSON() {
+        return gson;
+    }
+
+    public void setFileChooser(FileChooser fileChooser) {
+        this.fileChooser = fileChooser;
+    }
+
+    private FileChooser fileChooser;
+
+    public FileChooser getFileChooser() {
+        return fileChooser;
     }
 }

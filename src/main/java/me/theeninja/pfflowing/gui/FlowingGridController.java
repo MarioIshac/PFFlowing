@@ -449,18 +449,10 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         keyCodeCombinationMap.put(TOGGLE_CASE_WRITE, () -> setCaseWriteMode(!isCaseWriteMode()));
         keyCodeCombinationMap.put(new KeyCodeCombination(KeyCode.T), this::doSomething);
         keyCodeCombinationMap.put(SAVE, () -> {
-            try {
-                PFFlowing.getInstance().saveAs();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
         });
         keyCodeCombinationMap.put(OPEN, () -> {
-            try {
-                PFFlowing.getInstance().open();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
         });
     }
 
