@@ -4,7 +4,6 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.scene.control.Tab;
 import me.theeninja.pfflowing.gui.AffirmativeFlowingGridController;
 import me.theeninja.pfflowing.gui.FlowingGrid;
 import me.theeninja.pfflowing.gui.FlowingGridController;
@@ -12,9 +11,10 @@ import me.theeninja.pfflowing.gui.NegationFlowingGridController;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 
-import java.util.Map;
+import java.nio.file.Path;
 
 public class Round {
+    private ObjectProperty<Path> path = new SimpleObjectProperty<>();
     private StringProperty name = new SimpleStringProperty();
     private final Side side;
     private ObjectProperty<Side> displayedSide = new SimpleObjectProperty<>();
@@ -89,5 +89,17 @@ public class Round {
 
     public void setName(String name) {
         this.name.set(name);
+    }
+
+    public Path getPath() {
+        return path.get();
+    }
+
+    public ObjectProperty<Path> pathProperty() {
+        return path;
+    }
+
+    public void setPath(Path path) {
+        this.path.set(path);
     }
 }

@@ -12,11 +12,6 @@
             fx:controller="me.theeninja.pfflowing.gui.cardparser.CardParserController"
             prefHeight="400.0" prefWidth="600.0"
             fx:id="cardParserArea">
-    <left>
-        <VBox fx:id="parsedCardsDisplay">
-
-        </VBox>
-    </left>
     <right>
         <VBox fx:id="rightContainer">
             <ProgressBar fx:id="progressBar" />

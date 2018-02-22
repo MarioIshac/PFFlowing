@@ -10,7 +10,10 @@
             <MenuItem text="Tournament" onAction="#newTournament" />
             <MenuItem text="Round" onAction="#newRound"/>
         </Menu>
-        <MenuItem text="Open" onAction="#openFlow"/>
+        <Menu text="Open" onAction="#openRound">
+            <MenuItem text="Tournament" onAction="#openTournament" />
+            <MenuItem text="Round" onAction="#openRound" />
+        </Menu>
         <MenuItem text="Save" onAction="#saveFlow"/>
         <MenuItem text="Save As..."  onAction="#saveFlowAs"/>
         <MenuItem text="Print"  onAction="#printFlow"/>

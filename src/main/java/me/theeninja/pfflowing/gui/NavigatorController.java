@@ -1,25 +1,13 @@
 package me.theeninja.pfflowing.gui;
 
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.gui.cardparser.CardParserController;
-import me.theeninja.pfflowing.speech.Side;
-import me.theeninja.pfflowing.tournament.Round;
 import me.theeninja.pfflowing.utils.Utils;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ResourceBundle;
@@ -44,8 +32,20 @@ public class NavigatorController implements Initializable {
 
     }
 
-    public void openFlow(ActionEvent actionEvent) {
+    public void openRound() {
+        try {
+            FlowController.getFXMLInstance().openRound();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public void openTournament() {
+        try {
+            FlowController.getFXMLInstance().openTournament();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void saveFlow() {
@@ -53,7 +53,6 @@ public class NavigatorController implements Initializable {
     }
 
     public void saveFlowAs(ActionEvent actionEvent) {
-
     }
 
     public void printFlow(ActionEvent actionEvent) {
@@ -103,6 +102,6 @@ public class NavigatorController implements Initializable {
     }
 
     public void newTournament() {
-
+        FlowController.getFXMLInstance().newTournament();
     }
 }

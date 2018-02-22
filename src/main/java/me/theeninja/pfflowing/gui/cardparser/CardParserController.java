@@ -1,15 +1,11 @@
 package me.theeninja.pfflowing.gui.cardparser;
 
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import javafx.collections.ObservableSet;
-import javafx.concurrent.Task;
-import javafx.concurrent.Worker;
+import javafx.beans.binding.Bindings;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextField;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -17,8 +13,6 @@ import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.card.CardContent;
-import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.utils.Utils;
 import org.apache.tika.io.IOUtils;
 
@@ -29,14 +23,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Consumer;
 
 public class CardParserController implements SingleViewController<BorderPane>, Initializable {
 
     @FXML public VBox parsedCardsDisplay;
     private Stage associatedStage;
 
-    private ParsedCardsDisplayController pcdc;
+    private ParsedCardsDisplayController parsedCardsDisplayController;
 
     @FXML public BorderPane cardParserArea;
     @FXML public WebView documentDisplay;
@@ -44,8 +37,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     @FXML public VBox rightContainer;
 
     private String snapSelectionToWordJS;
-
-    // https://stackoverflow.com/questions/13765349/multi-term-named-entities-in-stanford-named-entity-recognizer
 
     /**
      * {@inheritDoc}
@@ -59,7 +50,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
             e.printStackTrace();
         }
 
-        System.out.println(getSnapSelectionToWordJS());
         documentDisplay.addEventHandler(MouseEvent.MOUSE_RELEASED, mouseEvent -> {
             documentDisplay.getEngine().executeScript(getSnapSelectionToWordJS());
         });
@@ -79,11 +69,16 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         // Splits border pane width equally between left and right components (no center is used)
         rightContainer.prefWidthProperty().bind(getCorrelatingView().widthProperty().divide(2));
 
-        setPcdc(Utils.getCorrelatingController("/card_parser_gui/parsed_cards_display.fxml"));
-        getCorrelatingView().setTop(getPcdc().getCorrelatingView());
-
+        setParsedCardsDisplayController(Utils.getCorrelatingController("/card_parser_gui/parsed_cards_display.fxml"));
+        getCorrelatingView().setTop(getParsedCardsDisplayController().getCorrelatingView());
         ParseCardsTask task = new ParseCardsTask();
+        task.setDocumentDisplay(documentDisplay);
+        task.setOnTextFieldPrompt(getCorrelatingView()::setLeft);
+
+        Bindings.bindContent(getParsedCardsDisplayController().getParsedCards(), task.getParsedCards());
+
         task.call();
+
         task.addEventHandler(WorkerStateEvent.WORKER_STATE_CANCELLED, workerStateEvent -> {
             System.out.println(task.getParsedCards());
         });
@@ -140,12 +135,12 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         return cardParserArea;
     }
 
-    public ParsedCardsDisplayController getPcdc() {
-        return pcdc;
+    public ParsedCardsDisplayController getParsedCardsDisplayController() {
+        return parsedCardsDisplayController;
     }
 
-    public void setPcdc(ParsedCardsDisplayController pcdc) {
-        this.pcdc = pcdc;
+    public void setParsedCardsDisplayController(ParsedCardsDisplayController parsedCardsDisplayController) {
+        this.parsedCardsDisplayController = parsedCardsDisplayController;
     }
 
     public void setAssociatedStage(Stage associatedStage) {

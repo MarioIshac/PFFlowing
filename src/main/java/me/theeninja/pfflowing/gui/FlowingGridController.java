@@ -17,7 +17,6 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import me.theeninja.pfflowing.Action;
 import me.theeninja.pfflowing.PFFlowing;
@@ -386,13 +385,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
 
     private final Map<KeyCodeCombination, Runnable> keyCodeCombinationMap = new HashMap<>();
 
-    private void toggleFullscreen() {
-        if (PFFlowing.getInstance().getStage().isFullScreen())
-            PFFlowing.getInstance().getStage().setFullScreen(false);
-        else
-            PFFlowing.getInstance().getStage().setFullScreen(true);
-    }
-
     public Map<KeyCodeCombination, Runnable> getKeyCodeCombinationMap() {
         return keyCodeCombinationMap;
     }
@@ -423,7 +415,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         keyCodeCombinationMap.put(SELECT_RIGHT_SPEECH, () -> getSpeechList().selectSpeech(1));
         keyCodeCombinationMap.put(SELECT_LEFT_SPEECH, () -> getSpeechList().selectSpeech(-1));
         keyCodeCombinationMap.put(WRITE, () -> addProactiveFlowingRegionWriter(getSpeechList().getSelectedSpeech()));
-        keyCodeCombinationMap.put(TOGGLE_FULLSCREEN, this::toggleFullscreen);
         keyCodeCombinationMap.put(UNDO, () -> PFFlowing.getInstance().getActionManager().undo());
         keyCodeCombinationMap.put(REDO, () -> PFFlowing.getInstance().getActionManager().redo());
         keyCodeCombinationMap.put(DELETE, () -> PFFlowing.getInstance().getActionManager().perform(new Delete(getSelectedFlowingRegions())));
@@ -448,16 +439,6 @@ public class FlowingGridController implements Initializable, SingleViewControlle
         });
         keyCodeCombinationMap.put(TOGGLE_CASE_WRITE, () -> setCaseWriteMode(!isCaseWriteMode()));
         keyCodeCombinationMap.put(new KeyCodeCombination(KeyCode.T), this::doSomething);
-        keyCodeCombinationMap.put(SAVE, () -> {
-
-        });
-        keyCodeCombinationMap.put(OPEN, () -> {
-
-        });
-    }
-
-    public FlowingGrid open() {
-        return null;
     }
 
     public void attemptDrop() {

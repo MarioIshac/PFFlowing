@@ -1,36 +1,13 @@
 package me.theeninja.pfflowing;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.reflect.TypeToken;
 import javafx.application.Application;
-import javafx.beans.value.ChangeListener;
-import javafx.event.ActionEvent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import me.theeninja.pfflowing.flowing.FlowingRegion;
-import me.theeninja.pfflowing.flowing.FlowingRegionAdapter;
 import me.theeninja.pfflowing.gui.*;
-import me.theeninja.pfflowing.speech.Side;
-import me.theeninja.pfflowing.tournament.Round;
-import me.theeninja.pfflowing.tournament.Tournament;
-import me.theeninja.pfflowing.utils.Utils;
-import org.hildan.fxgson.FxGson;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.logging.Logger;
 
 public class PFFlowing extends Application {
@@ -53,7 +30,9 @@ public class PFFlowing extends Application {
         return instance;
     }
 
-    private static final KeyCodeCombination FINISH = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
+    public void toggleFullscreen() {
+        getStage().setFullScreen(!getStage().isFullScreen());
+    }
 
     @Override
     public void start(Stage stage) {
@@ -68,8 +47,6 @@ public class PFFlowing extends Application {
         stage.show();
 
         setActionManager(new ActionManager());
-
-        FlowController.getFXMLInstance().addRound();
     }
 
     public Scene getScene() {

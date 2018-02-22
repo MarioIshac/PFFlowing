@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FlowingGridAdapter extends TypeAdapter<FlowingGrid> {
+    private static final String SIDE = "side";
+    private static final String FLOWING_REGIONS = "flowing_regions";
+
     @Override
     public void write(JsonWriter jsonWriter, FlowingGrid flowingGrid) throws IOException {
         writeJSON(jsonWriter, flowingGrid);
@@ -25,8 +28,8 @@ public class FlowingGridAdapter extends TypeAdapter<FlowingGrid> {
 
     public static void writeJSON(JsonWriter jsonWriter, FlowingGrid flowingGrid) throws IOException {
         jsonWriter.beginObject();
-        jsonWriter.name("side").value(flowingGrid.getSide().name());
-        jsonWriter.name("flowing_regions").beginArray();
+        jsonWriter.name(SIDE).value(flowingGrid.getSide().name());
+        jsonWriter.name(FLOWING_REGIONS).beginArray();
         for (FlowingRegion flowingRegion : Utils.getOfType(flowingGrid.getChildren(), FlowingRegion.class)) {
             FlowingRegionAdapter.addJSON(jsonWriter, flowingRegion);
         }

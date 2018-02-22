@@ -1,22 +1,22 @@
-package me.theeninja.pfflowing.gui;
+package me.theeninja.pfflowing.tournament;
 
-import com.google.gson.JsonParseException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import me.theeninja.pfflowing.gui.FlowingGridAdapter;
 import me.theeninja.pfflowing.speech.Side;
-import me.theeninja.pfflowing.tournament.Round;
 
 import java.io.IOException;
 
 public class RoundAdapter extends TypeAdapter<Round> {
-
+    private static final String NAME = "name";
     private static final String SIDE = "side";
     private static final String FLOWING_GRIDS = "flowing_grids";
 
     @Override
     public void write(JsonWriter jsonWriter, Round round) throws IOException {
         jsonWriter.beginObject();
+        jsonWriter.name(NAME).value(round.getName());
         jsonWriter.name(SIDE).value(round.getSide().name());
         jsonWriter.name(FLOWING_GRIDS).beginArray();
         FlowingGridAdapter.writeJSON(jsonWriter, round.getAffController().getCorrelatingView());
@@ -27,23 +27,12 @@ public class RoundAdapter extends TypeAdapter<Round> {
 
     @Override
     public Round read(JsonReader jsonReader) throws IOException {
-        Side side;
-
         jsonReader.beginObject();
+        if (!jsonReader.nextName().equals(NAME)) {
 
-        if (!jsonReader.nextName().equals(SIDE)) {
-            throw new JsonParseException("Expected name side");
         }
 
-        side = Side.valueOf(jsonReader.nextString());
-
-        jsonReader.beginArray();
-        FlowingGrid aff = FlowingGridAdapter.readJSON(jsonReader);
-        FlowingGrid neg = FlowingGridAdapter.readJSON(jsonReader);
-
-        jsonReader.endArray();
-        Round round = new Round(aff, neg, Side.AFFIRMATIVE);
-        round.setName("a");
-        return round;
+        Side side;
+        return null;
     }
 }

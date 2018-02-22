@@ -1,6 +1,7 @@
 package me.theeninja.pfflowing.gui.cardparser;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
@@ -14,13 +15,16 @@ import javafx.scene.web.WebView;
 import me.theeninja.pfflowing.flowingregions.Card;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ParseCardsTask extends Task<Void> {
     private WebView documentDisplay;
-    private final ObservableSet<Card> parsedCards = FXCollections.emptyObservableSet();
+    private final ObservableList<Card> parsedCards = FXCollections.observableArrayList();
     private final KeyCodeCombination PARSE_CARD_PERFORMER = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
 
-    private void setOnKeySubmission(Node node, EventHandler<KeyEvent > eventHandler) {
+    private Consumer<TextField> onTextFieldPrompt;
+
+    private void setOnKeySubmission(Node node, EventHandler<KeyEvent> eventHandler) {
         node.setOnKeyPressed(keyEvent -> {
             if (PARSE_CARD_PERFORMER.match(keyEvent))
                 eventHandler.handle(keyEvent);
@@ -40,13 +44,15 @@ public class ParseCardsTask extends Task<Void> {
     private void onCardParsed(KeyEvent keyEvent) {
         String cardContent = getSelectedText();
         TextField representationRequest = new TextField();
-        representationRequest.setPromptText("");
         representationRequest.setOnAction(actionEvent -> {
             Card card = new Card(representationRequest.getText(), cardContent);
             getParsedCards().add(card);
 
             clearSelection();
+            getOnTextFieldPrompt().accept(null);
         });
+        getOnTextFieldPrompt().accept(representationRequest);
+        representationRequest.requestFocus();
     }
 
     private void startProcess() {
@@ -73,7 +79,15 @@ public class ParseCardsTask extends Task<Void> {
         this.documentDisplay = documentDisplay;
     }
 
-    public ObservableSet<Card> getParsedCards() {
+    public ObservableList<Card> getParsedCards() {
         return parsedCards;
+    }
+
+    public Consumer<TextField> getOnTextFieldPrompt() {
+        return onTextFieldPrompt;
+    }
+
+    public void setOnTextFieldPrompt(Consumer<TextField> onTextFieldPrompt) {
+        this.onTextFieldPrompt = onTextFieldPrompt;
     }
 }

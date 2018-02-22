@@ -2,14 +2,20 @@
 
 <?import me.theeninja.pfflowing.gui.FlowingGrid?>
 <?import java.net.URL?>
-<FlowingGrid xmlns="http://javafx.com/javafx"
-             xmlns:fx="http://javafx.com/fxml"
-             fx:controller="me.theeninja.pfflowing.gui.AffirmativeFlowingGridController"
-             prefHeight="400.0" prefWidth="600.0"
-             fx:id="flowingGrid"
-             side="AFFIRMATIVE"
-            style="-fx-background-color: red">
-    <stylesheets>
-        <URL value="@flowing_columns.css" />
-    </stylesheets>
-</FlowingGrid>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:id="root"
+      fx:controller="me.theeninja.pfflowing.gui.AffirmativeFlowingGridController">
+    <HBox fx:id="speechLabels">
+
+    </HBox>
+    <FlowingGrid prefHeight="400.0" prefWidth="600.0"
+                 fx:id="flowingGrid"
+                 side="AFFIRMATIVE">
+        <stylesheets>
+            <URL value="@flowing_columns.css" />
+        </stylesheets>
+    </FlowingGrid>
+</VBox>
