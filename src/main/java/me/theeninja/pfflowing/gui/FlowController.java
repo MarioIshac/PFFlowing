@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
@@ -48,7 +50,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     @FXML public HBox notificationDisplay;
     @FXML public TabPane roundsBar;
 
-    private UseType useType = UseType.NONE;
+    private ObjectProperty<UseType> useType = new SimpleObjectProperty<>(UseType.NONE);
     private final ImmutableMap<KeyCodeCombination, Runnable> KEY_CODES = ImmutableMap.of(
         KeyCodeCombinationUtils.TOGGLE_FULLSCREEN, () -> PFFlowing.getInstance().toggleFullscreen(),
         KeyCodeCombinationUtils.SAVE, () -> {
@@ -96,7 +98,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         navigator.setPrefHeight(Region.USE_PREF_SIZE);
         roundsBar.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
-        roundsBar.getSelectionModel().selectedItemProperty().addListener(this::onSelectedTabChanged);
 
         roundsBar.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
             if (KeyCodeCombinationUtils.SWITCH_SPEECHLIST.match(keyEvent)) {
@@ -106,15 +107,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
             }
         });
 
-        roundsBar.focusedProperty().addListener(((observable, oldValue, newValue) -> {
-            if (newValue &&
-                    // Ensures that we do not attempt to request focus on initialization, where
-                    // roundsBar is given focus automatically
-                    !roundsBar.getTabs().isEmpty()) {
-                roundsBar.getSelectionModel().getSelectedItem().getContent().requestFocus();
-            }
-            System.out.println("focus received");
-        }));
+        useTypeProperty().addListener(this::onUseTypeChanged);
 
         // Keep file and directory choosers as global instance variables in order to preserve their state
         // through multiple saves and opens
@@ -235,7 +228,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
     private void onSelectedTabChanged(ObservableValue<? extends Tab> observable, Tab oldValue, Tab newValue) {
-        System.out.println("Tab changed");
+        System.out.println("Tab onFocusChanged");
 
         if (oldValue != null) {
             RoundTab oldRoundTab = (RoundTab) oldValue;
@@ -453,10 +446,35 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
     public UseType getUseType() {
+        return useType.get();
+    }
+
+    public ObjectProperty<UseType> useTypeProperty() {
         return useType;
     }
 
     public void setUseType(UseType useType) {
-        this.useType = useType;
+        this.useType.set(useType);
+    }
+
+    private void onUseTypeChanged(ObservableValue<? extends UseType> observableUseType, UseType oldUseType, UseType newUseType) {
+        if (newUseType.isInUse()) {
+            roundsBar.getSelectionModel().selectedItemProperty().addListener(this::onSelectedTabChanged);
+            roundsBar.focusedProperty().addListener(this::onFocusChanged);
+        }
+        else {
+            roundsBar.getSelectionModel().selectedItemProperty().removeListener(this::onSelectedTabChanged);
+            roundsBar.focusedProperty().removeListener(this::onFocusChanged);
+        }
+    }
+
+    private void onFocusChanged(ObservableValue<? extends Boolean> observable, boolean oldValue, boolean newValue) {
+        if (newValue &&
+                // Ensures that we do not attempt to request focus on initialization, where
+                // roundsBar is given focus automatically
+                !roundsBar.getTabs().isEmpty()) {
+            roundsBar.getSelectionModel().getSelectedItem().getContent().requestFocus();
+        }
+        System.out.println("focus received");
     }
 }
