@@ -4,12 +4,9 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import me.theeninja.pfflowing.gui.AffirmativeFlowingGridController;
-import me.theeninja.pfflowing.gui.FlowingGrid;
-import me.theeninja.pfflowing.gui.FlowingGridController;
-import me.theeninja.pfflowing.gui.NegationFlowingGridController;
+import me.theeninja.pfflowing.gui.FlowDisplayController;
+import me.theeninja.pfflowing.gui.FlowGrid;
 import me.theeninja.pfflowing.speech.Side;
-import me.theeninja.pfflowing.utils.Utils;
 
 import java.nio.file.Path;
 
@@ -18,13 +15,15 @@ public class Round {
     private StringProperty name = new SimpleStringProperty();
     private final Side side;
     private ObjectProperty<Side> displayedSide = new SimpleObjectProperty<>();
-    private final AffirmativeFlowingGridController affController;
-    private final NegationFlowingGridController negController;
-    private final ObjectProperty<FlowingGridController> selectedController = new SimpleObjectProperty<>();
+    private final FlowDisplayController affController;
+    private final FlowDisplayController negController;
+    private final ObjectProperty<FlowDisplayController> selectedController = new SimpleObjectProperty<>();
+
+
 
     public Round(Side side) {
-        affController = Utils.getCorrelatingController("/aff_flowing_pane.fxml");
-        negController = Utils.getCorrelatingController("/neg_flowing_pane.fxml");
+        affController = FlowDisplayController.newController(Side.AFFIRMATIVE);
+        negController = FlowDisplayController.newController(Side.NEGATION);
 
         this.side = side;
 
@@ -37,30 +36,30 @@ public class Round {
         }));
     }
 
-    public Round(FlowingGrid affFlowingGrid, FlowingGrid negFlowingGrid, Side side) {
+    public Round(FlowGrid affFlowGrid, FlowGrid negFlowGrid, Side side) {
         this(side);
-        getAffController().getCorrelatingView().getChildren().addAll(affFlowingGrid.getChildren());
-        getNegController().getCorrelatingView().getChildren().addAll(negFlowingGrid.getChildren());
+        getAffController().flowGrid.getChildren().addAll(affFlowGrid.getChildren());
+        getNegController().flowGrid.getChildren().addAll(negFlowGrid.getChildren());
     }
 
-    public AffirmativeFlowingGridController getAffController() {
+    public FlowDisplayController getAffController() {
         return affController;
     }
 
-    public NegationFlowingGridController getNegController() {
+    public FlowDisplayController getNegController() {
         return negController;
     }
 
-    public FlowingGridController getSelectedController() {
+    public FlowDisplayController getSelectedController() {
         return selectedController.get();
     }
 
-    public ObjectProperty<FlowingGridController> selectedControllerProperty() {
+    public ObjectProperty<FlowDisplayController> selectedControllerProperty() {
         return selectedController;
     }
 
-    private void setSelectedController(FlowingGridController flowingGridController) {
-        selectedController.set(flowingGridController);
+    private void setSelectedController(FlowDisplayController flowDisplayController) {
+        selectedController.set(flowDisplayController);
     }
 
     public Side getSide() {

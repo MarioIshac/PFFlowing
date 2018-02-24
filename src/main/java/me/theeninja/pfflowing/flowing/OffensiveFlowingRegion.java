@@ -1,7 +1,5 @@
 package me.theeninja.pfflowing.flowing;
 
-import me.theeninja.pfflowing.gui.FlowingGridController;
-import me.theeninja.pfflowing.gui.LengthLimitType;
 import me.theeninja.pfflowing.speech.Side;
 
 public class OffensiveFlowingRegion extends FlowingRegion implements Offensive {

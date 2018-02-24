@@ -3,8 +3,7 @@ package me.theeninja.pfflowing.flowing;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import me.theeninja.pfflowing.gui.FlowingGrid;
-import me.theeninja.pfflowing.gui.FlowingGridController;
+import me.theeninja.pfflowing.gui.FlowGrid;
 
 import java.io.IOException;
 
@@ -32,11 +31,11 @@ public class FlowingRegionAdapter extends TypeAdapter<FlowingRegion> {
 
         if (!jsonReader.nextName().equals(COLUMN_NAME))
             throw new Error("expected " + COLUMN_NAME);
-        FlowingGrid.setColumnIndex(flowingRegion, jsonReader.nextInt());
+        FlowGrid.setColumnIndex(flowingRegion, jsonReader.nextInt());
 
         if (!jsonReader.nextName().equals(ROW_NAME))
             throw new Error("expected " + ROW_NAME);
-        FlowingGrid.setRowIndex(flowingRegion, jsonReader.nextInt());
+        FlowGrid.setRowIndex(flowingRegion, jsonReader.nextInt());
 
         jsonReader.endObject();
         return flowingRegion;
@@ -45,8 +44,8 @@ public class FlowingRegionAdapter extends TypeAdapter<FlowingRegion> {
     public static void addJSON(JsonWriter jsonWriter, FlowingRegion flowingRegion) throws IOException {
         jsonWriter.beginObject();
         jsonWriter.name(TEXT_NAME).value(flowingRegion.getFullText());
-        jsonWriter.name(COLUMN_NAME).value(FlowingGrid.getColumnIndex(flowingRegion));
-        jsonWriter.name(ROW_NAME).value(FlowingGrid.getRowIndex(flowingRegion));
+        jsonWriter.name(COLUMN_NAME).value(FlowGrid.getColumnIndex(flowingRegion));
+        jsonWriter.name(ROW_NAME).value(FlowGrid.getRowIndex(flowingRegion));
         jsonWriter.endObject();
     }
 }

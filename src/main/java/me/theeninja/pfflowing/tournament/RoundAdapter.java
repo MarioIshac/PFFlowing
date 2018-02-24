@@ -19,8 +19,8 @@ public class RoundAdapter extends TypeAdapter<Round> {
         jsonWriter.name(NAME).value(round.getName());
         jsonWriter.name(SIDE).value(round.getSide().name());
         jsonWriter.name(FLOWING_GRIDS).beginArray();
-        FlowingGridAdapter.writeJSON(jsonWriter, round.getAffController().getCorrelatingView());
-        FlowingGridAdapter.writeJSON(jsonWriter, round.getNegController().getCorrelatingView());
+        FlowingGridAdapter.writeJSON(jsonWriter, round.getAffController().flowGrid);
+        FlowingGridAdapter.writeJSON(jsonWriter, round.getNegController().flowGrid);
         jsonWriter.endArray();
         jsonWriter.endObject();
     }

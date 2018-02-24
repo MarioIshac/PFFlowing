@@ -1,13 +1,7 @@
 package me.theeninja.pfflowing.gui;
 
-import com.google.common.collect.ImmutableList;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.FXCollections;
-import javafx.scene.layout.Background;
-import javafx.scene.paint.Color;
 import me.theeninja.pfflowing.flowing.*;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
@@ -114,9 +108,9 @@ public class SpeechList extends ArrayList<SpeechPair> {
     }
 
     public Speech getSpeech(FlowingRegion flowingRegion) {
-        System.out.println("Yo" + FlowingGrid.getColumnIndex(flowingRegion));
+        System.out.println("Yo" + FlowGrid.getColumnIndex(flowingRegion));
         for (Speech speech : getSpeeches())
-            if (speech.getGridPaneColumn() == FlowingGrid.getColumnIndex(flowingRegion))
+            if (speech.getGridPaneColumn() == FlowGrid.getColumnIndex(flowingRegion))
                 return speech;
         return null;
     }

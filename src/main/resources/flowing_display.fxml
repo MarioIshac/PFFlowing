@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import me.theeninja.pfflowing.gui.FlowDisplay?>
+<FlowDisplay xmlns="http://javafx.com/javafx"
+             xmlns:fx="http://javafx.com/fxml"
+             fx:controller="me.theeninja.pfflowing.gui.FlowDisplayController"
+             fx:id="flowDisplay">
+    <HBox fx:id="speechLabels" />
+    <fx:include source="flowing_grid.fxml" fx:id="flowGrid" />
+</FlowDisplay>

@@ -1,6 +1,5 @@
 package me.theeninja.pfflowing.gui;
 
-import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Bounds;
@@ -14,11 +13,11 @@ public class FlowingLink extends Line {
     private final int firstColumn;
     private final int secondColumn;
     private final int row;
-    private final FlowingGridController flowingGridController;
+    private final FlowDisplayController flowDisplayController;
 
     public void rebindProperties() {
-        FlowingRegion start = flowingGridController.getCorrelatingView().getFlowingRegion(firstColumn, row).get();
-        FlowingRegion end = flowingGridController.getCorrelatingView().getFlowingRegion(secondColumn, row).get();
+        FlowingRegion start = flowDisplayController.flowGrid.getFlowingRegion(firstColumn, row).get();
+        FlowingRegion end = flowDisplayController.flowGrid.getFlowingRegion(secondColumn, row).get();
 
 
         Bounds starterBounds = start.localToScene(start.getLayoutBounds());
@@ -63,11 +62,11 @@ public class FlowingLink extends Line {
                 start.layoutBoundsProperty()));
     }
 
-    public FlowingLink(int firstColumn, int secondColumn, int row, FlowingGridController flowingGridController) {
+    public FlowingLink(int firstColumn, int secondColumn, int row, FlowDisplayController flowDisplayController) {
         this.firstColumn = firstColumn;
         this.secondColumn = secondColumn;
         this.row = row;
-        this.flowingGridController = flowingGridController;
+        this.flowDisplayController = flowDisplayController;
     }
 
     private static DoubleBinding generateDoubleBinding(Supplier<Double> computationFunction, ObservableValue<?>... observableValue) {

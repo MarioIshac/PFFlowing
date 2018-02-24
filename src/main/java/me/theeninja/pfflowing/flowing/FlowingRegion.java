@@ -1,6 +1,5 @@
 package me.theeninja.pfflowing.flowing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.annotations.Expose;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -8,14 +7,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.control.Label;
 import me.theeninja.pfflowing.Duplicable;
-import me.theeninja.pfflowing.StringSerializable;
 import me.theeninja.pfflowing.configuration.GlobalConfiguration;
-import me.theeninja.pfflowing.gui.FlowingGrid;
-import me.theeninja.pfflowing.gui.FlowingGridController;
+import me.theeninja.pfflowing.gui.FlowGrid;
 import me.theeninja.pfflowing.gui.LengthLimitType;
-
-import com.google.gson.Gson;
-import org.hildan.fxgson.FxGson;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -61,8 +55,8 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
     public FlowingRegion duplicate() {
         FlowingRegion duplicate = new FlowingRegion(getText());
         duplicate.setStyle(this.getStyle());
-        FlowingGrid.setColumnIndex(duplicate, FlowingGrid.getColumnIndex(this));
-        FlowingGrid.setRowIndex(duplicate, FlowingGrid.getRowIndex(this));
+        FlowGrid.setColumnIndex(duplicate, FlowGrid.getColumnIndex(this));
+        FlowGrid.setRowIndex(duplicate, FlowGrid.getRowIndex(this));
         return duplicate;
     }
 

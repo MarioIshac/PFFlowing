@@ -12,40 +12,36 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FlowingGridAdapter extends TypeAdapter<FlowingGrid> {
-    private static final String SIDE = "side";
+public class FlowingGridAdapter extends TypeAdapter<FlowGrid> {
     private static final String FLOWING_REGIONS = "flowing_regions";
 
     @Override
-    public void write(JsonWriter jsonWriter, FlowingGrid flowingGrid) throws IOException {
-        writeJSON(jsonWriter, flowingGrid);
+    public void write(JsonWriter jsonWriter, FlowGrid flowGrid) throws IOException {
+        writeJSON(jsonWriter, flowGrid);
     }
 
     @Override
-    public FlowingGrid read(JsonReader jsonReader) throws IOException {
+    public FlowGrid read(JsonReader jsonReader) throws IOException {
         return readJSON(jsonReader);
     }
 
-    public static void writeJSON(JsonWriter jsonWriter, FlowingGrid flowingGrid) throws IOException {
+    public static void writeJSON(JsonWriter jsonWriter, FlowGrid flowGrid) throws IOException {
         jsonWriter.beginObject();
-        jsonWriter.name(SIDE).value(flowingGrid.getSide().name());
         jsonWriter.name(FLOWING_REGIONS).beginArray();
-        for (FlowingRegion flowingRegion : Utils.getOfType(flowingGrid.getChildren(), FlowingRegion.class)) {
+        for (FlowingRegion flowingRegion : Utils.getOfType(flowGrid.getChildren(), FlowingRegion.class)) {
             FlowingRegionAdapter.addJSON(jsonWriter, flowingRegion);
         }
         jsonWriter.endArray();
         jsonWriter.endObject();
     }
 
-    public static FlowingGrid readJSON(JsonReader jsonReader) throws IOException {
-        FlowingGrid flowingGrid = new FlowingGrid();
+    public static FlowGrid readJSON(JsonReader jsonReader) throws IOException {
+        FlowGrid flowGrid = new FlowGrid();
 
         jsonReader.beginObject();
         jsonReader.nextName(); // discards side
         String sideName = jsonReader.nextString();
         Side side = Side.valueOf(sideName);
-
-        flowingGrid.setSide(side);
 
         jsonReader.nextName(); // discards flowing_regions
         jsonReader.beginArray();
@@ -57,7 +53,7 @@ public class FlowingGridAdapter extends TypeAdapter<FlowingGrid> {
         jsonReader.endArray();
         jsonReader.endObject();
 
-        flowingGrid.getChildren().setAll(flowingRegions);
-        return flowingGrid;
+        flowGrid.getChildren().setAll(flowingRegions);
+        return flowGrid;
     }
 }

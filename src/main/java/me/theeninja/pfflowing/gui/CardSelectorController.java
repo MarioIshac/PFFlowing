@@ -9,7 +9,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import me.theeninja.pfflowing.DependentController;
 import me.theeninja.pfflowing.flowingregions.Card;
-import me.theeninja.pfflowing.speech.Side;
 
 import java.net.URL;
 import java.util.List;
@@ -102,7 +101,7 @@ public class CardSelectorController implements Initializable, DependentControlle
     private EventHandler<KeyEvent> handler = keyEvent -> {
         if (keyEvent.getCode() == KeyCode.ENTER) {
             TreeItem<Card> treeItem = cardSelectorTreeView.getSelectionModel().getSelectedItem();
-           // FlowingGridController.getFXMLInstance().addOffensiveFlowingRegion(offensiveCard);
+           // FlowDisplayController.getFXMLInstance().addOffensiveFlowingRegion(offensiveCard);
             removeCardSelectionListener();
         }
     };
@@ -113,7 +112,7 @@ public class CardSelectorController implements Initializable, DependentControlle
     }
 
     public void removeCardSelectionListener() {
-        FlowingGridController.getFXMLInstance().getCorrelatingView().requestFocus();
+        FlowDisplayController.getFXMLInstance().getCorrelatingView().requestFocus();
         cardSelectorTreeView.removeEventHandler(KeyEvent.KEY_PRESSED, handler);
     }
 }

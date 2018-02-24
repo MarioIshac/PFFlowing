@@ -19,8 +19,8 @@ public class RoundAdapter extends TypeAdapter<Round> {
         jsonWriter.beginObject();
         jsonWriter.name(SIDE).value(round.getSide().name());
         jsonWriter.name(FLOWING_GRIDS).beginArray();
-        FlowingGridAdapter.writeJSON(jsonWriter, round.getAffController().getCorrelatingView());
-        FlowingGridAdapter.writeJSON(jsonWriter, round.getNegController().getCorrelatingView());
+        FlowingGridAdapter.writeJSON(jsonWriter, round.getAffController().flowGrid);
+        FlowingGridAdapter.writeJSON(jsonWriter, round.getNegController().flowGrid);
         jsonWriter.endArray();
         jsonWriter.endObject();
     }
@@ -38,8 +38,8 @@ public class RoundAdapter extends TypeAdapter<Round> {
         side = Side.valueOf(jsonReader.nextString());
 
         jsonReader.beginArray();
-        FlowingGrid aff = FlowingGridAdapter.readJSON(jsonReader);
-        FlowingGrid neg = FlowingGridAdapter.readJSON(jsonReader);
+        FlowGrid aff = FlowingGridAdapter.readJSON(jsonReader);
+        FlowGrid neg = FlowingGridAdapter.readJSON(jsonReader);
 
         jsonReader.endArray();
         Round round = new Round(aff, neg, Side.AFFIRMATIVE);

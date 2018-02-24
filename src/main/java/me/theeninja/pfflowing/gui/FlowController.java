@@ -229,7 +229,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         configStage.show();
     }
 
-    private void onSelectedControllerChanged(ObservableValue<? extends FlowingGridController> observableController, FlowingGridController oldController, FlowingGridController newController) {
+    private void onSelectedControllerChanged(ObservableValue<? extends FlowDisplayController> observableController, FlowDisplayController oldController, FlowDisplayController newController) {
         System.out.println("Controller switched for " + newController.getCorrelatingView().getChildren());
         newController.getCorrelatingView().requestFocus();
     }
@@ -265,7 +265,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
                 FxGson.coreBuilder()
                         .excludeFieldsWithoutExposeAnnotation()
                         .registerTypeAdapter(FlowingRegion.class, new FlowingRegionAdapter())
-                        .registerTypeAdapter(FlowingGrid.class, new FlowingGridAdapter())
+                        .registerTypeAdapter(FlowGrid.class, new FlowingGridAdapter())
                         .registerTypeAdapter(Round.class, new RoundAdapter())
                         .setPrettyPrinting()
                         .create()
@@ -288,7 +288,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
             return file;
     }
 
-    private static final Type FLOWING_GRIDS_TYPE = new TypeToken<List<FlowingGrid>>(){}.getType();
+    private static final Type FLOWING_GRIDS_TYPE = new TypeToken<List<FlowGrid>>(){}.getType();
 
     public void saveRoundAs() throws IOException {
         getFileChooser().setTitle(SAVE_TITLE);
