@@ -22,6 +22,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import me.theeninja.pfflowing.ActionManager;
 import me.theeninja.pfflowing.PFFlowing;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
@@ -41,8 +42,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static me.theeninja.pfflowing.gui.KeyCodeCombinationUtils.*;
 
 public class FlowController implements Initializable, SingleViewController<FlowingPane> {
     @FXML public FlowingPane pfFlowingMain;
@@ -51,9 +58,9 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     @FXML public TabPane roundsBar;
 
     private ObjectProperty<UseType> useType = new SimpleObjectProperty<>(UseType.NONE);
-    private final ImmutableMap<KeyCodeCombination, Runnable> KEY_CODES = ImmutableMap.of(
-        KeyCodeCombinationUtils.TOGGLE_FULLSCREEN, () -> PFFlowing.getInstance().toggleFullscreen(),
-        KeyCodeCombinationUtils.SAVE, () -> {
+    private final ImmutableMap<KeyCodeCombination, Runnable> GLOBAL_KEY_CODES = ImmutableMap.of(
+        KeyCodeCombinationUtils.TOGGLE_FULLSCREEN, () -> PFFlowing.getInstance().toggleFullscreen()
+        /*KeyCodeCombinationUtils.SAVE, () -> {
                 try {
                     saveSelectedRound();
                 } catch (IOException e) {
@@ -66,7 +73,12 @@ public class FlowController implements Initializable, SingleViewController<Flowi
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
+            },
+        KeyCodeCombinationUtils.SWITCH_SPEECHLIST, () -> {
+                RoundTab roundTab = (RoundTab) roundsBar.getSelectionModel().getSelectedItem();
+                Round selectedRound = roundTab.getRound();
+                selectedRound.setDisplayedSide(selectedRound.getDisplayedSide().getOpposite());
+            }*/
     );
 
     @Override
@@ -85,9 +97,20 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     private EventHandler<KeyEvent> getKeyEventHandler() {
         return keyEvent -> {
-            for (Map.Entry<KeyCodeCombination, Runnable> entry : KEY_CODES.entrySet())
-                if (entry.getKey().match(keyEvent))
-                    entry.getValue().run();
+            GLOBAL_KEY_CODES.forEach((key, value) -> {
+                if (key.match(keyEvent))
+                    value.run();
+            });
+
+            if (!roundsBar.getTabs().isEmpty()) {
+                RoundTab selectedRoundTab = (RoundTab) roundsBar.getSelectionModel().getSelectedItem();
+                Round selectedRound = selectedRoundTab.getRound();
+
+                FlowDisplayController currentVisibleController = selectedRound.getSelectedController();
+
+                KeyEventProcessor keyEventProcessor = new KeyEventProcessor(currentVisibleController, keyEvent);
+                keyEventProcessor.process();
+            }
         };
     }
 
@@ -97,17 +120,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
         navigator.setPrefHeight(Region.USE_PREF_SIZE);
         roundsBar.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-
-
-        roundsBar.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-            if (KeyCodeCombinationUtils.SWITCH_SPEECHLIST.match(keyEvent)) {
-                RoundTab roundTab = (RoundTab) roundsBar.getSelectionModel().getSelectedItem();
-                Round selectedRound = roundTab.getRound();
-                selectedRound.setDisplayedSide(selectedRound.getDisplayedSide().getOpposite());
-            }
-        });
-
-        useTypeProperty().addListener(this::onUseTypeChanged);
 
         // Keep file and directory choosers as global instance variables in order to preserve their state
         // through multiple saves and opens
@@ -137,7 +149,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         }
     }
 
-    public void addRound() {
+    public void promptRoundAddition() {
         Stage configStage = new Stage();
         VBox configLayout = new VBox();
         Scene configScene = new Scene(configLayout);
@@ -173,18 +185,21 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         Runnable options[][] = {
             {
                 () -> { // add round to new tournament with something in use
-
+                    PFFlowing newApplication = new PFFlowing();
+                    Stage allocatedStage = new Stage();
+                    newApplication.start(allocatedStage);
                 },
 
                 () -> { // add round to new tournament with nothing in use
                     roundsBar.getSelectionModel().selectedItemProperty().addListener(((observable, oldValue, newValue) -> {
                         RoundTab roundTab = (RoundTab) newValue;
                         roundsBar.getSelectionModel().select(roundTab);
-                        System.out.println("new round" + roundTab.getRound().getName());
                     }));
 
                     addRound(nameField.getText(), comboBox.getValue());
                     configStage.hide();
+
+                    setUseType(UseType.TOURNAMENT);
                 }
             },
 
@@ -195,7 +210,9 @@ public class FlowController implements Initializable, SingleViewController<Flowi
                 },
 
                 () -> { // don't add round to new tournament with nothing in use
-
+                    PFFlowing newApplication = new PFFlowing();
+                    Stage allocatedStage = new Stage();
+                    newApplication.start(allocatedStage);
                 }
             }
         };
@@ -222,34 +239,11 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         configStage.show();
     }
 
-    private void onSelectedControllerChanged(ObservableValue<? extends FlowDisplayController> observableController, FlowDisplayController oldController, FlowDisplayController newController) {
-        System.out.println("Controller switched for " + newController.getCorrelatingView().getChildren());
-        newController.getCorrelatingView().requestFocus();
-    }
-
-    private void onSelectedTabChanged(ObservableValue<? extends Tab> observable, Tab oldValue, Tab newValue) {
-        System.out.println("Tab onFocusChanged");
-
-        if (oldValue != null) {
-            RoundTab oldRoundTab = (RoundTab) oldValue;
-            System.out.println("Listener removed from " + oldRoundTab.getRound().getName());
-            oldRoundTab.getRound().selectedControllerProperty().removeListener(this::onSelectedControllerChanged);
-
-        }
-        RoundTab newRoundTab = (RoundTab) newValue;
-        System.out.println("Listener added to " + newRoundTab.getRound().getName());
-
-        newRoundTab.getRound().selectedControllerProperty().addListener(this::onSelectedControllerChanged);
-
-        newRoundTab.getContent().requestFocus();
-    }
-
     private void addRound(String roundName, Side side) {
         Round round = new Round(side);
         RoundTab roundTab = new RoundTab(round);
-        roundTab.textProperty().bind(round.nameProperty());
         round.setName(roundName);
-        round.setDisplayedSide(round.getSide());
+        round.setDisplayedSide(side);
         roundsBar.getTabs().add(roundTab);
     }
 
@@ -400,7 +394,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
             Path parentDirectoryPath = Paths.get(directory.get());
             String tournamentName = tournamentRequestField.getText();
             Path entireDirectoryPath = parentDirectoryPath.resolve(tournamentName);
-            System.out.println(entireDirectoryPath);
+            System.out.println("Directory" + entireDirectoryPath);
             try {
                 Files.createDirectory(entireDirectoryPath);
             } catch (IOException e) {
@@ -455,26 +449,5 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     public void setUseType(UseType useType) {
         this.useType.set(useType);
-    }
-
-    private void onUseTypeChanged(ObservableValue<? extends UseType> observableUseType, UseType oldUseType, UseType newUseType) {
-        if (newUseType.isInUse()) {
-            roundsBar.getSelectionModel().selectedItemProperty().addListener(this::onSelectedTabChanged);
-            roundsBar.focusedProperty().addListener(this::onFocusChanged);
-        }
-        else {
-            roundsBar.getSelectionModel().selectedItemProperty().removeListener(this::onSelectedTabChanged);
-            roundsBar.focusedProperty().removeListener(this::onFocusChanged);
-        }
-    }
-
-    private void onFocusChanged(ObservableValue<? extends Boolean> observable, boolean oldValue, boolean newValue) {
-        if (newValue &&
-                // Ensures that we do not attempt to request focus on initialization, where
-                // roundsBar is given focus automatically
-                !roundsBar.getTabs().isEmpty()) {
-            roundsBar.getSelectionModel().getSelectedItem().getContent().requestFocus();
-        }
-        System.out.println("focus received");
     }
 }

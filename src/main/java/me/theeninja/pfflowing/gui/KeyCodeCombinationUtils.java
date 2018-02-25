@@ -23,7 +23,8 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination QUESTION = new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination EDIT = new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
 
-    // Selection Keys
+    public static final KeyCombination.Modifier TOGGLE_SELECT_MULTIPLE = KeyCombination.CONTROL_DOWN;
+
     public static final KeyCodeCombination SELECT_UP_ONLY = new KeyCodeCombination(KeyCode.UP);
     public static final KeyCodeCombination SELECT_DOWN_ONLY = new KeyCodeCombination(KeyCode.DOWN);
     public static final KeyCodeCombination SELECT_RIGHT_ONLY = new KeyCodeCombination(KeyCode.RIGHT);

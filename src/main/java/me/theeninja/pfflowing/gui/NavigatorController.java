@@ -98,7 +98,7 @@ public class NavigatorController implements Initializable {
 
 
     public void newRound() {
-        FlowController.getFXMLInstance().addRound();
+        FlowController.getFXMLInstance().promptRoundAddition();
     }
 
     public void newTournament() {

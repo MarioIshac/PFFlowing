@@ -1,14 +1,18 @@
 package me.theeninja.pfflowing.tournament;
 
+import com.google.common.collect.ImmutableMap;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ObservableValue;
 import me.theeninja.pfflowing.gui.FlowDisplayController;
 import me.theeninja.pfflowing.gui.FlowGrid;
 import me.theeninja.pfflowing.speech.Side;
 
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public class Round {
     private ObjectProperty<Path> path = new SimpleObjectProperty<>();
@@ -19,21 +23,18 @@ public class Round {
     private final FlowDisplayController negController;
     private final ObjectProperty<FlowDisplayController> selectedController = new SimpleObjectProperty<>();
 
-
-
     public Round(Side side) {
         affController = FlowDisplayController.newController(Side.AFFIRMATIVE);
         negController = FlowDisplayController.newController(Side.NEGATION);
 
         this.side = side;
 
-        displayedSideProperty().addListener(((observable, oldValue, newValue) -> {
-            if (newValue == Side.AFFIRMATIVE) {
-                setSelectedController(getAffController());
-            } else {
-                setSelectedController(getNegController());
-            }
-        }));
+        displayedSideProperty().addListener(this::onDisplayedSideChanged);
+
+        SIDE_CONTROLLER_MAP = ImmutableMap.of(
+                Side.AFFIRMATIVE, getAffController(),
+                Side.NEGATION, getNegController()
+        );
     }
 
     public Round(FlowGrid affFlowGrid, FlowGrid negFlowGrid, Side side) {
@@ -100,5 +101,11 @@ public class Round {
 
     public void setPath(Path path) {
         this.path.set(path);
+    }
+
+    private final Map<Side, FlowDisplayController> SIDE_CONTROLLER_MAP;
+
+    private void onDisplayedSideChanged(ObservableValue<? extends Side> observable, Side oldValue, Side newValue) {
+        setSelectedController(SIDE_CONTROLLER_MAP.get(side));
     }
 }

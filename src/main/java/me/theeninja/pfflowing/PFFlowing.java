@@ -7,6 +7,7 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.Stage;
 import me.theeninja.pfflowing.gui.*;
+import me.theeninja.pfflowing.utils.Utils;
 
 import java.util.logging.Logger;
 
@@ -37,7 +38,10 @@ public class PFFlowing extends Application {
     @Override
     public void start(Stage stage) {
         this.stage = stage;
-        scene = new Scene(FlowController.getFXMLInstance().getCorrelatingView());
+
+        FlowingPane flowingPane = Utils.getCorrelatingController("/flow.fxml");
+        scene = new Scene(flowingPane);
+
         instance = this;
 
         stage.setScene(scene);

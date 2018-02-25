@@ -123,6 +123,14 @@ public class SpeechList extends ArrayList<SpeechPair> {
         ));
     }
 
+    public void selectRightSpeech() {
+        selectSpeech(1);
+    }
+
+    public void selectLeftSpeech() {
+        selectSpeech(-1);
+    }
+
     public Side getSide() {
         return side;
     }
