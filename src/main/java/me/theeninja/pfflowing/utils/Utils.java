@@ -1,5 +1,10 @@
 package me.theeninja.pfflowing.utils;
 
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import javafx.beans.property.Property;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.SetChangeListener;
@@ -13,6 +18,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -39,7 +47,7 @@ public final class Utils {
      * Generates a background of the given color.
      *
      * @param color
-     * @return A background of the color specified.
+     * @return GDriveConnector background of the color specified.
      */
     public static Background generateBackgroundOfColor(Color color) {
         return new Background(new BackgroundFill(color, CornerRadii.EMPTY, Insets.EMPTY));
@@ -164,5 +172,40 @@ public final class Utils {
                 .filter(classRequired::isInstance)
                 .map(classRequired::cast)
                 .collect(Collectors.toList());
+    }
+
+    public static void expect(JsonReader jsonReader, String name) throws IOException {
+        if (!jsonReader.nextName().equals(name))
+            throw new JsonParseException("Expected" + name);
+
+    }
+
+    public static <T> void bindAndSet(ObservableValue<? extends T> observableValue, Property<T> property) {
+        observableValue.addListener((observable, oldValue, newValue) -> {
+            property.setValue(newValue);
+        });
+        property.setValue(observableValue.getValue());
+    }
+
+    private static final char EXTENSION_SEPERATOR = '.';
+
+    public static boolean hasExtension(String name, String extension) {
+        return name.endsWith(EXTENSION_SEPERATOR + extension);
+    }
+
+    public static String addExtension(String name, String extension) {
+        if (!hasExtension(name, extension))
+            name += EXTENSION_SEPERATOR + extension;
+        return name;
+    }
+
+    public static String readAsString(Path path) {
+        try {
+            byte[] bytes = Files.readAllBytes(path);
+            return new String(bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

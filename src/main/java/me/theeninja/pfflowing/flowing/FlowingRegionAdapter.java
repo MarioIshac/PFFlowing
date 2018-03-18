@@ -4,6 +4,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import me.theeninja.pfflowing.gui.FlowGrid;
+import me.theeninja.pfflowing.utils.Utils;
 
 import java.io.IOException;
 
@@ -21,21 +22,23 @@ public class FlowingRegionAdapter extends TypeAdapter<FlowingRegion> {
     private static final String TEXT_NAME = "text";
     private static final String COLUMN_NAME = "column";
     private static final String ROW_NAME = "row";
+    private static final String TYPE_NAME = "type";
 
     public static FlowingRegion readJSON(JsonReader jsonReader) throws IOException {
         jsonReader.beginObject();
 
-        if (!jsonReader.nextName().equals(TEXT_NAME))
-            throw new Error("expected " + TEXT_NAME);
+        Utils.expect(jsonReader, TYPE_NAME);
+
+
+        Utils.expect(jsonReader, TEXT_NAME);
         FlowingRegion flowingRegion = new FlowingRegion(jsonReader.nextString());
 
-        if (!jsonReader.nextName().equals(COLUMN_NAME))
-            throw new Error("expected " + COLUMN_NAME);
+        Utils.expect(jsonReader, COLUMN_NAME);
         FlowGrid.setColumnIndex(flowingRegion, jsonReader.nextInt());
 
-        if (!jsonReader.nextName().equals(ROW_NAME))
-            throw new Error("expected " + ROW_NAME);
+        Utils.expect(jsonReader, ROW_NAME);
         FlowGrid.setRowIndex(flowingRegion, jsonReader.nextInt());
+
 
         jsonReader.endObject();
         return flowingRegion;

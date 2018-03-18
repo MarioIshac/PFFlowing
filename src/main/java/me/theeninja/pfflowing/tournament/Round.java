@@ -12,7 +12,6 @@ import me.theeninja.pfflowing.speech.Side;
 
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.function.Supplier;
 
 public class Round {
     private ObjectProperty<Path> path = new SimpleObjectProperty<>();
@@ -106,6 +105,6 @@ public class Round {
     private final Map<Side, FlowDisplayController> SIDE_CONTROLLER_MAP;
 
     private void onDisplayedSideChanged(ObservableValue<? extends Side> observable, Side oldValue, Side newValue) {
-        setSelectedController(SIDE_CONTROLLER_MAP.get(side));
+        setSelectedController(SIDE_CONTROLLER_MAP.get(newValue));
     }
 }

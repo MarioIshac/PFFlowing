@@ -8,7 +8,8 @@ public abstract class Speech {
 
     public static final int SPEECH_SIZE = 8;
 
-    private SimpleIntegerProperty availableRow = new SimpleIntegerProperty();
+    private SimpleIntegerProperty availableRow = new SimpleIntegerProperty(0);
+    private SimpleIntegerProperty defensiveRegionsNumber = new SimpleIntegerProperty(0);
 
     private final Side side;
     private final String labelText;
@@ -32,7 +33,7 @@ public abstract class Speech {
         return labelText;
     }
 
-    public int getGridPaneColumn() {
+    public int getColumn() {
         return gridPaneColumn;
     }
 
@@ -46,5 +47,17 @@ public abstract class Speech {
 
     public int getAvailableRow() {
         return availableRow.get();
+    }
+
+    public int getDefensiveRegionsNumber() {
+        return defensiveRegionsNumber.get();
+    }
+
+    public SimpleIntegerProperty defensiveRegionsNumberProperty() {
+        return defensiveRegionsNumber;
+    }
+
+    public void setDefensiveRegionsNumber(int defensiveRegionsNumber) {
+        this.defensiveRegionsNumber.set(defensiveRegionsNumber);
     }
 }

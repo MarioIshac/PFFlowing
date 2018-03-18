@@ -1,27 +1,41 @@
 package me.theeninja.pfflowing.flowingregions;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import me.theeninja.pfflowing.speech.Side;
+
 public class Card {
-    private String card;
-    private String htmlCardContent;
+    @Expose
+    @SerializedName("representation")
+    private String representation;
 
-    public Card(String card, String htmlCardContent) {
-        this.card = card;
-        this.htmlCardContent = htmlCardContent;
+    @Expose
+    @SerializedName("htmlContent")
+    private String htmlContent;
+
+    public Card(String representation, String htmlContent) {
+        this.representation = representation;
+        this.htmlContent = htmlContent;
     }
 
-    public String getHtmlCardContent() {
-        return htmlCardContent;
+    public String getHTMLContent() {
+        return htmlContent;
     }
 
-    public void setHtmlCardContent(String htmlCardContent) {
-        this.htmlCardContent = htmlCardContent;
+    public void setHTMLContent(String htmlCardContent) {
+        this.htmlContent = htmlCardContent;
     }
 
-    public String getCard() {
-        return card;
+    public String getRepresentation() {
+        return representation;
     }
 
-    public void setCard(String card) {
-        this.card = card;
+    public void setRepresentation(String representation) {
+        this.representation = representation;
+    }
+
+    @Override
+    public String toString() {
+        return getRepresentation();
     }
 }

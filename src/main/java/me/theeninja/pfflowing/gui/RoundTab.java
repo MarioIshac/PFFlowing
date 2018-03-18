@@ -15,11 +15,11 @@ public class RoundTab extends Tab {
         textProperty().bind(round.nameProperty());
     }
 
-    public Round getRound() {
-        return round;
-    }
-
     private void onSelectedControllerChanged(ObservableValue<? extends FlowDisplayController> observable, FlowDisplayController oldValue, FlowDisplayController newValue) {
         setContent(newValue.getCorrelatingView());
+    }
+
+    public Round getRound() {
+        return round;
     }
 }

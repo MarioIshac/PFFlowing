@@ -7,7 +7,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.control.Label;
 import me.theeninja.pfflowing.Duplicable;
-import me.theeninja.pfflowing.configuration.GlobalConfiguration;
+import me.theeninja.pfflowing.EFlow;
+import me.theeninja.pfflowing.configuration.InternalConfiguration;
+import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.gui.FlowGrid;
 import me.theeninja.pfflowing.gui.LengthLimitType;
 
@@ -20,8 +22,13 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
     private StringProperty shortenedText = new SimpleStringProperty();
 
     private BooleanProperty expanded = new SimpleBooleanProperty();
+    private final List<Card> associatedCards;
 
     public FlowingRegion(String text) {
+        this(text, Collections.emptyList());
+    }
+
+    public FlowingRegion(String text, List<Card> associatedCards) {
         super();
 
         setWrapText(true);
@@ -30,20 +37,22 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
         addFullTextListener();
         setFullText(text);
 
-        setFont(GlobalConfiguration.FONT);
+        fontProperty().bind(EFlow.getInstance().getConfiguration().fontProperty());
 
         setExpanded(false);
+
+        this.associatedCards = associatedCards;
     }
 
     public void addFullTextListener() {
         fullTextProperty().addListener((observable, oldValue, newValue) -> {
-            String[] seperatedStrings = getFullText().split(GlobalConfiguration.LENGTH_LIMIT_TYPE.getSplit());
+            String[] seperatedStrings = getFullText().split(InternalConfiguration.LENGTH_LIMIT_TYPE.getSplit());
 
-            List<String> limitedSeperatedStrings = Arrays.stream(seperatedStrings).limit(GlobalConfiguration.LENGTH_LIMIT).collect(Collectors.toList());
+            List<String> limitedSeperatedStrings = Arrays.stream(seperatedStrings).limit(InternalConfiguration.LENGTH_LIMIT).collect(Collectors.toList());
 
-            String shortenedString = String.join(GlobalConfiguration.LENGTH_LIMIT_TYPE.getSplit(), limitedSeperatedStrings);
+            String shortenedString = String.join(InternalConfiguration.LENGTH_LIMIT_TYPE.getSplit(), limitedSeperatedStrings);
 
-            if (seperatedStrings.length > GlobalConfiguration.LENGTH_LIMIT) {
+            if (seperatedStrings.length > InternalConfiguration.LENGTH_LIMIT) {
                 shortenedString += "...";
             }
 
@@ -117,5 +126,9 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
         else
             textProperty().bind(shortenedTextProperty());
         this.expanded.set(expanded);
+    }
+
+    public List<Card> getAssociatedCards() {
+        return associatedCards;
     }
 }

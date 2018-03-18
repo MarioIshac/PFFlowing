@@ -3,8 +3,8 @@
 <?import javafx.scene.control.*?>
 <MenuBar xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml"
-         fx:controller="me.theeninja.pfflowing.gui.NavigatorController"
-         prefHeight="400.0" prefWidth="600.0">
+         prefHeight="400.0" prefWidth="600.0"
+         fx:id="navigator">
     <Menu text="File">
         <Menu text="New...">
             <MenuItem text="Tournament" onAction="#newTournament" />
@@ -18,7 +18,15 @@
         <MenuItem text="Save As..."  onAction="#saveFlowAs"/>
         <MenuItem text="Print"  onAction="#printFlow"/>
         <MenuItem text="Email" onAction="#emailFlow"/>
-        <MenuItem text="Parse" onAction="#openParserPopup" />
+        <Menu text="Parser">
+            <Menu text="New From...">
+                <MenuItem text="Google Drive" onAction="#openParserPopupGD" />
+                <MenuItem text="File System" onAction="#openParserPopupFile"/>
+                <MenuItem text="One Drive" />
+            </Menu>
+            <MenuItem text="Open" />
+            <Menu fx:id="openRecent" text="Open Recent" />
+        </Menu>
     </Menu>
     <Menu text="Edit">
         <MenuItem text="Undo" onAction="#undo"/>

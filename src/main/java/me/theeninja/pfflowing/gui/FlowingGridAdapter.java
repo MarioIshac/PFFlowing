@@ -5,7 +5,6 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowing.FlowingRegionAdapter;
-import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.io.IOException;
@@ -28,9 +27,11 @@ public class FlowingGridAdapter extends TypeAdapter<FlowGrid> {
     public static void writeJSON(JsonWriter jsonWriter, FlowGrid flowGrid) throws IOException {
         jsonWriter.beginObject();
         jsonWriter.name(FLOWING_REGIONS).beginArray();
+
         for (FlowingRegion flowingRegion : Utils.getOfType(flowGrid.getChildren(), FlowingRegion.class)) {
             FlowingRegionAdapter.addJSON(jsonWriter, flowingRegion);
         }
+
         jsonWriter.endArray();
         jsonWriter.endObject();
     }
@@ -39,11 +40,9 @@ public class FlowingGridAdapter extends TypeAdapter<FlowGrid> {
         FlowGrid flowGrid = new FlowGrid();
 
         jsonReader.beginObject();
-        jsonReader.nextName(); // discards side
-        String sideName = jsonReader.nextString();
-        Side side = Side.valueOf(sideName);
 
-        jsonReader.nextName(); // discards flowing_regions
+        Utils.expect(jsonReader, FLOWING_REGIONS);
+
         jsonReader.beginArray();
         List<FlowingRegion> flowingRegions = new ArrayList<>();
         while (jsonReader.hasNext()) {

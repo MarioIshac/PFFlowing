@@ -15,18 +15,16 @@ public class SpeechList extends ArrayList<SpeechPair> {
     private final Side side;
     private ObjectProperty<Speech> selectedSpeech = new SimpleObjectProperty<>();
 
-    public static final Map<Side, String> SIDE_HEADERS = new HashMap<>();
+    public static final Map<Side, String> SIDE_HEADERS = Map.of(
+            Side.AFFIRMATIVE, "Aff",
+            Side.NEGATION, "Neg"
+    );
     public static final String REF_PREFIX = "AT";
     public static final String PREFIX_HEADER_SEPERATOR = "-";
     public static final String HEADER_NUMBER_SEPERATOR = " ";
 
-    static {
-        SIDE_HEADERS.put(Side.AFFIRMATIVE, "Aff");
-        SIDE_HEADERS.put(Side.NEGATION, "Neg");
-    }
-
     /**
-     * A subround refers to a specific exchange between speakers in a round excluding crossfires. There are 4:
+     * GDriveConnector subround refers to a specific exchange between speakers in a round excluding crossfires. There are 4:
      * <ol>
      *     <li>Constructive Speeches</li>
      *     <li>Rebuttal Speeches</li>
@@ -44,11 +42,25 @@ public class SpeechList extends ArrayList<SpeechPair> {
             String defHead = SIDE_HEADERS.get(getSide()) + suffixWithSeperator;
             String refHead = REF_PREFIX + PREFIX_HEADER_SEPERATOR + SIDE_HEADERS.get(getSide()) + suffixWithSeperator;
             DefensiveSpeech defensiveSpeech =
-                new DefensiveSpeech(getSide(), defHead, subround * 2) ;
+                new DefensiveSpeech(getSide(), defHead, subround * 2);
             RefutationSpeech refutationSpeech =
                 new RefutationSpeech(defensiveSpeech, getSide().getOpposite(), refHead, subround * 2 + 1);
             add(new SpeechPair(defensiveSpeech, refutationSpeech));
         }
+
+        List<Speech> speeches = getSpeeches();
+
+        for (int column = 1; column < Speech.SPEECH_SIZE; column++) {
+            Speech previousSpeech = speeches.get(column - 1);
+            Speech currentSpeech = speeches.get(column);
+
+            speeches.get(column).availableRowProperty().bind(
+                    previousSpeech.availableRowProperty().add(
+                    currentSpeech.defensiveRegionsNumberProperty()));
+        }
+
+        Speech firstSpeech = speeches.get(0);
+        firstSpeech.availableRowProperty().bind(firstSpeech.defensiveRegionsNumberProperty());
     }
 
     public Speech getOpposite(Speech speech) {
@@ -63,7 +75,7 @@ public class SpeechList extends ArrayList<SpeechPair> {
     private Pair<DefensiveSpeech, RefutationSpeech> getPair(Speech speech) {
         System.out.println(this.size());
         System.out.println("Pair" + speech.getLabelText());
-        for (Pair<DefensiveSpeech, RefutationSpeech> pair : this) {
+        for (SpeechPair pair : this) {
             System.out.println(pair.getFirst().getLabelText());
             System.out.println(pair.getSecond().getLabelText());
             if (pair.contains(speech))
@@ -110,25 +122,9 @@ public class SpeechList extends ArrayList<SpeechPair> {
     public Speech getSpeech(FlowingRegion flowingRegion) {
         System.out.println("Yo" + FlowGrid.getColumnIndex(flowingRegion));
         for (Speech speech : getSpeeches())
-            if (speech.getGridPaneColumn() == FlowGrid.getColumnIndex(flowingRegion))
+            if (speech.getColumn() == FlowGrid.getColumnIndex(flowingRegion))
                 return speech;
         return null;
-    }
-
-    public void selectSpeech(int offset) {
-        setSelectedSpeech(Utils.getRelativeElement(
-            getSpeeches(),
-            getSelectedSpeech(),
-            offset
-        ));
-    }
-
-    public void selectRightSpeech() {
-        selectSpeech(1);
-    }
-
-    public void selectLeftSpeech() {
-        selectSpeech(-1);
     }
 
     public Side getSide() {

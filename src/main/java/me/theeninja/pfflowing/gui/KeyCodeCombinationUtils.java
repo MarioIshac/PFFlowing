@@ -6,13 +6,13 @@ import javafx.scene.input.KeyCombination;
 
 public class KeyCodeCombinationUtils {
     // Display-Management Keys
-    public static final KeyCodeCombination UPSCALE_BY_1 = new KeyCodeCombination(KeyCode.UP,   KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
-    public static final KeyCodeCombination NARROW_BY_1  = new KeyCodeCombination(KeyCode.DOWN, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
+    public static final KeyCodeCombination UPSCALE_BY_1 = new KeyCodeCombination(KeyCode.CLOSE_BRACKET,   KeyCombination.CONTROL_DOWN);
+    public static final KeyCodeCombination NARROW_BY_1  = new KeyCodeCombination(KeyCode.OPEN_BRACKET, KeyCombination.CONTROL_DOWN);
 
-    public static final KeyCodeCombination SHIFT_DISPLAY_RIGHT = new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
-    public static final KeyCodeCombination SHIFT_DISPLAY_LEFT  = new KeyCodeCombination(KeyCode.LEFT,  KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
+    public static final KeyCodeCombination SHIFT_DISPLAY_RIGHT = new KeyCodeCombination(KeyCode.PERIOD, KeyCombination.CONTROL_DOWN);
+    public static final KeyCodeCombination SHIFT_DISPLAY_LEFT  = new KeyCodeCombination(KeyCode.COMMA,  KeyCombination.CONTROL_DOWN);
 
-    // Flow-Management Keys
+    // FlowApp-Management Keys
     public static final KeyCodeCombination REFUTE = new KeyCodeCombination(KeyCode.R, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination EXTEND = new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination ORGANIZE = new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN);
@@ -23,23 +23,14 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination QUESTION = new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination EDIT = new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
 
-    public static final KeyCombination.Modifier TOGGLE_SELECT_MULTIPLE = KeyCombination.CONTROL_DOWN;
+    public static final KeyCode CARD_SELECTOR = KeyCode.SEMICOLON;
 
-    public static final KeyCodeCombination SELECT_UP_ONLY = new KeyCodeCombination(KeyCode.UP);
-    public static final KeyCodeCombination SELECT_DOWN_ONLY = new KeyCodeCombination(KeyCode.DOWN);
-    public static final KeyCodeCombination SELECT_RIGHT_ONLY = new KeyCodeCombination(KeyCode.RIGHT);
-    public static final KeyCodeCombination SELECT_LEFT_ONLY = new KeyCodeCombination(KeyCode.LEFT);
-
-    public static final KeyCodeCombination SELECT_UP_TOO = new KeyCodeCombination(KeyCode.UP, KeyCombination.CONTROL_DOWN);
-    public static final KeyCodeCombination SELECT_DOWN_TOO = new KeyCodeCombination(KeyCode.DOWN, KeyCombination.CONTROL_DOWN);
-    public static final KeyCodeCombination SELECT_RIGHT_TOO = new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.CONTROL_DOWN);
-    public static final KeyCodeCombination SELECT_LEFT_TOO = new KeyCodeCombination(KeyCode.LEFT, KeyCombination.CONTROL_DOWN);
-
-    public static final KeyCodeCombination UNFOCUS = new KeyCodeCombination(KeyCode.ESCAPE);
+    public static final KeyCombination.Modifier SELECT = KeyCombination.CONTROL_DOWN;
+    public static final KeyCombination.Modifier TOGGLE_SELECT_MULTIPLE = KeyCombination.SHIFT_DOWN;
 
     public static final KeyCodeCombination SWITCH_SPEECHLIST = new KeyCodeCombination(KeyCode.N, KeyCombination.SHIFT_DOWN);
-    public static final KeyCodeCombination SELECT_LEFT_SPEECH = new KeyCodeCombination(KeyCode.LEFT, KeyCombination.SHIFT_DOWN);
-    public static final KeyCodeCombination SELECT_RIGHT_SPEECH = new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.SHIFT_DOWN);
+
+    public static final KeyCombination.Modifier SPEECH_SELECTOR = KeyCombination.SHIFT_DOWN;
 
     // Application keys
     public static final KeyCodeCombination TOGGLE_FULLSCREEN = new KeyCodeCombination(KeyCode.F11);

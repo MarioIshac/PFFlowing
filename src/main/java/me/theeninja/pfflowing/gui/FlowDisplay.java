@@ -1,9 +1,9 @@
 package me.theeninja.pfflowing.gui;
 
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import me.theeninja.pfflowing.speech.Side;
 
-public class FlowDisplay extends HBox {
+public class FlowDisplay extends VBox {
     private Side side;
 
     public Side getSide() {

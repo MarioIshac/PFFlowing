@@ -2,9 +2,8 @@ Box .label {
 
 }
 
-.speechSelected {
-    -fx-border-width: 2;
-    -fx-border-color: sandybrown;
+.selectedSpeech {
+    -fx-font-weight: bold;
 }
 
 .selectedRegion {
@@ -16,12 +15,18 @@ Box .label {
     -fx-border-color: black;
 }
 
-.dropped {
-    -fx-strikethrough: true;
-    /*-fx-background-color: gray;
-    -fx-border-color: red;*/
-}
-
 .dropped .text {
     -fx-strikethrough: true;
+}
+
+/* #flowGrid {
+    -fx-background-color: lightgray;
+} */
+
+.affRegion {
+    -fx-fill: black;
+}
+
+.negRegion {
+    -fx-fill: red;
 }

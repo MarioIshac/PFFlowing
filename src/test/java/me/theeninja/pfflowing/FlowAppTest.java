@@ -8,10 +8,10 @@ import org.testfx.framework.junit.ApplicationTest;
 
 import java.util.concurrent.TimeoutException;
 
-class PFFlowingTest extends ApplicationTest {
+class FlowAppTest extends ApplicationTest {
     @BeforeEach
     public void start() throws Exception {
-        ApplicationTest.launch(PFFlowing.class);
+        ApplicationTest.launch(FlowApp.class);
     }
 
     @Override

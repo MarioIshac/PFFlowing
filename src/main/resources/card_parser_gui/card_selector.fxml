@@ -6,7 +6,6 @@
 <?import java.net.URL?>
 <TreeView xmlns="http://javafx.com/javafx"
           xmlns:fx="http://javafx.com/fxml"
-          fx:controller="me.theeninja.pfflowing.gui.CardSelectorController"
           prefWidth="200.0"
           fx:id="cardSelectorTreeView">
     <TreeItem fx:id="root" />

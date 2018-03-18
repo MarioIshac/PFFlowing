@@ -9,9 +9,16 @@
 <?import javafx.scene.web.WebView?>
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="me.theeninja.pfflowing.gui.cardparser.CardParserController"
             prefHeight="400.0" prefWidth="600.0"
             fx:id="cardParserArea">
+    <left>
+        <VBox>
+            <TextField fx:id="cardNameRequest" />
+            <TreeView fx:id="parsedCardsColumn" VBox.vgrow="ALWAYS">
+                <TreeItem fx:id="parsedCardsRoot" />
+            </TreeView>
+        </VBox>
+    </left>
     <right>
         <VBox fx:id="rightContainer">
             <ProgressBar fx:id="progressBar" />

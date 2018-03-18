@@ -2,9 +2,7 @@ package me.theeninja.pfflowing.gui;
 
 import javafx.fxml.FXML;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.configuration.GlobalConfiguration;
 import me.theeninja.pfflowing.flowingregions.Card;
 
 public class CardDisplayController implements SingleViewController<VBox> {

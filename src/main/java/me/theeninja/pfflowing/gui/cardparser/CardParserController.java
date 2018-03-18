@@ -1,20 +1,23 @@
 package me.theeninja.pfflowing.gui.cardparser;
 
-import javafx.beans.binding.Bindings;
-import javafx.concurrent.WorkerStateEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
+import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
+import me.theeninja.pfflowing.EFlow;
+import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
+import me.theeninja.pfflowing.flowingregions.Blocks;
+import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.utils.Utils;
 import org.apache.tika.io.IOUtils;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,33 +25,47 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class CardParserController implements SingleViewController<BorderPane>, Initializable {
+    private final FlowApp flowApp;
+    private final Consumer<List<Card>> onQuit;
 
-    @FXML public VBox parsedCardsDisplay;
-    private Stage associatedStage;
-
-    private ParsedCardsDisplayController parsedCardsDisplayController;
+    @FXML public TreeView<Card> parsedCardsColumn;
+    @FXML public TreeItem<Card> parsedCardsRoot;
+    @FXML public TextField cardNameRequest;
 
     @FXML public BorderPane cardParserArea;
     @FXML public WebView documentDisplay;
     @FXML public ProgressBar progressBar;
     @FXML public VBox rightContainer;
 
+    public CardParserController(FlowApp flowApp, Consumer<List<Card>> onQuit) {
+        this.flowApp = flowApp;
+        this.onQuit = onQuit;
+    }
+
     private String snapSelectionToWordJS;
+    private String selectHTMLJS;
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        InputStream inputStream = getClass().getResourceAsStream("snap_selection_to_word.js");
+        InputStream first = getClass().getResourceAsStream("snap_selection_to_word.js");
+        InputStream second = getClass().getResourceAsStream("select_html.js");
         try {
-            setSnapSelectionToWordJS(IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+            setSnapSelectionToWordJS(IOUtils.toString(first, StandardCharsets.UTF_8.name()));
+            setSelectHTMLJS(IOUtils.toString(second, StandardCharsets.UTF_8.name()));
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        parsedCardsColumn.setShowRoot(false);
 
         documentDisplay.addEventHandler(MouseEvent.MOUSE_RELEASED, mouseEvent -> {
             documentDisplay.getEngine().executeScript(getSnapSelectionToWordJS());
@@ -66,66 +83,83 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         // Essential that the user is able to reach as much of the to-be-parsed document as possible
         VBox.setVgrow(documentDisplay, Priority.ALWAYS);
 
-        // Splits border pane width equally between left and right components (no center is used)
-        rightContainer.prefWidthProperty().bind(getCorrelatingView().widthProperty().divide(2));
+        rightContainer.prefWidthProperty().bind(cardParserArea.widthProperty().subtract(parsedCardsColumn.widthProperty()));
 
-        setParsedCardsDisplayController(Utils.getCorrelatingController("/card_parser_gui/parsed_cards_display.fxml"));
-        getCorrelatingView().setTop(getParsedCardsDisplayController().getCorrelatingView());
-        ParseCardsTask task = new ParseCardsTask();
-        task.setDocumentDisplay(documentDisplay);
-        task.setOnTextFieldPrompt(getCorrelatingView()::setLeft);
-
-        Bindings.bindContent(getParsedCardsDisplayController().getParsedCards(), task.getParsedCards());
-
-        task.call();
-
-        task.addEventHandler(WorkerStateEvent.WORKER_STATE_CANCELLED, workerStateEvent -> {
-            System.out.println(task.getParsedCards());
-        });
+        cardNameRequest.setVisible(false);
     }
 
-    public void loadPath(Path path) {
-        try {
-            String string = new String(Files.readAllBytes(path));
-            this.documentDisplay.getEngine().loadContent(string);
-        } catch (IOException e) {
-            e.printStackTrace();
+    public void loadHTML(String string) {
+        documentDisplay.getEngine().loadContent(string);
+
+        Document document = documentDisplay.getEngine().getDocument();
+
+        // Should have length 1 only
+        NodeList bodyList = document.getElementsByTagName("body");
+
+        if (bodyList.getLength() == 0)
+            return;
+
+        Node body = bodyList.item(0);
+        Attr attr = document.createAttribute("style");
+        attr.setValue("margin: 0");
+        body.getAttributes().setNamedItem(attr);
+    }
+
+    public FlowApp getFlowApp() {
+        return flowApp;
+    }
+
+    public Consumer<List<Card>> getOnQuit() {
+        return onQuit;
+    }
+
+    public String getSelectHTMLJS() {
+        return selectHTMLJS;
+    }
+
+    public void setSelectHTMLJS(String selectHTMLJS) {
+        this.selectHTMLJS = selectHTMLJS;
+    }
+
+    private class CardTreeItem extends TreeItem<Card> {
+        private static final String RENAME = "Rename";
+        private static final String RESELECT = "Reselect";
+
+        CardTreeItem(Card card) {
+            super(card);
+        }
+
+        public void onRename() {
+
+        }
+
+        public void onReselect() {
+
         }
     }
 
-    private void useCardSelectionStyling() {
-        String cardSelectionCSSLocation = getClass().getResource("/card_parser_gui/card_selection.css").toExternalForm();
-        documentDisplay.getEngine().setUserStyleSheetLocation(cardSelectionCSSLocation);
-    }
+    private final static KeyCodeCombination QUIT = new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN);
 
-    private void useContentSelectionStyling() {
-        String contentSelectionCSSLocation = getClass().getResource("/card_parser_gui/content_selection.css").toExternalForm();
-        documentDisplay.getEngine().setUserStyleSheetLocation(contentSelectionCSSLocation);
-    }
-
-    private void generateOptionIndexLabel(int index) {
-        Label label = new Label(String.valueOf(index));
-        label.setBackground(Utils.generateBackgroundOfColor(Color.LIGHTGRAY));
-        label.setBorder(new Border(new BorderStroke(Color.BLACK,
-                BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-    }
+    private final static KeyCodeCombination PARSE_CARD_PERFORMER = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
 
     private Map<KeyCodeCombination, Runnable> PARSER_ACTIONS = Map.of(
-
+        PARSE_CARD_PERFORMER, this::onCardParsed,
+        QUIT, this::onAttemptFinish
     );
 
-    public Path askForFile() {
+    public Path promptFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select File to Parse");
-        return fileChooser.showOpenDialog(associatedStage).toPath();
+        return fileChooser.showOpenDialog(getFlowApp().getStage()).toPath();
     }
 
-    public static final KeyCodeCombination LOAD_FILE = new KeyCodeCombination(KeyCode.L, KeyCombination.CONTROL_DOWN);
-    public static final KeyCodeCombination PARSE_SELECTED_TEXT = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
-    public static final KeyCodeCombination SELECT_NEXT_LINE = new KeyCodeCombination(KeyCode.DOWN, KeyCombination.CONTROL_DOWN);
-    public static final KeyCodeCombination UNSELECT_PREVIOUS_LINE = new KeyCodeCombination(KeyCode.UP, KeyCombination.CONTROL_DOWN);
-    public static final KeyCodeCombination SELECT_NEXT_CHARACTER = new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.CONTROL_DOWN);
-    public static final KeyCodeCombination UNSELECT_PREVIOUS_CHARACTER = new KeyCodeCombination(KeyCode.LEFT, KeyCombination.CONTROL_DOWN);
+    public List<Card> getParsedCards() {
+        return parsedCardsRoot.getChildren().stream()
+                .filter(CardTreeItem.class::isInstance)
+                .map(CardTreeItem.class::cast)
+                .map(CardTreeItem::getValue)
+                .collect(Collectors.toList());
+    }
 
     /**
      * {@inheritDoc}
@@ -135,23 +169,89 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         return cardParserArea;
     }
 
-    public ParsedCardsDisplayController getParsedCardsDisplayController() {
-        return parsedCardsDisplayController;
-    }
-
-    public void setParsedCardsDisplayController(ParsedCardsDisplayController parsedCardsDisplayController) {
-        this.parsedCardsDisplayController = parsedCardsDisplayController;
-    }
-
-    public void setAssociatedStage(Stage associatedStage) {
-        this.associatedStage = associatedStage;
-    }
-
     public String getSnapSelectionToWordJS() {
         return snapSelectionToWordJS;
     }
 
     public void setSnapSelectionToWordJS(String snapSelectionToWordJS) {
         this.snapSelectionToWordJS = snapSelectionToWordJS;
+    }
+
+    private void onCardParsed() {
+        String cardContent = getSelectedHTML();
+        cardNameRequest.setOnAction(actionEvent -> {
+            Card card = new Card(cardNameRequest.getText(), cardContent);
+            cardNameRequest.setText(Utils.ZERO_LENGTH_STRING);
+
+            clearSelection();
+
+            CardTreeItem cardTreeItem = new CardTreeItem(card);
+            parsedCardsRoot.getChildren().add(cardTreeItem);
+
+            cardNameRequest.setVisible(false);
+            documentDisplay.requestFocus();
+        });
+
+        cardNameRequest.setVisible(true);
+        cardNameRequest.requestFocus();
+    }
+
+    private boolean inQuit = false;
+
+    private void onAttemptFinish() {
+        cardNameRequest.setText(Utils.ZERO_LENGTH_STRING);
+        cardNameRequest.setVisible(true);
+        cardNameRequest.requestFocus();;
+
+        cardNameRequest.setOnAction(actionEvent -> {
+            try {
+                Blocks blocks = new Blocks();
+                blocks.setName(cardNameRequest.getText());
+
+                Path cardsPath = EFlow.getInstance().getFullAppPath().resolve(EFlow.BLOCKS_DIRECTORY);
+                String withExtension = Utils.addExtension(blocks.getName(), "json");
+                Path filePath = Paths.get(withExtension);
+                Path fullPath = cardsPath.resolve(filePath);
+
+                blocks.setCards(getParsedCards());
+
+                if (Files.exists(fullPath)) // name already in use
+                    return;
+
+                Files.createFile(fullPath);
+
+                String json = EFlow.getInstance().getGSON().toJson(blocks, Blocks.class);
+                Files.write(fullPath, json.getBytes());
+
+                if (!inQuit) {
+                    getOnQuit().accept(getParsedCards());
+                    inQuit = true;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void startProcess() {
+        cardParserArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
+            PARSER_ACTIONS.forEach((keyCodeCombination, runnable) -> {
+                if (keyCodeCombination.match(keyEvent))
+                    runnable.run();
+                keyEvent.consume();
+            });
+        });
+    }
+
+    private String getSelectedText() {
+        return (String) documentDisplay.getEngine().executeScript("window.getSelection().toString()");
+    }
+
+    private String getSelectedHTML() {
+        return (String) documentDisplay.getEngine().executeScript(getSelectHTMLJS());
+    }
+
+    private void clearSelection() {
+        documentDisplay.getEngine().executeScript("window.getSelection().removeAllRanges()");
     }
 }

@@ -9,15 +9,16 @@ import me.theeninja.pfflowing.flowing.FlowingRegion;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static me.theeninja.pfflowing.gui.KeyCodeCombinationUtils.*;
 
 public class KeyEventProcessor {
     private static final Map<KeyCodeCombination, Consumer<FlowDisplayController>> KEYCODE_ACTION_MAP = ImmutableMap.<KeyCodeCombination, Consumer<FlowDisplayController>>builder().put(
-            QUESTION, FlowDisplayController::attemptMark).put(
+            QUESTION, FlowDisplayController::attemptQuestion).put(
             MERGE, FlowDisplayController::attemptMerge).put(
             REFUTE, FlowDisplayController::attemptRefutation).put(
             EXTEND, FlowDisplayController::attemptExtension).put(
@@ -27,33 +28,47 @@ public class KeyEventProcessor {
             WRITE, FlowDisplayController::addWriter).put(
             DELETE, FlowDisplayController::attemptDelete).put(
             EXPAND, FlowDisplayController::attemptExpansion).put(
-            SELECT_ALL, FlowDisplayController::attemptSelectAll
+            SELECT_ALL, FlowDisplayController::attemptSelectAll).put(
+            SHIFT_DISPLAY_LEFT, FlowDisplayController::shiftLeft).put(
+            SHIFT_DISPLAY_RIGHT, FlowDisplayController::shiftRight
     ).build();
 
-    private static final Map<KeyCode, BiFunction<FlowGrid, FlowingRegion, Optional<FlowingRegion>>> KEYCODE_REGION_SELECTION_MAP = ImmutableMap.of(
-            KeyCode.LEFT, FlowGrid::getLeft,
-            KeyCode.RIGHT, FlowGrid::getRight,
-            KeyCode.UP, FlowGrid::getAbove,
-            KeyCode.DOWN, FlowGrid::getBelow
+    private static final Map<Direction, KeyCode> KEYCODE_DIRECTION_MAP = Map.of(
+            Direction.UP, KeyCode.UP,
+            Direction.RIGHT, KeyCode.RIGHT,
+            Direction.DOWN, KeyCode.DOWN,
+            Direction.LEFT, KeyCode.LEFT
     );
 
-    private static final Map<KeyCode, Consumer<SpeechList>> KEYCODE_SPEECH_SELECTION_MAP = ImmutableMap.of(
-            KeyCode.RIGHT, SpeechList::selectRightSpeech,
-            KeyCode.LEFT, SpeechList::selectLeftSpeech
+    private static final Map<Direction, BiFunction<FlowGrid, FlowingRegion, Optional<FlowingRegion>>> KEYCODE_REGION_SELECTION_MAP = ImmutableMap.of(
+            Direction.UP, FlowGrid::getAbove,
+            Direction.RIGHT, FlowGrid::getRight,
+            Direction.DOWN, FlowGrid::getBelow,
+            Direction.LEFT, FlowGrid::getLeft
     );
 
-    private static final ImmutableMap<KeyCode, Runnable> KEYCODE_GLOBAL_ACTIONS_MAP = ImmutableMap.of();
+    private static final Map<Direction, Function<FlowDisplayController, Optional<FlowingRegion>>> KEYCODE_REGION_DEFAULT_MAP = Map.of(
+            Direction.UP, FlowDisplayController::fromBottom,
+            Direction.RIGHT, FlowDisplayController::fromLeft,
+            Direction.DOWN, FlowDisplayController::fromTop,
+            Direction.LEFT, FlowDisplayController::fromRight
+    );
 
-    private final FlowDisplayController flowDisplayController;
+    private static final Map<KeyCodeCombination, Consumer<FlowController>> KEYCODE_MULTI_CONTROLLER_ACTION_MAP = ImmutableMap.of(
+            SWITCH_SPEECHLIST, FlowController::switchSpeechList
+    );
+
+    private static final Map<Direction, Consumer<FlowDisplayController>> KEYCODE_SPEECH_SELECTION_MAP = Map.of(
+            Direction.RIGHT, FlowDisplayController::selectRightSpeech,
+            Direction.LEFT, FlowDisplayController::selectLeftSpeech
+    );
+
+    private final FlowController flowController;
     private final KeyEvent keyEvent;
 
-    KeyEventProcessor(FlowDisplayController flowDisplayController, KeyEvent keyEvent) {
-        this.flowDisplayController = flowDisplayController;
+    KeyEventProcessor(FlowController flowController, KeyEvent keyEvent) {
+        this.flowController = flowController;
         this.keyEvent = keyEvent;
-    }
-
-    public FlowDisplayController getFlowDisplayController() {
-        return flowDisplayController;
     }
 
     public KeyEvent getKeyEvent() {
@@ -61,33 +76,52 @@ public class KeyEventProcessor {
     }
 
     private final List<Runnable> PROCESS_LIST = List.of(
-        this::handleIfAction,
+        this::handleIfSingleControllerAction,
+        this::handleIfMultiControllerAction,
         this::handleIfRegionSelection,
         this::handleIfSpeechSelection
     );
 
-    private void handleIfAction() {
+    private void handleIfSingleControllerAction() {
         KEYCODE_ACTION_MAP.forEach((key, value) -> {
-            if (key.match(keyEvent))
-                value.accept(flowDisplayController);
+            if (key.match(getKeyEvent()))
+                value.accept(flowController.getSelectedRound().getSelectedController());
+        });
+    }
+
+    private void handleIfMultiControllerAction() {
+        KEYCODE_MULTI_CONTROLLER_ACTION_MAP.forEach((key, value) -> {
+            if (key.match(getKeyEvent()))
+                value.accept(flowController);
         });
     }
 
     private void handleIfRegionSelection() {
+        final FlowDisplayController selectedController = flowController.getSelectedRound().getSelectedController();
         KEYCODE_REGION_SELECTION_MAP.forEach((key, value) -> {
-            if (keyEvent.getCode() == key)
-                getFlowDisplayController().handleSelection(
-                        // Partial application
-                        flowingRegion -> value.apply(getFlowDisplayController().flowGrid, flowingRegion),
-                        keyEvent.isControlDown()
-                );
+            KeyCode keyCode = KEYCODE_DIRECTION_MAP.get(key);
+            KeyCodeCombination singleSelect = new KeyCodeCombination(keyCode, SELECT);
+            KeyCodeCombination multiSelect = new KeyCodeCombination(keyCode, SELECT, TOGGLE_SELECT_MULTIPLE);
+
+            Function<FlowingRegion, Optional<FlowingRegion>> partialApplication =
+                    flowingRegion -> value.apply(selectedController.flowGrid, flowingRegion);
+            Function<FlowDisplayController, Optional<FlowingRegion>> function = KEYCODE_REGION_DEFAULT_MAP.get(key);
+            Supplier<Optional<FlowingRegion>> supplier = () -> function.apply(selectedController);
+
+            if (singleSelect.match(getKeyEvent()))
+                selectedController.handleSelection(partialApplication, supplier, false);
+            else if (multiSelect.match(getKeyEvent()))
+                selectedController.handleSelection(partialApplication, supplier,true);
         });
     }
 
     private void handleIfSpeechSelection() {
         KEYCODE_SPEECH_SELECTION_MAP.forEach((key, value) -> {
-            if (key == keyEvent.getCode())
-                value.accept(flowDisplayController.getSpeechList());
+            KeyCode keyCode = KEYCODE_DIRECTION_MAP.get(key);
+            KeyCodeCombination test = new KeyCodeCombination(keyCode, KeyCodeCombinationUtils.SPEECH_SELECTOR);
+            System.out.println("Required is" + test);
+            if (test.match(getKeyEvent()))
+                value.accept(flowController.getSelectedRound().getSelectedController());
         });
     }
 

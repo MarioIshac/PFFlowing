@@ -6,9 +6,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox xmlns="http://javafx.com/javafx"
+<TreeTableView xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            prefWidth="Infinity"
-            fx:id="notificationBox">
+            prefHeight="400.0" prefWidth="600.0"
+            fx:id="picker">
 
-</HBox>
+</TreeTableView>
