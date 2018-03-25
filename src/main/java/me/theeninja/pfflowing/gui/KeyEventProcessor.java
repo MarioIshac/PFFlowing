@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
+import me.theeninja.pfflowing.ActionManager;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 
 import java.util.List;
@@ -24,27 +25,26 @@ public class KeyEventProcessor {
             EXTEND, FlowDisplayController::attemptExtension).put(
             NARROW_BY_1, FlowDisplayController::narrowOnce).put(
             UPSCALE_BY_1, FlowDisplayController::upscaleOnce).put(
-            EDIT, FlowDisplayController::edit).put(
+            EDIT, FlowDisplayController::attemptEdit).put(
             WRITE, FlowDisplayController::addWriter).put(
             DELETE, FlowDisplayController::attemptDelete).put(
             EXPAND, FlowDisplayController::attemptExpansion).put(
             SELECT_ALL, FlowDisplayController::attemptSelectAll).put(
             SHIFT_DISPLAY_LEFT, FlowDisplayController::shiftLeft).put(
-            SHIFT_DISPLAY_RIGHT, FlowDisplayController::shiftRight
+            SHIFT_DISPLAY_RIGHT, FlowDisplayController::shiftRight).put(
+            UNDO, FlowDisplayController::test
     ).build();
+
+    private static final Map<KeyCodeCombination, Consumer<ActionManager>> KEYCODE_ACTIONMANAGER_MAP = Map.of(
+            UNDO, ActionManager::undo,
+            REDO, ActionManager::redo
+    );
 
     private static final Map<Direction, KeyCode> KEYCODE_DIRECTION_MAP = Map.of(
             Direction.UP, KeyCode.UP,
             Direction.RIGHT, KeyCode.RIGHT,
             Direction.DOWN, KeyCode.DOWN,
             Direction.LEFT, KeyCode.LEFT
-    );
-
-    private static final Map<Direction, BiFunction<FlowGrid, FlowingRegion, Optional<FlowingRegion>>> KEYCODE_REGION_SELECTION_MAP = ImmutableMap.of(
-            Direction.UP, FlowGrid::getAbove,
-            Direction.RIGHT, FlowGrid::getRight,
-            Direction.DOWN, FlowGrid::getBelow,
-            Direction.LEFT, FlowGrid::getLeft
     );
 
     private static final Map<Direction, Function<FlowDisplayController, Optional<FlowingRegion>>> KEYCODE_REGION_DEFAULT_MAP = Map.of(
@@ -98,30 +98,39 @@ public class KeyEventProcessor {
 
     private void handleIfRegionSelection() {
         final FlowDisplayController selectedController = flowController.getSelectedRound().getSelectedController();
-        KEYCODE_REGION_SELECTION_MAP.forEach((key, value) -> {
-            KeyCode keyCode = KEYCODE_DIRECTION_MAP.get(key);
-            KeyCodeCombination singleSelect = new KeyCodeCombination(keyCode, SELECT);
-            KeyCodeCombination multiSelect = new KeyCodeCombination(keyCode, SELECT, TOGGLE_SELECT_MULTIPLE);
 
-            Function<FlowingRegion, Optional<FlowingRegion>> partialApplication =
-                    flowingRegion -> value.apply(selectedController.flowGrid, flowingRegion);
-            Function<FlowDisplayController, Optional<FlowingRegion>> function = KEYCODE_REGION_DEFAULT_MAP.get(key);
+        for (Direction direction : Direction.values()) {
+            KeyCode keyCode = KEYCODE_DIRECTION_MAP.get(direction);
+            KeyCodeCombination singleSelect = new KeyCodeCombination(keyCode/*, SELECT*/);
+            KeyCodeCombination multiSelect = new KeyCodeCombination(keyCode,/* SELECT,*/ TOGGLE_SELECT_MULTIPLE);
+
+            Function<FlowDisplayController, Optional<FlowingRegion>> function = KEYCODE_REGION_DEFAULT_MAP.get(direction);
             Supplier<Optional<FlowingRegion>> supplier = () -> function.apply(selectedController);
 
+            Function<FlowingRegion, Optional<FlowingRegion>> a = flowingRegion ->
+                selectedController.flowGrid.getRelativeFlowingRegion(flowingRegion, direction);
+
             if (singleSelect.match(getKeyEvent()))
-                selectedController.handleSelection(partialApplication, supplier, false);
+                selectedController.handleSelection(a, supplier, false);
             else if (multiSelect.match(getKeyEvent()))
-                selectedController.handleSelection(partialApplication, supplier,true);
-        });
+                selectedController.handleSelection(a, supplier,true);
+        }
     }
 
     private void handleIfSpeechSelection() {
         KEYCODE_SPEECH_SELECTION_MAP.forEach((key, value) -> {
             KeyCode keyCode = KEYCODE_DIRECTION_MAP.get(key);
             KeyCodeCombination test = new KeyCodeCombination(keyCode, KeyCodeCombinationUtils.SPEECH_SELECTOR);
-            System.out.println("Required is" + test);
             if (test.match(getKeyEvent()))
                 value.accept(flowController.getSelectedRound().getSelectedController());
+        });
+    }
+
+    private void handleIfEdit() {
+        KEYCODE_ACTIONMANAGER_MAP.forEach((key, value) -> {
+            if (key.match(getKeyEvent())) {
+                value.accept(flowController.getSelectedRound().getSelectedController().getActionManager());
+            }
         });
     }
 

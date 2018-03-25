@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -117,6 +118,16 @@ public class EFlow {
 
     public Configuration getConfiguration() {
         return configuration;
+    }
+
+    private void saveConfiguration() {
+        try {
+            String json = getGSON().toJson(getConfiguration(), Configuration.class);
+            byte[] bytes = json.getBytes();
+            Files.write(getConfigPath(), bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public Gson getGSON() {

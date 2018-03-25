@@ -26,10 +26,9 @@ public class KeyCodeCombinationUtils {
     public static final KeyCode CARD_SELECTOR = KeyCode.SEMICOLON;
 
     public static final KeyCombination.Modifier SELECT = KeyCombination.CONTROL_DOWN;
-    public static final KeyCombination.Modifier TOGGLE_SELECT_MULTIPLE = KeyCombination.SHIFT_DOWN;
+    public static final KeyCombination.Modifier TOGGLE_SELECT_MULTIPLE = KeyCombination.CONTROL_DOWN;
 
     public static final KeyCodeCombination SWITCH_SPEECHLIST = new KeyCodeCombination(KeyCode.N, KeyCombination.SHIFT_DOWN);
-
     public static final KeyCombination.Modifier SPEECH_SELECTOR = KeyCombination.SHIFT_DOWN;
 
     // Application keys

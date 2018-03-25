@@ -18,6 +18,7 @@ import javafx.stage.Stage;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
+import me.theeninja.pfflowing.configuration.ConfigEditorController;
 import me.theeninja.pfflowing.drive.google.GDriveConnector;
 import me.theeninja.pfflowing.drive.GDriveFilePickerController;
 import me.theeninja.pfflowing.flowingregions.Blocks;
@@ -109,6 +110,26 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     @FXML
     public void emailFlow(ActionEvent actionEvent) {
 
+    }
+
+    @FXML
+    public void configure(ActionEvent actionEvent) {
+        try {
+            ConfigEditorController configEditorController = new ConfigEditorController(EFlow.getInstance().getConfiguration());
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/config_editor.fxml"));
+            fxmlLoader.setController(configEditorController);
+            fxmlLoader.load();
+
+            Stage stage = new Stage();
+            Scene scene = new Scene(configEditorController.getCorrelatingView());
+
+            stage.setScene(scene);
+
+            stage.show();
+            stage.toFront();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML

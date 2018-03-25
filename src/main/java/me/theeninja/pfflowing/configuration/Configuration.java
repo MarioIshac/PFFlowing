@@ -3,10 +3,15 @@ package me.theeninja.pfflowing.configuration;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javafx.beans.property.*;
+import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import me.theeninja.pfflowing.utils.Utils;
 
 public class Configuration {
+
+    private static final String AFF_COLOR_PROPERTY_LABEL = "Affirmative Color";
+    private static final String NEG_COLOR_PROPERTY_LABEL = "Negation Color";
 
     private final String DEFAULT_FONT_FAMILY = "Times New Roman";
     private final int DEFAULT_FONT_SIZE = 12;
@@ -16,65 +21,45 @@ public class Configuration {
 
     @Expose
     @SerializedName("affColor")
-    private ObjectProperty<Color> affColor = new SimpleObjectProperty<>(DEFAULT_AFF_COLOR);
+    private Configurable<Color> affColor = new Configurable<>(
+            new Descriptor("Color", "Aff Color", "Aff Color"),
+            DEFAULT_AFF_COLOR
+    );
 
     @SerializedName("negColor")
     @Expose
-    private ObjectProperty<Color> negColor = new SimpleObjectProperty<>(DEFAULT_NEG_COLOR);
+    private Configurable<Color> negColor = new Configurable<>(
+            new Descriptor("Color", "Neg Color", "Neg Color"),
+            DEFAULT_NEG_COLOR
+    );
 
     @SerializedName("backgroundColor")
     @Expose
-    private ObjectProperty<Color> backgroundColor = new SimpleObjectProperty<>(DEFAULT_BACKGROUND_COLOR);
+    private Configurable<Color> backgroundColor = new Configurable<>(
+            new Descriptor("Color", "Background Color", "Background Color"),
+            DEFAULT_BACKGROUND_COLOR
+    );
 
     @SerializedName("font")
     @Expose
-    private ObjectProperty<Font> font = new SimpleObjectProperty<>(Font.font(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE));
+    private Configurable<Font> font = new Configurable<>(
+            new Descriptor("Font", "Font", "Font"),
+            Font.font(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
+    );
 
-    public Color getAffColor() {
-        return affColor.get();
-    }
-
-    public ObjectProperty<Color> affColorProperty() {
+    public Configurable<Color> getAffColor() {
         return affColor;
     }
 
-    public void setAffColor(Color affColor) {
-        this.affColor.set(affColor);
-    }
-
-    public Color getNegColor() {
-        return negColor.get();
-    }
-
-    public ObjectProperty<Color> negColorProperty() {
+    public Configurable<Color> getNegColor() {
         return negColor;
     }
 
-    public void setNegColor(Color negColor) {
-        this.negColor.set(negColor);
-    }
-
-    public Color getBackgroundColor() {
-        return backgroundColor.get();
-    }
-
-    public ObjectProperty<Color> backgroundColorProperty() {
+    public Configurable<Color> getBackgroundColor() {
         return backgroundColor;
     }
 
-    public void setBackgroundColor(Color backgroundColor) {
-        this.backgroundColor.set(backgroundColor);
-    }
-
-    public Font getFont() {
-        return font.get();
-    }
-
-    public ObjectProperty<Font> fontProperty() {
+    public Configurable<Font> getFont() {
         return font;
-    }
-
-    public void setFont(Font font) {
-        this.font.set(font);
     }
 }

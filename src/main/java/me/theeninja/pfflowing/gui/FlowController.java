@@ -117,7 +117,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        getCorrelatingView().addEventHandler(KeyEvent.KEY_PRESSED, getKeyEventHandler());
+        roundsBar.addEventHandler(KeyEvent.KEY_PRESSED, getKeyEventHandler());
 
         // Keep file and directory choosers as global instance variables in order to preserve their state
         // through multiple saves and opens
@@ -277,8 +277,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         else
             return file;
     }
-
-    private static final Type FLOWING_GRIDS_TYPE = new TypeToken<List<FlowGrid>>(){}.getType();
 
     public void saveRoundAs() throws IOException {
         getFileChooser().setTitle(SAVE_TITLE);

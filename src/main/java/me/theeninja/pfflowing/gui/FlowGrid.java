@@ -6,86 +6,128 @@ import javafx.scene.layout.GridPane;
 import me.theeninja.pfflowing.flowing.*;
 
 import java.util.*;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FlowGrid extends GridPane {
     public static final int REF_COL_OFFSET = 1;
     public static final int EXT_COL_OFFSET = 2;
 
+    private static boolean isOnGrid(Node node) {
+        Integer columnIndex = FlowGrid.getColumnIndex(node);
+        Integer rowIndex = FlowGrid.getRowIndex(node);
+
+        return columnIndex != null && rowIndex != null;
+    }
     public List<Node> getColumnChildren(int column) {
-        return getChildren().stream().filter(node -> GridPane.getColumnIndex(node) == column).collect(Collectors.toList());
+        return getChildren().stream()
+                .filter(FlowGrid::isOnGrid)
+                .filter(node -> GridPane.getColumnIndex(node) == column).collect(Collectors.toList());
     }
 
     public List<Node> getRowChildren(int row) {
-        return getChildren().stream().filter(node -> GridPane.getRowIndex(node) == row).collect(Collectors.toList());
+        return getChildren().stream()
+                .filter(FlowGrid::isOnGrid)
+                .filter(node -> GridPane.getRowIndex(node) == row).collect(Collectors.toList());
     }
 
     public Optional<Node> getNode(int column, int row) {
-        return getChildren().stream().filter(node -> GridPane.getColumnIndex(node) == column && GridPane.getRowIndex(node) == row ).findFirst();
-    }
+        return getChildren().stream()
+            .filter(FlowGrid::isOnGrid)
+            .filter(node -> {
+                Integer columnIndex = FlowGrid.getColumnIndex(node);
+                Integer rowIndex = FlowGrid.getRowIndex(node);
 
-    public static Optional<FlowingRegion> toFlowingRegionOptional(Optional<Node> optionalNode) {
-        if (optionalNode.isPresent() && optionalNode.get() instanceof FlowingRegion)
-            return Optional.of((FlowingRegion) optionalNode.get());
-        else
-            return Optional.empty();
+                return columnIndex == column && rowIndex == row;
+            }).findFirst();
     }
 
     public Optional<FlowingRegion> getFlowingRegion(int column, int row) {
-        return toFlowingRegionOptional(getNode(column, row));
+        Optional<Node> node = getNode(column, row);
+
+        return node
+                .filter(FlowingRegion.class::isInstance)
+                .map(FlowingRegion.class::cast);
     }
 
-    public Optional<FlowingRegion> getRelativeFlowingRegion(FlowingRegion flowingRegion, int columnOffset, int rowOffset) {
-        int baseColumn = GridPane.getColumnIndex(flowingRegion);
-        int baseRow = GridPane.getRowIndex(flowingRegion);
+    public Optional<FlowingRegion> getRelativeFlowingRegion(FlowingRegion flowingRegion, Direction direction) {
+        int column = FlowGrid.getColumnIndex(flowingRegion);
+        int row = FlowGrid.getRowIndex(flowingRegion);
 
-        Optional<Node> possibleRelNode = getNode(baseColumn + columnOffset, baseRow + rowOffset);
+        return getRelativeFlowingRegion(column, row, direction);
+    }
 
-        if (!possibleRelNode.isPresent())
-            return Optional.empty();
+    public Optional<FlowingRegion> getRelativeFlowingRegion(int baseColumn, int baseRow, Direction direction) {
+        switch (direction) {
+            case LEFT:
+                for (int column = baseColumn - 1; column >= 0; column--) {
+                    Optional<FlowingRegion> optionalFlowingRegion = getFlowingRegion(column, baseRow);
+                    if (optionalFlowingRegion.isPresent())
+                        return optionalFlowingRegion;
+                }
+                break;
+            case RIGHT:
+                for (int column = baseColumn + 1; column < getColumnCount(); column++) {
+                    Optional<FlowingRegion> optionalFlowingRegion = getFlowingRegion(column, baseRow);
+                    if (optionalFlowingRegion.isPresent())
+                        return optionalFlowingRegion;
+                }
+                break;
+            case UP: {
+                for (int row = baseRow - 1; row >= 0; row--) {
+                    Optional<FlowingRegion> optionalFlowingRegion = getFlowingRegion(baseColumn, row);
+                    if (optionalFlowingRegion.isPresent())
+                        return optionalFlowingRegion;
+                }
+                break;
+            }
+            case DOWN: {
+                for (int row = baseRow + 1; row < getRowCount(); row++) {
+                    Optional<FlowingRegion> optionalFlowingRegion = getFlowingRegion(baseColumn, row);
+                    if (optionalFlowingRegion.isPresent())
+                        return optionalFlowingRegion;
+                }
+                break;
+            }
 
-        Node relNode = possibleRelNode.get();
-
-        if (!(relNode instanceof FlowingRegion))
-            return Optional.empty();
-
-        return Optional.of((FlowingRegion) relNode);
+            default: return Optional.empty();
+        }
+        return Optional.empty();
     }
 
     public Optional<FlowingRegion> getLeft(FlowingRegion node) {
-        return getRelativeFlowingRegion(node, -1, 0);
+        return getRelativeFlowingRegion(node, Direction.LEFT);
     }
 
     public Optional<FlowingRegion> getRight(FlowingRegion node) {
-        return getRelativeFlowingRegion(node, 1, 0);
+        return getRelativeFlowingRegion(node, Direction.RIGHT);
     }
 
     public Optional<FlowingRegion> getAbove(FlowingRegion node) {
-        return getRelativeFlowingRegion(node, 0, -1);
+        return getRelativeFlowingRegion(node, Direction.UP);
     }
 
     public Optional<FlowingRegion> getBelow(FlowingRegion node) {
-        return getRelativeFlowingRegion(node, 0, 1);
+        return getRelativeFlowingRegion(node, Direction.DOWN);
     }
 
     public Optional<OffensiveFlowingRegion> getRefutation(FlowingRegion flowingRegion) {
-        Optional<FlowingRegion> rightFlowingRegion = getFlowingRegion(FlowGrid.getColumnIndex(flowingRegion) + REF_COL_OFFSET,
+        Optional<FlowingRegion> rightFlowingRegion = getFlowingRegion(
+                FlowGrid.getColumnIndex(flowingRegion) + REF_COL_OFFSET,
                 FlowGrid.getRowIndex(flowingRegion));
 
-        if (rightFlowingRegion.isPresent() && rightFlowingRegion.get() instanceof OffensiveFlowingRegion)
-            return Optional.of((OffensiveFlowingRegion) rightFlowingRegion.get());
-        return Optional.empty();
+        return rightFlowingRegion.map(OffensiveFlowingRegion.class::cast);
     }
 
     public Optional<ExtensionFlowingRegion> getExtension(FlowingRegion flowingRegion) {
-        Optional<FlowingRegion> rightFlowingRegion = getFlowingRegion(FlowGrid.getColumnIndex(flowingRegion) + EXT_COL_OFFSET,
+        Optional<FlowingRegion> rightFlowingRegion = getFlowingRegion(
+                FlowGrid.getColumnIndex(flowingRegion) + EXT_COL_OFFSET,
                 FlowGrid.getRowIndex(flowingRegion));
 
-        if (rightFlowingRegion.isPresent() && rightFlowingRegion.get() instanceof ExtensionFlowingRegion)
-            return Optional.of((ExtensionFlowingRegion) rightFlowingRegion.get());
-        return Optional.empty();
+        return rightFlowingRegion.map(ExtensionFlowingRegion.class::cast);
     }
 
     public List<FlowingRegion> getPostLink(FlowingRegion flowingRegion) {

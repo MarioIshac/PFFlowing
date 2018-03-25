@@ -24,11 +24,11 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
     private BooleanProperty expanded = new SimpleBooleanProperty();
     private final List<Card> associatedCards;
 
-    public FlowingRegion(String text) {
+    protected FlowingRegion(String text) {
         this(text, Collections.emptyList());
     }
 
-    public FlowingRegion(String text, List<Card> associatedCards) {
+    protected FlowingRegion(String text, List<Card> associatedCards) {
         super();
 
         setWrapText(true);
@@ -37,7 +37,7 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
         addFullTextListener();
         setFullText(text);
 
-        fontProperty().bind(EFlow.getInstance().getConfiguration().fontProperty());
+        fontProperty().bind(EFlow.getInstance().getConfiguration().getFont().valueProperty());
 
         setExpanded(false);
 

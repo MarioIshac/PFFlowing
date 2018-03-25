@@ -4,9 +4,11 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import me.theeninja.pfflowing.gui.FlowGrid;
+import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class FlowingRegionAdapter extends TypeAdapter<FlowingRegion> {
     @Override
@@ -28,25 +30,31 @@ public class FlowingRegionAdapter extends TypeAdapter<FlowingRegion> {
         jsonReader.beginObject();
 
         Utils.expect(jsonReader, TYPE_NAME);
-
+        String className = jsonReader.nextString();
 
         Utils.expect(jsonReader, TEXT_NAME);
-        FlowingRegion flowingRegion = new FlowingRegion(jsonReader.nextString());
+        String text = jsonReader.nextString();
 
         Utils.expect(jsonReader, COLUMN_NAME);
-        FlowGrid.setColumnIndex(flowingRegion, jsonReader.nextInt());
+        int column = jsonReader.nextInt();
 
         Utils.expect(jsonReader, ROW_NAME);
-        FlowGrid.setRowIndex(flowingRegion, jsonReader.nextInt());
-
+        int row = jsonReader.nextInt();
 
         jsonReader.endObject();
-        return flowingRegion;
+
+        return null;
     }
 
     public static void addJSON(JsonWriter jsonWriter, FlowingRegion flowingRegion) throws IOException {
         jsonWriter.beginObject();
-        jsonWriter.name(TEXT_NAME).value(flowingRegion.getFullText());
+
+        String className = flowingRegion.getClass().getSimpleName();
+        jsonWriter.name(TYPE_NAME).value(className);
+
+        if (!className.equals(ExtensionFlowingRegion.class.getSimpleName()))
+            jsonWriter.name(TEXT_NAME).value(flowingRegion.getFullText());
+
         jsonWriter.name(COLUMN_NAME).value(FlowGrid.getColumnIndex(flowingRegion));
         jsonWriter.name(ROW_NAME).value(FlowGrid.getRowIndex(flowingRegion));
         jsonWriter.endObject();
