@@ -1,34 +1,59 @@
 package me.theeninja.pfflowing.flowing;
 
 import com.google.gson.annotations.Expose;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import com.google.gson.annotations.SerializedName;
+import javafx.beans.property.*;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import me.theeninja.pfflowing.Duplicable;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.configuration.InternalConfiguration;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.gui.FlowGrid;
+import me.theeninja.pfflowing.gui.FlowingRegionDetailController;
 import me.theeninja.pfflowing.gui.LengthLimitType;
+import me.theeninja.pfflowing.utils.Utils;
+import org.controlsfx.control.PopOver;
+import org.controlsfx.control.decoration.Decorator;
+import org.controlsfx.control.decoration.StyleClassDecoration;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
 
-    @Expose private StringProperty fullText = new SimpleStringProperty();
+    @Expose
+    @SerializedName("fullText")
+    private StringProperty fullText = new SimpleStringProperty();
+
+    /**
+     * The shortened version of full text. How short this is relative
+     * to {@code fullText} is dependent on the limit specified in the
+     * configuration. Since it is a dependent variable, no need to serialize.
+     */
     private StringProperty shortenedText = new SimpleStringProperty();
 
+    /**
+     * Represents whether the flowing region is expanded on the flow grid.
+     * Since this is set to a default value (false) when a flowing region is loaded on the
+     * flow grid, no need to serialize.
+     */
     private BooleanProperty expanded = new SimpleBooleanProperty();
-    private final List<Card> associatedCards;
+
+    @Expose
+    @SerializedName("associatedCards")
+    private final ObservableList<Card> associatedCards;
 
     protected FlowingRegion(String text) {
-        this(text, Collections.emptyList());
+        this(text, FXCollections.observableArrayList());
     }
 
-    protected FlowingRegion(String text, List<Card> associatedCards) {
+    protected FlowingRegion(String text, ObservableList<Card> associatedCards) {
         super();
 
         setWrapText(true);
@@ -42,6 +67,23 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
         setExpanded(false);
 
         this.associatedCards = associatedCards;
+
+        getAssociatedCards().addListener(Utils.generateListChangeListener(this::checkIfSizeIs0));
+        checkIfSizeIs0();
+
+        PopOver detailer = getDetailer();
+
+        expandedProperty().addListener((observable, oldValue, newValue) -> {
+            VBox vbox = (VBox) detailer.getContentNode();
+
+            if (vbox.getChildren().isEmpty())
+                return;
+
+            if (newValue)
+                detailer.show(this);
+            else
+                detailer.hide();
+        });
     }
 
     public void addFullTextListener() {
@@ -128,7 +170,32 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
         this.expanded.set(expanded);
     }
 
-    public List<Card> getAssociatedCards() {
+    public ObservableList<Card> getAssociatedCards() {
         return associatedCards;
+    }
+
+    private void checkIfSizeIs0() {
+        if (getAssociatedCards().size() == 0)
+            Decorator.addDecoration(this, new StyleClassDecoration("warning"));
+    }
+
+    private PopOver getDetailer() {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/card_details.fxml"));
+            FlowingRegionDetailController flowingRegionDetailController = new FlowingRegionDetailController(this);
+            fxmlLoader.setController(flowingRegionDetailController);
+            fxmlLoader.load();
+
+            PopOver popOver = new PopOver(flowingRegionDetailController.getCorrelatingView());
+
+            popOver.setArrowLocation(PopOver.ArrowLocation.LEFT_TOP);
+            popOver.maxHeightProperty().bind(flowingRegionDetailController.getCorrelatingView().heightProperty());
+
+            return popOver;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

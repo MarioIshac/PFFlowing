@@ -76,6 +76,10 @@ public final class Utils {
         };
     }
 
+    public static <T> ListChangeListener<? super T> generateListChangeListener(Runnable runnable) {
+        return change -> runnable.run();
+    }
+
     public static <T> SetChangeListener<? super T> generateSetChangeListener(Consumer<T> addFunction, Consumer<T> removeFunction) {
         return change -> {
             if (change.wasAdded())

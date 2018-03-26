@@ -90,19 +90,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
     public void loadHTML(String string) {
         documentDisplay.getEngine().loadContent(string);
-
-        Document document = documentDisplay.getEngine().getDocument();
-
-        // Should have length 1 only
-        NodeList bodyList = document.getElementsByTagName("body");
-
-        if (bodyList.getLength() == 0)
-            return;
-
-        Node body = bodyList.item(0);
-        Attr attr = document.createAttribute("style");
-        attr.setValue("margin: 0");
-        body.getAttributes().setNamedItem(attr);
     }
 
     public FlowApp getFlowApp() {
@@ -248,7 +235,9 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     }
 
     private String getSelectedHTML() {
-        return (String) documentDisplay.getEngine().executeScript(getSelectHTMLJS());
+        String html = (String) documentDisplay.getEngine().executeScript(getSelectHTMLJS());
+        System.out.println("The html" + html);
+        return html;
     }
 
     private void clearSelection() {

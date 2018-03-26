@@ -49,12 +49,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
                     .filter(path -> Utils.hasExtension(path.getFileName().toString(), "json"))
                     .map(Utils::readAsString)
                     .map(json -> EFlow.getInstance().getGSON().fromJson(json, Blocks.class))
-                    .forEach(blocks -> {
-                        MenuItem blocksMenuItem = new MenuItem();
-                        blocksMenuItem.setOnAction(actionEvent ->
-                            getPFFlowing().getFlowController().getCardSelectorController().addBlocks(blocks)
-                        );
-                    });
+                    .forEach(this::addLoadBlockMenuItem);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -163,9 +158,8 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
             List<File> files = result.getFiles();
 
-            if (files.isEmpty()) {
+            if (files.isEmpty())
                 System.out.println("No files found.");
-            }
             else {
                 FXMLLoader fxmlLoader = new FXMLLoader(NavigatorController.class.getResource("/drive_picker.fxml"));
                 GDriveFilePickerController pickerController = new GDriveFilePickerController(files);
@@ -287,5 +281,16 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
             stage.hide();
         };
+    }
+
+    private void addLoadBlockMenuItem(Blocks blocks) {
+        MenuItem blocksMenuItem = new MenuItem();
+        blocksMenuItem.setText(blocks.getName());
+
+        blocksMenuItem.setOnAction(actionEvent ->
+            getPFFlowing().getFlowController().getCardSelectorController().addBlocks(blocks)
+        );
+
+        openRecent.getItems().add(blocksMenuItem);
     }
 }

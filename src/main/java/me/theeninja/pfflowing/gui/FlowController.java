@@ -1,7 +1,6 @@
 package me.theeninja.pfflowing.gui;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.reflect.TypeToken;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -13,6 +12,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
@@ -23,11 +23,12 @@ import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import me.theeninja.pfflowing.ActionManager;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.configuration.InternalConfiguration;
+import me.theeninja.pfflowing.flowing.FlowingRegion;
+import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.tournament.Round;
 import me.theeninja.pfflowing.tournament.UseType;
@@ -36,7 +37,6 @@ import me.theeninja.pfflowing.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,6 +84,29 @@ public class FlowController implements Initializable, SingleViewController<Flowi
             }*/
     );
 
+    private void onRegionRemovalRemoveDragSupport(Node node) {
+        if (node instanceof FlowingRegion) {
+            FlowingRegion flowingRegion = (FlowingRegion) node;
+            addDragSupport(flowingRegion);
+        }
+    }
+
+    private void onRegionAdditionAddDragSupport(Node node) {
+        if (node instanceof FlowingRegion) {
+            FlowingRegion flowingRegion = (FlowingRegion) node;
+            removeDragSupport(flowingRegion);
+        }
+    }
+
+    private void onDragOver(DragEvent dragEvent) {
+        Object source = dragEvent.getGestureSource();
+
+        if (!(source instanceof CardTreeCell))
+            return; // drag was initiated from an irrelevant component on the scene
+
+        dragEvent.acceptTransferModes(TransferMode.ANY);
+    }
+
     @Override
     public FlowingPane getCorrelatingView() {
         return pfFlowingMain;
@@ -91,7 +114,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     private EventHandler<KeyEvent> getKeyEventHandler() {
         return keyEvent -> {
-            System.out.println("Key received + " + keyEvent.toString());
             GLOBAL_KEY_CODES.forEach((key, value) -> {
                 if (key.match(keyEvent))
                     value.run();
@@ -263,10 +285,27 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
         roundsBar.getTabs().add(roundTab);
 
-        round.getAffController().flowDisplay.prefWidthProperty().bind(roundsBar.widthProperty());
-        round.getNegController().flowDisplay.prefWidthProperty().bind(roundsBar.widthProperty());
+        for (FlowDisplayController controller : round.getSideControllers()) {
+            controller.getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
+            controller.flowGrid.getChildren().addListener(Utils.generateListChangeListener(
+                this::onRegionRemovalRemoveDragSupport,
+                this::onRegionAdditionAddDragSupport)
+            );
+        }
+
+        round.getAffController().getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
+        round.getNegController().getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
     }
 
+    private void addDragSupport(FlowingRegion flowingRegion) {
+        flowingRegion.addEventHandler(DragEvent.DRAG_OVER, this::onDragOver);
+        flowingRegion.addEventHandler(DragEvent.DRAG_DROPPED, this::onDragDroppedOnRegion);
+    }
+
+    private void removeDragSupport(FlowingRegion flowingRegion) {
+        flowingRegion.removeEventHandler(DragEvent.DRAG_OVER, this::onDragOver);
+        flowingRegion.removeEventHandler(DragEvent.DRAG_DROPPED, this::onDragDroppedOnRegion);
+    }
 
     private static final String FILE_EXTENSION = "eflow";
     private static final String SAVE_TITLE = "Save an EFlow";
@@ -395,7 +434,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
             Path parentDirectoryPath = Paths.get(directory.get());
             String tournamentName = tournamentRequestField.getText();
             Path entireDirectoryPath = parentDirectoryPath.resolve(tournamentName);
-            System.out.println("Directory" + entireDirectoryPath);
             try {
                 Files.createDirectory(entireDirectoryPath);
             } catch (IOException e) {
@@ -516,5 +554,35 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     public Round getSelectedRound() {
         RoundTab roundTab = (RoundTab) roundsBar.getSelectionModel().getSelectedItem();
         return roundTab.getRound();
+    }
+
+    private void onDragDroppedOnRegion(DragEvent dragEvent) {
+        Object target = dragEvent.getGestureTarget();
+
+        // should never happen, as this event handler is only applied to flowing regions
+        if (!(target instanceof FlowingRegion))
+            return;
+
+        FlowingRegion flowingRegion = (FlowingRegion) target;
+
+        Dragboard dragboard = dragEvent.getDragboard();
+
+        // should never happen, as the DRAG_OVER event handler should confirm that the drag source
+        // is onRegionRemovalRemoveDragSupport card tree cell. Thus, the drag event should have onRegionRemovalRemoveDragSupport string containing the card name
+        if (!dragboard.hasString())
+            return;
+
+        String cardName = dragboard.getString();
+
+        Card card = getCardSelectorController().getCard(cardName);
+
+        // should never happen, as cardName was derived from a card, hence reversing the process should work
+        if (card == null)
+            return;
+
+        if (flowingRegion.getAssociatedCards().contains(card))
+            return; // if card has already been added, do not readd
+
+        flowingRegion.getAssociatedCards().add(card);
     }
 }

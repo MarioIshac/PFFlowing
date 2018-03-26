@@ -10,7 +10,8 @@
 <?import org.controlsfx.control.NotificationPane?>
 <FlowDisplay xmlns="http://javafx.com/javafx"
              xmlns:fx="http://javafx.com/fxml"
-             fx:id="flowDisplay">
+             fx:id="flowDisplay"
+             minWidth="0">
     <HBox fx:id="speechLabels" />
     <fx:include VBox.vgrow="ALWAYS" source="flowing_grid.fxml" fx:id="flowGrid" />
 </FlowDisplay>

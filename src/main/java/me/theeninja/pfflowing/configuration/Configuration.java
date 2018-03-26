@@ -43,8 +43,13 @@ public class Configuration {
     @SerializedName("font")
     @Expose
     private Configurable<Font> font = new Configurable<>(
-            new Descriptor("Font", "Font", "Font"),
+            new Descriptor("Font", "Global Font", "Font"),
             Font.font(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
+    );
+
+    private Configurable<Double> fontScale = new Configurable<>(
+            new Descriptor("Font", "Card Display Font Scale", "Font"),
+            0.75
     );
 
     public Configurable<Color> getAffColor() {
@@ -61,5 +66,13 @@ public class Configuration {
 
     public Configurable<Font> getFont() {
         return font;
+    }
+
+    public Configurable<Double> getFontScale() {
+        return fontScale;
+    }
+
+    public void setFontScale(Configurable<Double> fontScale) {
+        this.fontScale = fontScale;
     }
 }

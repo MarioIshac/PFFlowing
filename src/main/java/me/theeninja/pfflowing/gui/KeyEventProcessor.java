@@ -31,9 +31,8 @@ public class KeyEventProcessor {
             EXPAND, FlowDisplayController::attemptExpansion).put(
             SELECT_ALL, FlowDisplayController::attemptSelectAll).put(
             SHIFT_DISPLAY_LEFT, FlowDisplayController::shiftLeft).put(
-            SHIFT_DISPLAY_RIGHT, FlowDisplayController::shiftRight).put(
-            UNDO, FlowDisplayController::test
-    ).build();
+            SHIFT_DISPLAY_RIGHT, FlowDisplayController::shiftRight)
+    .build();
 
     private static final Map<KeyCodeCombination, Consumer<ActionManager>> KEYCODE_ACTIONMANAGER_MAP = Map.of(
             UNDO, ActionManager::undo,

@@ -6,8 +6,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.input.*;
 import me.theeninja.pfflowing.DependentController;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
@@ -31,8 +30,11 @@ public class CardSelectorController implements Initializable, SingleViewControll
         blocks.getCards().stream().map(TreeItem::new).forEach(root.getChildren()::add);
     }
 
-    @FXML public TreeView<Card> cardSelectorTreeView;
-    @FXML public TreeItem<Card> root;
+    @FXML
+    public TreeView<Card> cardSelectorTreeView;
+
+    @FXML
+    public TreeItem<Card> root;
 
     @Override
     public TreeView<Card> getCorrelatingView() {
@@ -61,14 +63,12 @@ public class CardSelectorController implements Initializable, SingleViewControll
                 .collect(Collectors.toList());
     }
 
-    private class CardTreeCell extends TreeCell<Card> {
-        @Override
-        public void updateItem(Card item, boolean empty) {
-            super.updateItem(item, empty);
-            if (item != null && !empty)
-                setText(item.getRepresentation());
-            else
-                setText("");
+    public Card getCard(String cardName) {
+        for (Card card : getCards()) {
+            if (card.getRepresentation().equals(cardName))
+                return card;
         }
+
+        return null;
     }
 }

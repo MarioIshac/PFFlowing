@@ -131,7 +131,7 @@ public class FlowGrid extends GridPane {
     }
 
     public List<FlowingRegion> getPostLink(FlowingRegion flowingRegion) {
-        return getChildren().stream().filter(node -> {
+        return getChildren().stream().filter(FlowGrid::isOnGrid).filter(node -> {
             // Verifies that this node is somehow part of the link
             boolean isSameRow = FlowGrid.getRowIndex(node).equals(FlowGrid.getRowIndex(flowingRegion));
 
@@ -143,11 +143,15 @@ public class FlowGrid extends GridPane {
     }
 
     public List<FlowingRegion> getWholeLink(FlowingRegion flowingRegion) {
-        return getChildren().stream().filter(node -> {
-            // Verifies that this node is somehow part of the link
-            boolean isSameRow = FlowGrid.getRowIndex(node).equals(FlowGrid.getRowIndex(flowingRegion));
+        return getChildren().stream()
+                .filter(FlowGrid::isOnGrid)
+                .filter(node -> {
+                    // Verifies that this node is somehow part of the link
+                    boolean isSameRow = FlowGrid.getRowIndex(node).equals(FlowGrid.getRowIndex(flowingRegion));
 
-            return node instanceof FlowingRegion && isSameRow;
-        }).map(FlowingRegion.class::cast).collect(Collectors.toList());
+                    return node instanceof FlowingRegion && isSameRow;
+                })
+                .map(FlowingRegion.class::cast)
+                .collect(Collectors.toList());
     }
 }

@@ -11,6 +11,7 @@ import me.theeninja.pfflowing.gui.FlowGrid;
 import me.theeninja.pfflowing.speech.Side;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 public class Round {
@@ -106,5 +107,9 @@ public class Round {
 
     private void onDisplayedSideChanged(ObservableValue<? extends Side> observable, Side oldValue, Side newValue) {
         setSelectedController(SIDE_CONTROLLER_MAP.get(newValue));
+    }
+
+    public List<FlowDisplayController> getSideControllers() {
+        return List.of(getAffController(), getNegController());
     }
 }

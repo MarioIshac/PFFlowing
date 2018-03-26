@@ -15,6 +15,10 @@ Box .label {
     -fx-border-color: black;
 }
 
+.popover {
+    -fx-padding: 0 0 0 0;
+}
+
 .dropped .text {
     -fx-strikethrough: true;
 }
