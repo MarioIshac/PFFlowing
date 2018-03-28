@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            prefHeight="400.0" prefWidth="600.0"
+            fx:id="root">
+    <VBox fx:id="webViewContainer">
+        <!-- Webview here -->
+    </VBox>
+    <HBox> <!-- regions are used as spacers to make alignment pleasing -->
+        <Region HBox.hgrow="ALWAYS" />
+        <Button fx:id="previous"
+                text="Prevois"
+                onAction="#previous"/>
+        <Region HBox.hgrow="ALWAYS" />
+        <Button fx:id="next"
+                text="Next"
+                onAction="#next" />
+        <Region HBox.hgrow="ALWAYS" />
+    </HBox>
+</VBox>

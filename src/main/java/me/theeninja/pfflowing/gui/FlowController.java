@@ -153,11 +153,11 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         getFileChooser().getExtensionFilters().add(eflowExtensionFilter);
 
         CardSelectorController cardSelectorController = new CardSelectorController(getPFFlowing());
-        setUpController(cardSelectorController, "/card_parser_gui/card_selector.fxml", this::setCardSelectorController);
+        setUpController(cardSelectorController, "/gui/cardSelector/card_selector.fxml", this::setCardSelectorController);
         getCorrelatingView().setLeft(cardSelectorController.getCorrelatingView());
 
         NavigatorController navigatorController = new NavigatorController(getPFFlowing());
-        setUpController(navigatorController, "/navigator.fxml", this::setNavigatorController);
+        setUpController(navigatorController, "/gui/navigator/navigator.fxml", this::setNavigatorController);
         getCorrelatingView().setTop(navigatorController.getCorrelatingView());
 
         getNavigatorController().getCorrelatingView().setPrefHeight(Region.USE_PREF_SIZE);
@@ -185,98 +185,29 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     private static final int PIXELS_TO_REMOVE_DROPDOWN = 30;
 
     public void promptRoundAddition() {
-        Stage configStage = new Stage();
-        VBox configLayout = new VBox();
-        Scene configScene = new Scene(configLayout);
-        configStage.setScene(configScene);
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/prompter/new_prompt.fxml"));
+        RoundPrompterController roundPrompterController = new RoundPrompterController(this);
+        fxmlLoader.setController(roundPrompterController);
 
-        Label nameLabel = new Label("Name");
-        TextField nameField = new TextField();
+        try {
+            fxmlLoader.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        CheckBox inTournamentCheckbox = new CheckBox();
-        inTournamentCheckbox.setText("New Tournament");
+        Stage stage = new Stage();
+        Scene scene = new Scene(roundPrompterController.getCorrelatingView());
+        stage.setScene(scene);
+        stage.show();
 
-        Label tournamentLabel = new Label("Tournament");
-        TextField tournamentField = new TextField();
-
-        HBox tournamentRequest = new HBox(tournamentLabel, tournamentField);
-        tournamentRequest.visibleProperty().bind(inTournamentCheckbox.selectedProperty());
-
-        ComboBox<Side> comboBox = new ComboBox<>();
-        comboBox.getItems().add(Side.AFFIRMATIVE);
-        comboBox.getItems().add(Side.NEGATION);
-        comboBox.setPromptText("Side");
-
-        Button finish = new Button("Finish");
-
-        configLayout.getChildren().addAll(
-                new HBox(nameLabel, nameField),
-                inTournamentCheckbox,
-                tournamentRequest,
-                comboBox,
-                finish
-        );
-
-        Runnable options[][] = {
-            {
-                () -> { // add round to new tournament with something in use
-                    FlowApp newApplication = new FlowApp();
-                    Stage allocatedStage = new Stage();
-                    newApplication.start(allocatedStage);
-                    newApplication.getFlowController().addRound(nameField.getText(), comboBox.getValue());
-
-                    setUseType(UseType.TOURNAMENT);
-                },
-
-                () -> { // add round to new tournament with nothing in use
-                    this.addRound(nameField.getText(), comboBox.getValue());
-
-                    setUseType(UseType.TOURNAMENT);
-                }
-            },
-
-            {
-                () -> { // don't add round to new tournament with something in use
-                    FlowApp newApplication = new FlowApp();
-                    Stage allocatedStage = new Stage();
-                    newApplication.start(allocatedStage);
-                    newApplication.getFlowController().addRound(nameField.getText(), comboBox.getValue());
-
-                    setUseType(UseType.ROUND);
-                },
-
-                () -> { // don't add round to new tournament with nothing in use
-                    this.addRound(nameField.getText(), comboBox.getValue());
-
-                    setUseType(UseType.ROUND);
-                }
-            }
-        };
-
-        Runnable onSubmission = () -> {
-            if (nameField.getText().isEmpty())
-                nameField.setPromptText("Round name?");
-            else {
-                options[inTournamentCheckbox.isSelected() ? 0 : 1]
-                        [getUseType().isInUse() ? 0 : 1]
-                        .run();
-                configStage.hide();
-            }
-        };
-
-        configLayout.addEventHandler(KeyEvent.KEY_RELEASED, keyEvent -> {
-            if (FINISH.match(keyEvent))
-                onSubmission.run();
+        roundPrompterController.finishButton.addEventHandler(ActionEvent.ACTION, actionEvent -> {
+            roundPrompterController.finish();
+            stage.hide();
         });
 
-        finish.addEventHandler(ActionEvent.ACTION, actionEvent ->
-                onSubmission.run()
-        );
-
-        configStage.show();
     }
 
-    private void addRound(String roundName, Side side) {
+    public void addRound(String roundName, Side side) {
         Round round = new Round(side);
         RoundTab roundTab = new RoundTab(round);
 

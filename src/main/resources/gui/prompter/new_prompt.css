@@ -1,0 +1,12 @@
+.notFilled {
+    -fx-background-color: #ddfaff;
+}
+
+#promptBox {
+    -fx-background-color: lightblue;
+    -fx-padding: 5px;
+}
+
+.promptLabel {
+    -fx-font-family: "Comic Sans MS";
+}

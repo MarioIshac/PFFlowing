@@ -40,6 +40,20 @@ public class Configuration {
             DEFAULT_BACKGROUND_COLOR
     );
 
+    @SerializedName("questionColor")
+    @Expose
+    private Configurable<Color> questionColor = new Configurable<>(
+            new Descriptor("Color", "Question Color", "Question Color"),
+            Color.BLUE
+    );
+
+    @SerializedName("cardColor")
+    @Expose
+    private Configurable<Color> cardColor = new Configurable<>(
+            new Descriptor("Color", "Card Color", "Question Color"),
+            Color.GREEN
+    );
+
     @SerializedName("font")
     @Expose
     private Configurable<Font> font = new Configurable<>(
@@ -74,5 +88,21 @@ public class Configuration {
 
     public void setFontScale(Configurable<Double> fontScale) {
         this.fontScale = fontScale;
+    }
+
+    public Configurable<Color> getQuestionColor() {
+        return questionColor;
+    }
+
+    public void setQuestionColor(Configurable<Color> questionColor) {
+        this.questionColor = questionColor;
+    }
+
+    public Configurable<Color> getCardColor() {
+        return cardColor;
+    }
+
+    public void setCardColor(Configurable<Color> cardColor) {
+        this.cardColor = cardColor;
     }
 }

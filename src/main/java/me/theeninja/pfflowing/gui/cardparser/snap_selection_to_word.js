@@ -1,4 +1,4 @@
-function snapSelectionToWord() {
+(function snapSelectionToWord() {
     var sel;
 
     // Check for existence of window.getSelection() and that it has a
@@ -44,4 +44,4 @@ function snapSelectionToWord() {
             textRange.select();
         }
     }
-}
+})();

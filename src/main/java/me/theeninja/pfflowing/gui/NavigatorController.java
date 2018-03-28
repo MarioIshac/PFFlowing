@@ -8,16 +8,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TreeItem;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
-import me.theeninja.pfflowing.EFlow;
-import me.theeninja.pfflowing.FlowApp;
-import me.theeninja.pfflowing.SingleViewController;
+import me.theeninja.pfflowing.*;
 import me.theeninja.pfflowing.configuration.ConfigEditorController;
 import me.theeninja.pfflowing.drive.google.GDriveConnector;
 import me.theeninja.pfflowing.drive.GDriveFilePickerController;
@@ -25,6 +20,7 @@ import me.theeninja.pfflowing.flowingregions.Blocks;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.flowingregions.CardProcessor;
 import me.theeninja.pfflowing.gui.cardparser.CardParserController;
+import me.theeninja.pfflowing.tournament.Round;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
@@ -41,6 +37,12 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
     @FXML
     public Menu openRecent;
+
+    @FXML
+    public MenuItem undoItem;
+
+    @FXML
+    public MenuItem redoItem;
 
     public void loadOpenRecent() {
         try {
@@ -73,7 +75,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     @FXML
     public void openRound(ActionEvent actionEvent) {
         try {
-            getPFFlowing().getFlowController().openRound();
+            getFlowApp().getFlowController().openRound();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -82,7 +84,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     @FXML
     public void openTournament(ActionEvent actionEvent) {
         try {
-            getPFFlowing().getFlowController().openTournament();
+            getFlowApp().getFlowController().openTournament();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -111,7 +113,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     public void configure(ActionEvent actionEvent) {
         try {
             ConfigEditorController configEditorController = new ConfigEditorController(EFlow.getInstance().getConfiguration());
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/config_editor.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/config/config_editor.fxml"));
             fxmlLoader.setController(configEditorController);
             fxmlLoader.load();
 
@@ -127,19 +129,26 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
         }
     }
 
+    private FlowDisplayController getSelectedController() {
+        Tab selectedTab = getFlowApp().getFlowController().roundsBar.getSelectionModel().getSelectedItem();
+        RoundTab selectedRoundTab = (RoundTab) selectedTab;
+        Round selectedRound = selectedRoundTab.getRound();
+        return selectedRound.getSelectedController();
+    }
+
     @FXML
     public void undo(ActionEvent actionEvent) {
-
+        getSelectedController().getActionManager().undo();
     }
 
     @FXML
     public void redo(ActionEvent actionEvent) {
-
+        getSelectedController().getActionManager().redo();
     }
 
     @FXML
     public void selectAll(ActionEvent actionEvent) {
-
+        getSelectedController().selectAll();
     }
 
     @FXML
@@ -161,7 +170,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
             if (files.isEmpty())
                 System.out.println("No files found.");
             else {
-                FXMLLoader fxmlLoader = new FXMLLoader(NavigatorController.class.getResource("/drive_picker.fxml"));
+                FXMLLoader fxmlLoader = new FXMLLoader(NavigatorController.class.getResource("/gui/dri ve/drive_picker.fxml"));
                 GDriveFilePickerController pickerController = new GDriveFilePickerController(files);
                 fxmlLoader.setController(pickerController);
                 fxmlLoader.load();
@@ -190,8 +199,8 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
                             Stage stage_ = new Stage();
 
-                            FXMLLoader fxmlLoader_ = new FXMLLoader(getClass().getResource("/card_parser_gui/card_parser.fxml"));
-                            CardParserController cardParserController = new CardParserController(getPFFlowing(), generateOnFinish(stage));
+                            FXMLLoader fxmlLoader_ = new FXMLLoader(getClass().getResource("/gui/cardParser/card_parser.fxml"));
+                            CardParserController cardParserController = new CardParserController(getFlowApp(), generateOnFinish(stage));
                             fxmlLoader_.setController(cardParserController);
 
                             try {
@@ -223,8 +232,8 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     public void openParserPopupFile() {
         Stage stage = new Stage();
 
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/card_parser_gui/card_parser.fxml"));
-        CardParserController cardParserController = new CardParserController(getPFFlowing(), generateOnFinish(stage));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/cardParser/card_parser.fxml"));
+        CardParserController cardParserController = new CardParserController(getFlowApp(), generateOnFinish(stage));
         fxmlLoader.setController(cardParserController);
 
         try {
@@ -248,12 +257,12 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
     @FXML
     public void newRound(ActionEvent actionEvent) {
-        getPFFlowing().getFlowController().promptRoundAddition();
+        getFlowApp().getFlowController().promptRoundAddition();
     }
 
     @FXML
     public void newTournament(ActionEvent actionEvent) {
-        getPFFlowing().getFlowController().newTournament();
+        getFlowApp().getFlowController().newTournament();
     }
 
     @Override
@@ -261,7 +270,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
         return navigator;
     }
 
-    public FlowApp getPFFlowing() {
+    public FlowApp getFlowApp() {
         return flowApp;
     }
 
@@ -272,7 +281,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
     private Consumer<List<Card>> generateOnFinish(Stage stage) {
         return cards -> {
-            CardSelectorController cardSelectorController = getPFFlowing().getFlowController().getCardSelectorController();
+            CardSelectorController cardSelectorController = getFlowApp().getFlowController().getCardSelectorController();
             TreeItem<Card> treeViewRoot = cardSelectorController.getCorrelatingView().getRoot();
 
             cards.stream().map(TreeItem::new)
@@ -288,9 +297,44 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
         blocksMenuItem.setText(blocks.getName());
 
         blocksMenuItem.setOnAction(actionEvent ->
-            getPFFlowing().getFlowController().getCardSelectorController().addBlocks(blocks)
+            getFlowApp().getFlowController().getCardSelectorController().addBlocks(blocks)
         );
 
         openRecent.getItems().add(blocksMenuItem);
+    }
+
+    @FXML
+    public void extend() {
+        getSelectedController().attemptExtension();
+    }
+
+    @FXML
+    public void refute() {
+        getSelectedController().attemptRefutation();
+    }
+
+    @FXML
+    public void write() {
+        getSelectedController().addWriter();
+    }
+
+    @FXML
+    public void drop() {
+        getSelectedController().attemptDrop();
+    }
+
+    @FXML
+    public void delete() {
+        getSelectedController().attemptDelete();
+    }
+
+    @FXML
+    public void merge() {
+        getSelectedController().attemptMerge();
+    }
+
+    @FXML
+    public void question() {
+        getSelectedController().attemptQuestion();
     }
 }

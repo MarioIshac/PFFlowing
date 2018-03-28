@@ -10,7 +10,6 @@ import me.theeninja.pfflowing.flowing.FlowingRegion;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -29,7 +28,7 @@ public class KeyEventProcessor {
             WRITE, FlowDisplayController::addWriter).put(
             DELETE, FlowDisplayController::attemptDelete).put(
             EXPAND, FlowDisplayController::attemptExpansion).put(
-            SELECT_ALL, FlowDisplayController::attemptSelectAll).put(
+            SELECT_ALL, FlowDisplayController::selectAll).put(
             SHIFT_DISPLAY_LEFT, FlowDisplayController::shiftLeft).put(
             SHIFT_DISPLAY_RIGHT, FlowDisplayController::shiftRight)
     .build();
@@ -78,7 +77,8 @@ public class KeyEventProcessor {
         this::handleIfSingleControllerAction,
         this::handleIfMultiControllerAction,
         this::handleIfRegionSelection,
-        this::handleIfSpeechSelection
+        this::handleIfSpeechSelection,
+        this::handleIfEdit
     );
 
     private void handleIfSingleControllerAction() {

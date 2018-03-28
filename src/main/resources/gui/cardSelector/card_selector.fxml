@@ -10,6 +10,6 @@
           fx:id="cardSelectorTreeView">
     <TreeItem fx:id="root" />
     <stylesheets>
-        <URL value="@card_selector.css" />
+        <URL value="@../cardParser/card_selector.css" />
     </stylesheets>
 </TreeView>

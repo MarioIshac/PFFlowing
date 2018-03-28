@@ -61,7 +61,7 @@ public class GDriveConnector implements DriveConnector {
     public static Credential authorize() throws IOException {
         // Load client secrets.
         InputStream in =
-                GDriveConnector.class.getResourceAsStream("/client_secret.json");
+                GDriveConnector.class.getResourceAsStream("/gdrive_client_secret.json");
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 

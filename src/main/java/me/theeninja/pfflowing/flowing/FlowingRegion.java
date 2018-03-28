@@ -3,29 +3,34 @@ package me.theeninja.pfflowing.flowing;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javafx.beans.property.*;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import me.theeninja.pfflowing.Duplicable;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.configuration.InternalConfiguration;
 import me.theeninja.pfflowing.flowingregions.Card;
-import me.theeninja.pfflowing.gui.FlowGrid;
-import me.theeninja.pfflowing.gui.FlowingRegionDetailController;
-import me.theeninja.pfflowing.gui.LengthLimitType;
+import me.theeninja.pfflowing.gui.*;
 import me.theeninja.pfflowing.utils.Utils;
 import org.controlsfx.control.PopOver;
+import org.controlsfx.control.decoration.Decoration;
 import org.controlsfx.control.decoration.Decorator;
-import org.controlsfx.control.decoration.StyleClassDecoration;
+import org.controlsfx.control.decoration.GraphicDecoration;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
+
+    private final Decoration hasCardsDecoration;
+    public static final String QUESTION_KEY = "question";
+
+    PopOver currentShownPopover;
 
     @Expose
     @SerializedName("fullText")
@@ -56,6 +61,14 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
     protected FlowingRegion(String text, ObservableList<Card> associatedCards) {
         super();
 
+        int sideLength = FlowDisplayController.FLOWGRID_VERTICAL_GAP;
+
+        Rectangle rectangle = new Rectangle(sideLength, sideLength);
+        rectangle.fillProperty().bind(
+            EFlow.getInstance().getConfiguration().getCardColor().valueProperty()
+        );
+        hasCardsDecoration = new GraphicDecoration(rectangle, Pos.BOTTOM_RIGHT);
+
         setWrapText(true);
 
         // Listener must be added first, before setting full text
@@ -68,22 +81,49 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
 
         this.associatedCards = associatedCards;
 
-        getAssociatedCards().addListener(Utils.generateListChangeListener(this::checkIfSizeIs0));
-        checkIfSizeIs0();
+        getAssociatedCards().addListener(Utils.generateListChangeListener(this::onSizeChange));
 
-        PopOver detailer = getDetailer();
+        CardsDetailerController cardsDetailerController = getCardsDetailerController();
 
         expandedProperty().addListener((observable, oldValue, newValue) -> {
-            VBox vbox = (VBox) detailer.getContentNode();
+            if (newValue) {
+                VBox popOverVBox = new VBox();
+                if (hasCards()) {
+                    popOverVBox.getChildren().add(cardsDetailerController.root);
+                    cardsDetailerController.setCurrentCard(getAssociatedCards().get(0));
+                }
+                if (hasQuestion()) {
+                    QuestionDetailerController questionDetailerController = getQuestionDetailerController();
+                    popOverVBox.getChildren().add(questionDetailerController.questionText);
+                }
+                if (!popOverVBox.getChildren().isEmpty()) {
+                    PopOver popOver = new PopOver(popOverVBox);
+                    popOver.maxHeightProperty().bind(popOver.heightProperty());
+                    popOver.setArrowLocation(PopOver.ArrowLocation.LEFT_TOP);
 
-            if (vbox.getChildren().isEmpty())
-                return;
-
-            if (newValue)
-                detailer.show(this);
-            else
-                detailer.hide();
+                    currentShownPopover = popOver;
+                    currentShownPopover.show(this);
+                }
+            }
+            else {
+                if (currentShownPopover != null)
+                    currentShownPopover.hide();
+            }
         });
+    }
+
+    private boolean hasQuestion() {
+        return getProperties().containsKey(QUESTION_KEY);
+    }
+
+    private boolean hasCards() {
+        return !getAssociatedCards().isEmpty();
+    }
+
+    private boolean shouldShowPopOver() {
+        boolean hasCards = !getAssociatedCards().isEmpty();
+
+        return hasCards || hasQuestion();
     }
 
     public void addFullTextListener() {
@@ -174,28 +214,39 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
         return associatedCards;
     }
 
-    private void checkIfSizeIs0() {
-        if (getAssociatedCards().size() == 0)
-            Decorator.addDecoration(this, new StyleClassDecoration("warning"));
-    }
-
-    private PopOver getDetailer() {
+    private CardsDetailerController getCardsDetailerController() {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/card_details.fxml"));
-            FlowingRegionDetailController flowingRegionDetailController = new FlowingRegionDetailController(this);
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/cardDisplay/card_details.fxml"));
+            CardsDetailerController flowingRegionDetailController = new CardsDetailerController(this);
             fxmlLoader.setController(flowingRegionDetailController);
             fxmlLoader.load();
 
-            PopOver popOver = new PopOver(flowingRegionDetailController.getCorrelatingView());
-
-            popOver.setArrowLocation(PopOver.ArrowLocation.LEFT_TOP);
-            popOver.maxHeightProperty().bind(flowingRegionDetailController.getCorrelatingView().heightProperty());
-
-            return popOver;
+            return flowingRegionDetailController;
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return null;
+    }
+
+    private QuestionDetailerController getQuestionDetailerController() {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/flow/question_detailer.fxml"));
+            String question = (String) getProperties().get(QUESTION_KEY);
+            QuestionDetailerController questionDetailerController = new QuestionDetailerController(question);
+            fxmlLoader.setController(questionDetailerController);
+            fxmlLoader.load();
+
+            return questionDetailerController;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private void onSizeChange() {
+        if (!getAssociatedCards().isEmpty())
+            Decorator.addDecoration(this, hasCardsDecoration);
+        else
+            Decorator.removeDecoration(this, hasCardsDecoration);
     }
 }

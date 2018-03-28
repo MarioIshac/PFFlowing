@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.*?>
+<?import java.net.URL?>
 <MenuBar xmlns="http://javafx.com/javafx"
          xmlns:fx="http://javafx.com/fxml"
          prefHeight="400.0" prefWidth="600.0"
@@ -30,18 +31,24 @@
         </Menu>
     </Menu>
     <Menu text="Edit">
-        <MenuItem text="Undo" onAction="#undo"/>
-        <MenuItem text="Redo" onAction="#redo"/>
+        <MenuItem fx:id="undoItem" text="Undo" onAction="#undo"/>
+        <MenuItem fx:id="redoItem" text="Redo" onAction="#redo"/>
         <MenuItem text="Select" onAction="#selectAll" />
     </Menu>
     <Menu text="Action">
-        <MenuItem text="Refute" />
-        <MenuItem text="Extend" />
-        <MenuItem text="Drop" />
-        <MenuItem text="Write" />
-        <MenuItem text="Support" />
+        <MenuItem text="Refute" onAction="#refute" />
+        <MenuItem text="Extend" onAction="#extend" />
+        <MenuItem text="Drop" onAction="#drop" />
+        <MenuItem text="Write" onAction="#write" />
+        <MenuItem text="Delete" onAction="#delete" />
+        <MenuItem text="Merge" onAction="#merge" />
+        <MenuItem text="Question" onAction="#question" />
     </Menu>
     <Menu text="Help">
         <!-- Filled out by application -->
     </Menu>
+
+    <stylesheets>
+        <URL value="@navigator.css" />
+    </stylesheets>
 </MenuBar>

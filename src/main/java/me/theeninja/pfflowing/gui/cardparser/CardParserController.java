@@ -236,7 +236,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
     private String getSelectedHTML() {
         String html = (String) documentDisplay.getEngine().executeScript(getSelectHTMLJS());
-        System.out.println("The html" + html);
         return html;
     }
 

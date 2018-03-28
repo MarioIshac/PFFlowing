@@ -1,25 +1,13 @@
 package me.theeninja.pfflowing;
 
-import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Stage;
-import me.theeninja.pfflowing.configuration.Configuration;
-import me.theeninja.pfflowing.flowing.FlowingRegion;
-import me.theeninja.pfflowing.flowing.FlowingRegionAdapter;
 import me.theeninja.pfflowing.gui.*;
-import me.theeninja.pfflowing.tournament.Round;
-import org.apache.commons.lang3.SystemUtils;
-import org.hildan.fxgson.FxGson;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class FlowApp extends Application {
@@ -65,7 +53,7 @@ public class FlowApp extends Application {
         setStage(stage);
 
         FlowController flowController = new FlowController(this);
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/flow.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/flow/flow.fxml"));
         fxmlLoader.setController(flowController);
 
         try {

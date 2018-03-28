@@ -1,0 +1,5 @@
+.questionText {
+    -fx-padding: 5px;
+    -fx-font-weight: bold;
+    -fx-text-fill: red;
+}

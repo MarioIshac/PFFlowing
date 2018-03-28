@@ -212,4 +212,13 @@ public final class Utils {
         }
         return null;
     }
+
+    public static <T> T getLastElement(Collection<T> c) {
+        Iterator<T> itr = c.iterator();
+        T lastElement = itr.next();
+        while(itr.hasNext()) {
+            lastElement = itr.next();
+        }
+        return lastElement;
+    }
 }

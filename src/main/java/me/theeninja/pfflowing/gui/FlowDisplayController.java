@@ -1,17 +1,15 @@
 package me.theeninja.pfflowing.gui;
 
 import javafx.animation.PauseTransition;
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.geometry.Bounds;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -21,17 +19,20 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.util.Duration;
 import me.theeninja.pfflowing.Action;
 import me.theeninja.pfflowing.ActionManager;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.flowing.*;
+import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 import org.controlsfx.control.PopOver;
+import org.controlsfx.control.decoration.Decoration;
 import org.controlsfx.control.decoration.Decorator;
-import org.controlsfx.control.decoration.GraphicDecoration;
+import org.controlsfx.control.decoration.StyleClassDecoration;
 
 import java.io.IOException;
 import java.net.URL;
@@ -49,20 +50,27 @@ import static me.theeninja.pfflowing.gui.KeyCodeCombinationUtils.*;
 
 /**
  * The controller for the actual flowing area on the application. This controller
- * is responsible for managing the relations between all flowing regions that exist.
+ * is responsible for managing the relations between all flowing regions that exist within its
+ * managed flow display.
  *
  * @author TheeNinja
  */
 public class FlowDisplayController implements Initializable, SingleViewController<FlowDisplay> {
+    public static final int FLOWGRID_VERTICAL_GAP = 7;
+
+    private BooleanProperty onDisplay;
+
     public FlowDisplayController(Side side) {
+        actionManager = new ActionManager();
+
         this.side = side;
         setSpeechList(new SpeechList(side));
     }
 
-    private ActionManager actionManager;
+    private final ActionManager actionManager;
 
     public static FlowDisplayController newController(Side side) {
-        FXMLLoader fxmlLoader = new FXMLLoader(FlowDisplayController.class.getResource("/flowing_display.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(FlowDisplayController.class.getResource("/gui/flow/flowing_display.fxml"));
         FlowDisplayController flowDisplayController = new FlowDisplayController(side);
         fxmlLoader.setController(flowDisplayController);
         try {
@@ -75,7 +83,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
     private static final String SELECTED_REGION_STYLECLASS = "selectedRegion";
     private static final String SELECTED_SPEECH_STYLECLASS = "selectedSpeech";
-    private static final String QUESTIONED_REGION_STYLECLASS = "marked";
 
     @FXML
     public HBox speechLabels;
@@ -98,6 +105,14 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
     private static void onSelectedFlowingRegionsRemoval(FlowingRegion node) {
         node.getStyleClass().remove(SELECTED_REGION_STYLECLASS);
+    }
+
+    private void onFlowingRegionRemoved(Node node) {
+        if (node instanceof FlowingRegion) {
+            FlowingRegion flowingRegion = (FlowingRegion) node;
+            flowingRegion.textFillProperty().unbind();
+            flowingRegion.prefWidthProperty().unbind();
+        }
     }
 
     private void onChildAdditionSelectionUpdater(Node node) {
@@ -154,7 +169,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             flowingRegion.setExpanded(!flowingRegion.getExpanded());
     }
 
-    public void attemptSelectAll() {
+    public void selectAll() {
         List<FlowingRegion> allFlowingRegions = Utils.getOfType(flowGrid.getChildren(), FlowingRegion.class);
 
         for (FlowingRegion flowingRegion : allFlowingRegions)
@@ -198,15 +213,47 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         return actionManager;
     }
 
-    private void setActionManager(ActionManager actionManager) {
-        this.actionManager = actionManager;
-    }
-
     private final static int PREVIOUS_ROW_POSITION = 0;
     private final static int FINAL_ROW_POSITION = 1;
 
     private void onConfigurationBackgroundColorChange(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
         flowGrid.setBackground(Utils.generateBackgroundOfColor(newValue));
+    }
+
+    private void onFlowingRegionAdded(Node node) {
+        if (node instanceof FlowingRegion) {
+            FlowingRegion flowingRegion = (FlowingRegion) node;
+
+            Side sideToCheck = getSide();
+
+            int column = FlowGrid.getColumnIndex(flowingRegion);
+
+            // Indicats that this is a refutation speech
+            if (column % 2 == 1)
+                sideToCheck = sideToCheck.getOpposite();
+
+            ObservableValue<Color> observedColor = sideToCheck == Side.AFFIRMATIVE ?
+                    EFlow.getInstance().getConfiguration().getAffColor().valueProperty() :
+                    EFlow.getInstance().getConfiguration().getNegColor().valueProperty();
+
+            flowingRegion.textFillProperty().bind(observedColor);
+
+            ColumnConstraints columnConstraints = flowGrid.getColumnConstraints().get(column);
+
+            flowingRegion.prefWidthProperty().bind(columnConstraints.prefWidthProperty());
+        }
+    }
+
+    public boolean isOnDisplay() {
+        return onDisplay.get();
+    }
+
+    public BooleanProperty onDisplayProperty() {
+        return onDisplay;
+    }
+
+    public void setOnDisplay(boolean onDisplay) {
+        this.onDisplay.set(onDisplay);
     }
 
     /**
@@ -219,7 +266,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         private final List<FlowingRegion> addedRegions = new ArrayList<>();
         private final List<FlowingRegion> removedRegions;
 
-        private final Map<FlowingRegion, List<Integer>> currentRegionModifications = new HashMap<>();
+        private final Map<FlowingRegion, List<Integer>> updateMap;
 
         private final int keptRow;
 
@@ -246,27 +293,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
                 FlowGrid.setConstraints(toAdd, column, getKeptRow());
                 addedRegions.add(toAdd);
             }
-        }
-
-        private FlowingRegion condense(List<FlowingRegion> flowingRegions) throws MergeException {
-            String condensedText = flowingRegions.stream()
-                    .map(FlowingRegion::getFullText)
-                    .collect(Collectors.joining("-"));
-
-            if (flowingRegions.stream().allMatch(DefensiveFlowingRegion.class::isInstance))
-                return new DefensiveFlowingRegion(condensedText);
-            if (flowingRegions.stream().allMatch(OffensiveFlowingRegion.class::isInstance))
-                return new OffensiveFlowingRegion(condensedText, Side.AFFIRMATIVE, flowingRegions.get(0));
-            if (flowingRegions.stream().allMatch(ExtensionFlowingRegion.class::isInstance))
-                return new ExtensionFlowingRegion(Side.AFFIRMATIVE, flowingRegions.get(0));
-
-            throw new MergeException("Multiple types of flowing regions within single speech");
-        }
-
-        @Override
-        public void execute() {
-            flowGrid.getChildren().removeAll(removedRegions);
-            flowGrid.getChildren().addAll(addedRegions);
 
             List<Integer> rows = removedRegions.stream()
                     .map(FlowGrid::getRowIndex)
@@ -276,7 +302,62 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             // We are reinserting kept row anyway, so remove it from the rows to be removed.
             rows.remove(getKeptRow());
 
-            getUpdateMap(rows).forEach((flowingRegion, integers) -> {
+            updateMap = getUpdateMap(rows);
+        }
+
+        private FlowingRegion condense(List<FlowingRegion> flowingRegions) throws MergeException {
+            String condensedText = flowingRegions.stream()
+                    .map(FlowingRegion::getFullText)
+                    .collect(Collectors.joining("-"));
+
+            List<Card> associatedCards = flowingRegions.stream()
+                    .map(FlowingRegion::getAssociatedCards)
+                    .flatMap(List::stream)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            FlowingRegion flowingRegion = null;
+
+            if (flowingRegions.stream().allMatch(DefensiveFlowingRegion.class::isInstance))
+                flowingRegion = new DefensiveFlowingRegion(condensedText);
+
+            if (flowingRegions.stream().allMatch(OffensiveFlowingRegion.class::isInstance)) {
+                flowingRegions.sort(Comparator.comparingInt(FlowGrid::getRowIndex));
+
+                OffensiveFlowingRegion topFlowingRegion = (OffensiveFlowingRegion) flowingRegions.get(0);
+
+                flowingRegion = new OffensiveFlowingRegion(
+                        condensedText,
+                        topFlowingRegion.getInitiator(),
+                        topFlowingRegion.getTargetRegion()
+                );
+
+            }
+
+            if (flowingRegions.stream().allMatch(ExtensionFlowingRegion.class::isInstance)) {
+                flowingRegions.sort(Comparator.comparingInt(FlowGrid::getRowIndex));
+
+                ExtensionFlowingRegion topFlowingRegion = (ExtensionFlowingRegion) flowingRegions.get(0);
+
+                flowingRegion = new ExtensionFlowingRegion(
+                        topFlowingRegion.getInitiator(),
+                        topFlowingRegion.getBase()
+                );
+            }
+
+            // If this passes, indicates that the list of flowing regions were different types
+            if (flowingRegion == null)
+                throw new MergeException("Multiple types of flowing regions within single speech");
+
+            return flowingRegion;
+        }
+
+        @Override
+        public void execute() {
+            flowGrid.getChildren().removeAll(removedRegions);
+            flowGrid.getChildren().addAll(addedRegions);
+
+            updateMap.forEach((flowingRegion, integers) -> {
                 FlowGrid.setRowIndex(flowingRegion, integers.get(FINAL_ROW_POSITION));
             });
         }
@@ -286,14 +367,14 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             flowGrid.getChildren().removeAll(addedRegions);
             flowGrid.getChildren().addAll(removedRegions);
 
-            currentRegionModifications.forEach((flowingRegion, integers) -> {
+            updateMap.forEach((flowingRegion, integers) -> {
                 FlowGrid.setRowIndex(flowingRegion, integers.get(PREVIOUS_ROW_POSITION));
             });
         }
 
         @Override
         public String getName() {
-            return "Merge";
+            return "Merge " + removedRegions.size() + " regions";
         }
 
         public int getKeptRow() {
@@ -318,16 +399,14 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         for (Speech speech : getSpeechList().getSpeeches()) {
             List<Node> speechChildren = flowGrid.getColumnChildren(speech.getColumn());
-            List<DefensiveFlowingRegion> defensiveFlowingRegions = Utils.getOfType(
+            List<FlowingRegion> flowingRegions = Utils.getOfType(
                     speechChildren,
-                    DefensiveFlowingRegion.class
+                    FlowingRegion.class
             );
 
-            // Only defensive flowing regions require iteration, as those are the ones affected by
-            // the available row properties.
-            for (DefensiveFlowingRegion defensiveFlowingRegion : defensiveFlowingRegions) {
+            for (FlowingRegion flowingRegion : flowingRegions) {
 
-                final int previousRow = getRowIndex(defensiveFlowingRegion);
+                final int previousRow = getRowIndex(flowingRegion);
 
                 // This will be a removed row anyways, no need to tamper with
                 if (removedRows.contains(previousRow))
@@ -342,7 +421,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
                 int finalRow = previousRow - removedRowsUnder;
 
-                map.put(defensiveFlowingRegion, List.of(previousRow, finalRow));
+                map.put(flowingRegion, List.of(previousRow, finalRow));
             }
         }
         return map;
@@ -375,7 +454,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         @Override
         public String getName() {
-            return "Drop";
+            return "Drop " + getDroppedFlowingRegions().size() + " regions";
         }
 
         public List<FlowingRegion> getDroppedFlowingRegions() {
@@ -402,11 +481,19 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
                 return;
 
             this.refFlowingRegion = new OffensiveFlowingRegion(text, baseSpeech.getSide(), getBaseFlowingRegion());
+
+            int baseRow = FlowGrid.getRowIndex(baseFlowingRegion);
+            int baseColumn = FlowGrid.getColumnIndex(baseFlowingRegion);
+
+            int refColumn = baseColumn + FlowGrid.REF_COL_OFFSET;
+
+            FlowGrid.setRowIndex(refFlowingRegion, baseRow);
+            FlowGrid.setColumnIndex(refFlowingRegion, refColumn);
         }
 
         @Override
         public void execute() {
-            addOffensiveFlowingRegion(refFlowingRegion);
+            flowGrid.getChildren().add(refFlowingRegion);
         }
 
         @Override
@@ -416,7 +503,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         @Override
         public String getName() {
-            return "Refute";
+            return "Refute \"" + getActionIdentifier(getBaseFlowingRegion()) + "\"";
         }
 
         public FlowingRegion getBaseFlowingRegion() {
@@ -430,34 +517,38 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         QUESTION_MARK_LABEL.setFont(Font.font(20));
     }
 
-    private static final GraphicDecoration QUESTION_DECORATION = new GraphicDecoration(new Label("?"), Pos.CENTER_RIGHT);
-
     private class Question extends Action {
+        private KeyCodeCombination SHOW_QUESTION = new KeyCodeCombination(KeyCode.SLASH, KeyCombination.SHIFT_DOWN);
+
         private static final String MARKED_CLASS = "marked";
+
+        private final Decoration questionDecoration;
 
         private final FlowingRegion baseFlowingRegion;
         private final String questionMessage;
 
         Question(FlowingRegion baseFlowingRegion, String questionMessage) {
+            this.questionDecoration = new StyleClassDecoration("questionDecoration");
+
             this.baseFlowingRegion = baseFlowingRegion;
             this.questionMessage = questionMessage;
         }
 
         @Override
         public void execute() {
-            getBaseFlowingRegion().getStyleClass().add(MARKED_CLASS);
-            Decorator.addDecoration(getBaseFlowingRegion(), QUESTION_DECORATION);
+            Decorator.addDecoration(getBaseFlowingRegion(), questionDecoration);
+            baseFlowingRegion.getProperties().put(FlowingRegion.QUESTION_KEY, getQuestionMessage());
         }
 
         @Override
         public void unexecute() {
-            getBaseFlowingRegion().getStyleClass().remove(MARKED_CLASS);
-            Decorator.removeDecoration(getBaseFlowingRegion(), QUESTION_DECORATION);
+            Decorator.removeDecoration(getBaseFlowingRegion(), questionDecoration);
+            baseFlowingRegion.getProperties().remove(FlowingRegion.QUESTION_KEY);
         }
 
         @Override
         public String getName() {
-            return "Question";
+            return "Question \"" + getActionIdentifier(getBaseFlowingRegion()) + "\"";
         }
 
         public FlowingRegion getBaseFlowingRegion() {
@@ -487,17 +578,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         public void execute() {
             this.extendFlowingRegions.forEach(FlowDisplayController.this::addExtensionFlowingRegion);
             PauseTransition pauseTransition = new PauseTransition(Duration.seconds(0.25));
-            pauseTransition.setOnFinished(actionEvent -> {
-                this.flowingLinks = this.extendFlowingRegions.stream().map(extensionFlowingRegion -> {
-                    Speech firstSpeech = getSpeechList().getSpeech(extensionFlowingRegion.getBase());
-                    Speech secondSpeech = getSpeechList().getSpeech(extensionFlowingRegion);
-                    int row = getRowIndex(extensionFlowingRegion);
-
-                    return new FlowingLink(firstSpeech.getColumn(), secondSpeech.getColumn(), row, FlowDisplayController.this);
-                }).collect(Collectors.toList());
-
-                flowGrid.getChildren().addAll(flowingLinks);
-            });
+            pauseTransition.setOnFinished(this::onPauseTransitionFinish);
             pauseTransition.play();
         }
 
@@ -508,12 +589,26 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         @Override
         public String getName() {
-            return "Extend";
+            return "Extend " + baseFlowingRegions.size() + " regions";
+        }
+
+        private void onPauseTransitionFinish(ActionEvent actionEvent) {
+            this.flowingLinks = this.extendFlowingRegions.stream().map(extensionFlowingRegion -> {
+                Speech firstSpeech = getSpeechList().getSpeech(extensionFlowingRegion.getBase());
+                Speech secondSpeech = getSpeechList().getSpeech(extensionFlowingRegion);
+                int row = getRowIndex(extensionFlowingRegion);
+
+                return new FlowingLink(firstSpeech.getColumn(), secondSpeech.getColumn(), row, FlowDisplayController.this);
+            }).collect(Collectors.toList());
+
+            flowGrid.getChildren().addAll(flowingLinks);
         }
     }
 
     private class Delete extends Action {
         private List<FlowingRegion> deletedFlowingRegions;
+
+        private final Map<FlowingRegion, List<Integer>> updateMap;
 
         public Delete(List<FlowingRegion> flowingRegions) {
             // Remove duplicates, as they are a possibility. An example to demonstrate:
@@ -528,6 +623,13 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
                     .flatMap(List::stream)
                     .distinct()
                     .collect(Collectors.toList());
+
+            List<Integer> rows = deletedFlowingRegions.stream()
+                    .map(FlowGrid::getRowIndex)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            updateMap = getUpdateMap(rows);
         }
 
 
@@ -535,16 +637,10 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         public void execute() {
             flowGrid.getChildren().removeAll(deletedFlowingRegions);
 
-            List<Integer> rows = deletedFlowingRegions.stream()
-                    .map(FlowGrid::getRowIndex)
-                    .distinct()
-                    .collect(Collectors.toList());
+            // post-removal, visibly, a flowing region previously on row 2 will be "seen" on row 1.
+            // Yet, its row is still 2 within memory. Below corrects this issue.
 
-            // TODO: Investigate effects of removal on row indexes
-            // However, post-removal, visibly, a flowing region previously on row 2 will be "seen" on row 1. Yet, its row is still 2 within memory.
-            // At the time being, this is handled correctly naturally with implementation, and no measures need to be taken for this.
-
-            getUpdateMap(rows).forEach((flowingRegion, integers) -> {
+            updateMap.forEach((flowingRegion, integers) -> {
                 FlowGrid.setRowIndex(flowingRegion, integers.get(FINAL_ROW_POSITION));
             });
         }
@@ -552,12 +648,94 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         @Override
         public void unexecute() {
             flowGrid.getChildren().addAll(deletedFlowingRegions);
+
+            updateMap.forEach((flowingRegion, integers) -> {
+                FlowGrid.setRowIndex(flowingRegion, integers.get(PREVIOUS_ROW_POSITION));
+            });
         }
 
         @Override
         public String getName() {
-            return "Delete";
+            return "Delete " + deletedFlowingRegions.size() + " regions";
         }
+    }
+
+    private class ProactiveWrite extends Action {
+        private final DefensiveFlowingRegion flowingRegion;
+
+        Map<FlowingRegion, List<Integer>> updateMap = new HashMap<>();
+
+        ProactiveWrite(Speech speech, DefensiveFlowingRegion flowingRegion) {
+            this.flowingRegion = flowingRegion;
+
+            FlowGrid.setColumnIndex(getFlowingRegion(), speech.getColumn());
+            FlowGrid.setRowIndex(getFlowingRegion(), speech.getAvailableRow());
+
+            /* Imagine a scenario like this, where R = defensive flowing region;
+
+                 Column Index
+               0 1 2 3 4 5 6 7
+               R
+               R
+               R
+                 R
+                   R
+
+               We would expect a user would add another flowing region to a column index greater or equal to 2. However,
+               we must account for the fact that they may want to add another flowing region to column 0 (perhaps
+               they forgot to flow something of the construction speech. In general, they may want to add something to
+               a column that does not have the most recently added defensive flowing regions.
+
+               To support this case, the following for-loop only runs if there are defensive flowing regions located
+               in the speeches after the speech that the user is adding a defensive flowing region to. We increment
+               the row indexes of all those defensive flowing regions by 1.
+            */
+            for (int column = speech.getColumn() + 1; column < Speech.SPEECH_SIZE; column++) {
+                List<DefensiveFlowingRegion> affectedRegions =  Utils.getOfType(
+                        flowGrid.getColumnChildren(column),
+                        DefensiveFlowingRegion.class
+                );
+
+                for (DefensiveFlowingRegion affectedRegion : affectedRegions) {
+                    int row = FlowGrid.getRowIndex(affectedRegion);
+                    updateMap.put(affectedRegion, List.of(row, row + 1));
+                }
+            }
+        }
+
+        @Override
+        public void execute() {
+            flowGrid.getChildren().add(getFlowingRegion());
+
+            updateMap.forEach((key, value) -> {
+                FlowGrid.setRowIndex(key, value.get(FINAL_ROW_POSITION));
+            });
+        }
+
+        @Override
+        public void unexecute() {
+            flowGrid.getChildren().remove(getFlowingRegion());
+
+            updateMap.forEach((key, value) -> {
+                FlowGrid.setRowIndex(key, value.get(PREVIOUS_ROW_POSITION));
+            });
+        }
+
+        @Override
+        public String getName() {
+            return "Write \"" + getActionIdentifier(getFlowingRegion()) + "\"";
+        }
+
+        public DefensiveFlowingRegion getFlowingRegion() {
+            return flowingRegion;
+        }
+    }
+
+    private static final int IDENTIFIER_CHAR_LIMIT = 10;
+
+
+    private static String getActionIdentifier(FlowingRegion flowingRegion) {
+        return flowingRegion.getFullText().substring(0, IDENTIFIER_CHAR_LIMIT);
     }
 
     /**
@@ -638,10 +816,10 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         Speech offensiveSpeech = Utils.getRelativeElement(getSpeechList().getSpeeches(), baseSpeech, 1);
 
         TextArea textArea = getFlowingRegionWriter(
-            offensiveSpeech,
-            false,
-            flowingTextArea -> getActionManager().perform(new Refute(flowingRegion, flowingTextArea.getText())),
-            getRowIndex(getLastSelected())
+                offensiveSpeech,
+                false,
+                flowingTextArea -> getActionManager().perform(new Refute(flowingRegion, flowingTextArea.getText())),
+                getRowIndex(getLastSelected())
         );
 
         flowGrid.getChildren().add(textArea);
@@ -692,7 +870,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             if (isInColumns(start, end, speech.getColumn())) {
                 SpeechLabel speechLabel = new SpeechLabel(speech);
                 speechLabel.prefWidthProperty().bind(speechLabels.widthProperty().divide(columnSpan));
-                speechLabel.setTextFill(this.getColor(speech.getColumn()));
                 speechLabelChildren.add(speechLabel);
                 if (getSpeechList().getSelectedSpeech() == speech)
                     speechLabel.getStyleClass().add(SELECTED_SPEECH_STYLECLASS);
@@ -703,7 +880,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        setActionManager(new ActionManager());
+        flowGrid.setVgap(FLOWGRID_VERTICAL_GAP);
 
         speechLabels.minWidthProperty().bind(flowDisplay.widthProperty());
 
@@ -736,6 +913,11 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
                         FlowingRegion flowingRegion = (FlowingRegion) node;
                     }
                 }
+        ));
+
+        flowGrid.getChildren().addListener(Utils.generateListChangeListener(
+                this::onFlowingRegionAdded,
+                this::onFlowingRegionRemoved
         ));
 
         flowGrid.getColumnConstraints().setAll(Collections.nCopies(Speech.SPEECH_SIZE, new ColumnConstraints()));
@@ -854,17 +1036,17 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         FlowingRegion flowingRegion = getLastSelected();
 
         Optional<FlowingRegion> optionalFlowingRegion =
-            getLastSelected() == null ?
-                defaultFunc.get() :
-                function.apply(flowingRegion);
+                getLastSelected() == null ?
+                        defaultFunc.get() :
+                        function.apply(flowingRegion);
 
         optionalFlowingRegion.ifPresent(obtFlowingRegion -> handleSelection(obtFlowingRegion, multiSelect));
     }
 
     private void initializeListeners() {
         getSelectedFlowingRegions().addListener(Utils.generateListChangeListener(
-            FlowDisplayController::onSelectedFlowingRegionsAddition,
-            FlowDisplayController::onSelectedFlowingRegionsRemoval
+                FlowDisplayController::onSelectedFlowingRegionsAddition,
+                FlowDisplayController::onSelectedFlowingRegionsRemoval
         ));
     }
 
@@ -893,7 +1075,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             });
 
             textArea.addEventHandler(KeyEvent.KEY_TYPED, keyEvent -> {
-                
+
             });
 
             // newValue will only change to false upon loss of focus obtained from FlowingTextArea#requestFocus();
@@ -994,7 +1176,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     public void addProactiveFlowingRegionWriter(Speech speech) {
         // A node will only be present at this position if the previously added text area hasn't been submitted. This
         // leads to the assumption that a user has attempted to add a flowing region when they haven't finished submission
-        // of the previous Write action.
+        // of the previous ProactiveWrite action.
         if (flowGrid.getNode(speech.getColumn(), speech.getAvailableRow()).isPresent())
             return; // do not add allow the user to have two flowing writers / text areas at once
 
@@ -1002,38 +1184,12 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             DefensiveFlowingRegion defensiveFlowingRegion = new DefensiveFlowingRegion(flowingTextArea.getText());
             defensiveFlowingRegion.getAssociatedCards().addAll(flowingTextArea.getAddedCards());
 
-            addDefensiveFlowingRegion(speech, defensiveFlowingRegion);
+            FlowGrid.setColumnIndex(defensiveFlowingRegion, speech.getColumn());
+            FlowGrid.setRowIndex(defensiveFlowingRegion, speech.getAvailableRow());
 
-            /* Imagine a scenario like this, where R = defensive flowing region;
+            ProactiveWrite proactiveWrite = new ProactiveWrite(speech, defensiveFlowingRegion);
 
-                 Column Index
-               0 1 2 3 4 5 6 7
-               R
-               R
-               R
-                 R
-                   R
-
-               We would expect a user would add another flowing region to a column index greater or equal to 2. However,
-               we must account for the fact that they may want to add another flowing region to column 0 (perhaps
-               they forgot to flow something of the construction speech. In general, they may want to add something to
-               a column that does not have the most recently added defensive flowing regions.
-
-               To support this case, the following for-loop only runs if there are defensive flowing regions located
-               in the speeches after the speech that the user is adding a defensive flowing region to. We increment
-               the row indexes of all those defensive flowing regions by 1.
-            */
-            for (int column = speech.getColumn() + 1; column < Speech.SPEECH_SIZE; column++) {
-                List<DefensiveFlowingRegion> affectedRegions =  Utils.getOfType(
-                    flowGrid.getColumnChildren(column),
-                    DefensiveFlowingRegion.class
-                );
-
-                for (DefensiveFlowingRegion affectedRegion : affectedRegions) {
-                    int row = FlowGrid.getRowIndex(affectedRegion);
-                    FlowGrid.setRowIndex(affectedRegion, row + 1);
-                }
-            }
+            getActionManager().perform(proactiveWrite);
         }, speech.getAvailableRow());
 
         flowGrid.getChildren().add(textArea);
@@ -1044,53 +1200,16 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         return getSpeechList().getSpeeches().get(getColumnIndex(flowingRegion));
     }
 
-    public void addOffensiveFlowingRegion(OffensiveFlowingRegion offensiveFlowingRegion) {
-        int rowIndex = getRowIndex(offensiveFlowingRegion.getTargetRegion());
-        int refColumnIndex = getColumnIndex(offensiveFlowingRegion.getTargetRegion()) + 1;
-        addFlowingRegion(offensiveFlowingRegion, refColumnIndex, rowIndex);
-    }
-
-    public void addDefensiveFlowingRegion(Speech speech, DefensiveFlowingRegion defensiveRegion) {
-        int rowIndex = speech.getAvailableRow();
-        addFlowingRegion(defensiveRegion, speech.getColumn(), rowIndex);
-    }
-
     public void addExtensionFlowingRegion(ExtensionFlowingRegion extensionFlowingRegion) {
         int rowIndex = getRowIndex(extensionFlowingRegion.getBase());
         int extColumnIndex = getColumnIndex(extensionFlowingRegion.getBase()) + 2;
-        addFlowingRegion(extensionFlowingRegion, extColumnIndex, rowIndex);
+
+        flowGrid.add(extensionFlowingRegion, rowIndex, extColumnIndex);
     }
 
     private static final String AFF_REGION_STYLECLASS = "affRegion";
     private static final String NEG_REGION_STYLECLASS = "negRegion";
 
-    public void addFlowingRegion(FlowingRegion flowingRegion) {
-        addFlowingRegion(flowingRegion, getColumnIndex(flowingRegion), getRowIndex(flowingRegion));
-    }
-
-    public void addFlowingRegion(FlowingRegion flowingRegion, int column, final int row) {
-        Speech speech = getSpeechList().getSpeeches().get(column);
-
-        flowGrid.add(flowingRegion, column, row);
-
-        ColumnConstraints columnConstraints = flowGrid.getColumnConstraints().get(column);
-
-        ObservableValue<Color> observedColor = getSide() == Side.AFFIRMATIVE ?
-                EFlow.getInstance().getConfiguration().getAffColor().valueProperty() :
-                EFlow.getInstance().getConfiguration().getNegColor().valueProperty();
-
-        Utils.bindAndSet(observedColor, flowingRegion.textFillProperty());
-
-        flowingRegion.minWidthProperty().bind(columnConstraints.prefWidthProperty());
-
-        flowingRegion.setTextFill(getColor(column));
-    }
-
-    private Color getColor(int column) {
-        return getSide() == Side.AFFIRMATIVE ?
-                column % 2 == 0 ? Color.BLACK : Color.RED :
-                column % 2 == 0 ? Color.RED : Color.BLACK;
-    }
 
     private final IntegerProperty startingColumn = new SimpleIntegerProperty(0);
     private final IntegerProperty finishingColumn = new SimpleIntegerProperty(7);
@@ -1304,9 +1423,9 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     private final static Map<Level, Color> LEVEL_BACKGROUND_MAP = Map.of(
-        Level.INFO, Color.WHITE,
-        Level.WARNING, Color.YELLOW,
-        Level.SEVERE, Color.LIGHTPINK
+            Level.INFO, Color.WHITE,
+            Level.WARNING, Color.YELLOW,
+            Level.SEVERE, Color.LIGHTPINK
     );
 
     private void notify(String notificationText, Level notificationLevel) {

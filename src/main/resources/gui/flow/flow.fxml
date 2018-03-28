@@ -12,13 +12,7 @@
     <center>
         <fx:include source="rounds_bar.fxml" fx:id="roundsBar" />
     </center>
-    <!-- <right>
-        <fx:include source="card_display.fxml" />
-    </right> -->
-    <bottom>
-        <fx:include source="notification_display.fxml" fx:id="notificationDisplay" />
-    </bottom>
     <stylesheets>
-        <URL value="@flowing_columns.css" />
+        <URL value="@flow.css" />
     </stylesheets>
 </FlowingPane>

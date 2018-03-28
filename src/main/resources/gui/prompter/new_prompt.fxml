@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import java.net.URL?>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:id="promptBox" id="promptBox"
+      spacing="5">
+    <HBox spacing="5">
+        <Label styleClass="promptLabel" text="Round Name" />
+        <TextField fx:id="roundNameField" HBox.hgrow="ALWAYS" />
+    </HBox>
+    <HBox spacing="5">
+        <Label styleClass="promptLabel" text="New Tournament" />
+        <CheckBox fx:id="newTournamentCheckBox" />
+    </HBox>
+    <HBox fx:id="tournamentNameBox" spacing="5">
+        <Label styleClass="promptLabel" text="Tournament Name" />
+        <TextField fx:id="tournamentNameField" HBox.hgrow="ALWAYS" />
+    </HBox>
+    <HBox spacing="5">
+        <Label styleClass="promptLabel" text="Side" />
+        <ComboBox fx:id="sideChooser" />
+    </HBox>
+
+    <HBox prefHeight="10" />
+
+    <HBox alignment="CENTER_RIGHT">
+        <Button id="finishButton" fx:id="finishButton" text="finish" />
+    </HBox>
+
+    <stylesheets>
+        <URL value="@new_prompt.css" />
+    </stylesheets>
+</VBox>

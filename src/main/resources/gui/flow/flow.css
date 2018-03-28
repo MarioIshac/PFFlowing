@@ -34,3 +34,7 @@ Box .label {
 .negRegion {
     -fx-fill: red;
 }
+
+.questionDecoration {
+    -fx-background-color: lightgreen;
+}
