@@ -19,7 +19,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import javafx.scene.text.Text;
 import javafx.util.Duration;
 import me.theeninja.pfflowing.Action;
 import me.theeninja.pfflowing.ActionManager;
@@ -191,15 +190,25 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         }
     }
 
+
+
     private void onChildChangeListener(Node node) {
-        if (node instanceof DefensiveFlowingRegion) {
-            DefensiveFlowingRegion flowingRegion = (DefensiveFlowingRegion) node;
-            Speech speech = getSpeechList().getSpeech(flowingRegion);
-            long defensiveRegionCount = flowGrid.getColumnChildren(speech.getColumn()).stream()
-                    .filter(DefensiveFlowingRegion.class::isInstance)
-                    .count();
-            speech.setDefensiveRegionsNumber((int) defensiveRegionCount);
-        }
+        if (!(node instanceof FlowingRegion))
+            return;
+
+        FlowingRegion flowingRegion = (FlowingRegion) node;
+
+        if (flowingRegion.getFlowingRegionType() != FlowingRegionType.PROACTIVE)
+            return;
+
+        Speech speech = getSpeechList().getSpeech(flowingRegion);
+        long defensiveRegionCount = flowGrid.getColumnChildren(speech.getColumn()).stream()
+                .filter(FlowingRegion.class::isInstance)
+                .map(FlowingRegion.class::cast)
+                .filter(FlowingRegion::isProactive)
+                .count();
+
+        speech.setDefensiveRegionsNumber((int) defensiveRegionCount);
     }
 
     private void onChildAdditionListenerUpdater(Node node) {
@@ -318,31 +327,31 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
             FlowingRegion flowingRegion = null;
 
-            if (flowingRegions.stream().allMatch(DefensiveFlowingRegion.class::isInstance))
-                flowingRegion = new DefensiveFlowingRegion(condensedText);
+            if (flowingRegions.stream().allMatch(FlowingRegion::isProactive))
+                flowingRegion = new FlowingRegion(condensedText, FlowingRegionType.PROACTIVE);
 
-            if (flowingRegions.stream().allMatch(OffensiveFlowingRegion.class::isInstance)) {
+            if (flowingRegions.stream().allMatch(FlowingRegion::isOffensive)) {
                 flowingRegions.sort(Comparator.comparingInt(FlowGrid::getRowIndex));
 
-                OffensiveFlowingRegion topFlowingRegion = (OffensiveFlowingRegion) flowingRegions.get(0);
+                FlowingRegion topFlowingRegion = flowingRegions.get(0);
 
-                flowingRegion = new OffensiveFlowingRegion(
+                flowingRegion = new FlowingRegion(
                         condensedText,
-                        topFlowingRegion.getInitiator(),
-                        topFlowingRegion.getTargetRegion()
+                        FlowingRegionType.REFUTATION
                 );
 
             }
 
-            if (flowingRegions.stream().allMatch(ExtensionFlowingRegion.class::isInstance)) {
+            if (flowingRegions.stream().allMatch(FlowingRegion::isExtension)) {
                 flowingRegions.sort(Comparator.comparingInt(FlowGrid::getRowIndex));
 
-                ExtensionFlowingRegion topFlowingRegion = (ExtensionFlowingRegion) flowingRegions.get(0);
+                FlowingRegion topFlowingRegion = flowingRegions.get(0);
 
-                flowingRegion = new ExtensionFlowingRegion(
-                        topFlowingRegion.getInitiator(),
-                        topFlowingRegion.getBase()
+                flowingRegion = new FlowingRegion(
+                        "Extension",
+                    FlowingRegionType.EXTENSION
                 );
+
             }
 
             // If this passes, indicates that the list of flowing regions were different types
@@ -470,7 +479,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     private class Refute extends Action {
 
         private final FlowingRegion baseFlowingRegion;
-        private OffensiveFlowingRegion refFlowingRegion;
+        private FlowingRegion refFlowingRegion;
 
         public Refute(FlowingRegion baseFlowingRegion, String text) {
             this.baseFlowingRegion = baseFlowingRegion;
@@ -480,7 +489,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             if (Utils.isLastElement(getSpeechList().getSpeeches(), baseSpeech))
                 return;
 
-            this.refFlowingRegion = new OffensiveFlowingRegion(text, baseSpeech.getSide(), getBaseFlowingRegion());
+            this.refFlowingRegion = new FlowingRegion(text, FlowingRegionType.REFUTATION);
 
             int baseRow = FlowGrid.getRowIndex(baseFlowingRegion);
             int baseColumn = FlowGrid.getColumnIndex(baseFlowingRegion);
@@ -563,20 +572,21 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     private class Extend extends Action {
         private List<FlowingRegion> baseFlowingRegions;
         private Speech speech;
-        private List<ExtensionFlowingRegion> extendFlowingRegions;
+        private List<FlowingRegion> extendFlowingRegions;
         private List<FlowingLink> flowingLinks;
 
         Extend(List<FlowingRegion> baseFlowingRegions) {
             this.baseFlowingRegions = baseFlowingRegions;
             this.speech = getSpeechList().getSpeech(baseFlowingRegions.get(0)); // speech guaranteed to be the same for all selected
-            this.extendFlowingRegions = this.baseFlowingRegions.stream().map(FlowingRegion::duplicate).map(baseFlowingRegion ->
-                    new ExtensionFlowingRegion(speech.getSide(), baseFlowingRegion)
-            ).collect(Collectors.toList());
+            this.extendFlowingRegions = this.baseFlowingRegions.stream()
+                    .map(FlowingRegion::duplicate)
+                    .map(this::newExtensionFromBase)
+                    .collect(Collectors.toList());
         }
 
         @Override
         public void execute() {
-            this.extendFlowingRegions.forEach(FlowDisplayController.this::addExtensionFlowingRegion);
+            flowGrid.getChildren().addAll(extendFlowingRegions);
             PauseTransition pauseTransition = new PauseTransition(Duration.seconds(0.25));
             pauseTransition.setOnFinished(this::onPauseTransitionFinish);
             pauseTransition.play();
@@ -593,15 +603,29 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         }
 
         private void onPauseTransitionFinish(ActionEvent actionEvent) {
-            this.flowingLinks = this.extendFlowingRegions.stream().map(extensionFlowingRegion -> {
-                Speech firstSpeech = getSpeechList().getSpeech(extensionFlowingRegion.getBase());
+            /*this.flowingLinks = this.extendFlowingRegions.stream().map(extensionFlowingRegion -> {
                 Speech secondSpeech = getSpeechList().getSpeech(extensionFlowingRegion);
+                int secondSpeechIndex
                 int row = getRowIndex(extensionFlowingRegion);
 
                 return new FlowingLink(firstSpeech.getColumn(), secondSpeech.getColumn(), row, FlowDisplayController.this);
             }).collect(Collectors.toList());
 
-            flowGrid.getChildren().addAll(flowingLinks);
+            flowGrid.getChildren().addAll(flowingLinks);*/
+        }
+
+        private FlowingRegion newExtensionFromBase(FlowingRegion baseFlowingRegion) {
+            FlowingRegion extension = new FlowingRegion("extension", FlowingRegionType.EXTENSION);
+
+            int baseRowIndex = FlowGrid.getRowIndex(baseFlowingRegion);
+            int baseColIndex = FlowGrid.getColumnIndex(baseFlowingRegion);
+
+            int newColIndex = baseColIndex + FlowGrid.EXT_COL_OFFSET;
+
+            FlowGrid.setColumnIndex(extension, newColIndex);
+            FlowGrid.setRowIndex(extension, baseRowIndex);
+
+            return extension;
         }
     }
 
@@ -661,11 +685,11 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     private class ProactiveWrite extends Action {
-        private final DefensiveFlowingRegion flowingRegion;
+        private final FlowingRegion flowingRegion;
 
         Map<FlowingRegion, List<Integer>> updateMap = new HashMap<>();
 
-        ProactiveWrite(Speech speech, DefensiveFlowingRegion flowingRegion) {
+        ProactiveWrite(Speech speech, FlowingRegion flowingRegion) {
             this.flowingRegion = flowingRegion;
 
             FlowGrid.setColumnIndex(getFlowingRegion(), speech.getColumn());
@@ -691,12 +715,14 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
                the row indexes of all those defensive flowing regions by 1.
             */
             for (int column = speech.getColumn() + 1; column < Speech.SPEECH_SIZE; column++) {
-                List<DefensiveFlowingRegion> affectedRegions =  Utils.getOfType(
-                        flowGrid.getColumnChildren(column),
-                        DefensiveFlowingRegion.class
-                );
+                List<FlowingRegion> affectedRegions =  flowGrid.getColumnChildren(column).stream()
+                        .filter(FlowingRegion.class::isInstance)
+                        .map(FlowingRegion.class::cast)
+                        .filter(FlowingRegion::isProactive)
+                        .collect(Collectors.toList());
 
-                for (DefensiveFlowingRegion affectedRegion : affectedRegions) {
+
+                for (FlowingRegion affectedRegion : affectedRegions) {
                     int row = FlowGrid.getRowIndex(affectedRegion);
                     updateMap.put(affectedRegion, List.of(row, row + 1));
                 }
@@ -726,7 +752,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             return "Write \"" + getActionIdentifier(getFlowingRegion()) + "\"";
         }
 
-        public DefensiveFlowingRegion getFlowingRegion() {
+        public FlowingRegion getFlowingRegion() {
             return flowingRegion;
         }
     }
@@ -981,7 +1007,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         for (Map.Entry<Integer, List<FlowingRegion>> entry : groupedBySpeech.entrySet()) {
             if (entry.getKey() == minColumn)
                 continue;
-            if (entry.getValue().stream().anyMatch(DefensiveFlowingRegion.class::isInstance)) {
+            if (entry.getValue().stream().anyMatch(FlowingRegion::isProactive)) {
                 notify("Cannot merge new defensive content with old defensive content.", Level.SEVERE);
                 return;
             }
@@ -1181,7 +1207,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             return; // do not add allow the user to have two flowing writers / text areas at once
 
         TextArea textArea = getFlowingRegionWriter(speech, isCaseWriteMode(), flowingTextArea -> {
-            DefensiveFlowingRegion defensiveFlowingRegion = new DefensiveFlowingRegion(flowingTextArea.getText());
+            FlowingRegion defensiveFlowingRegion = new FlowingRegion(flowingTextArea.getText(), FlowingRegionType.PROACTIVE);
             defensiveFlowingRegion.getAssociatedCards().addAll(flowingTextArea.getAddedCards());
 
             FlowGrid.setColumnIndex(defensiveFlowingRegion, speech.getColumn());
@@ -1198,13 +1224,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
     public Speech getSpeech(FlowingRegion flowingRegion) {
         return getSpeechList().getSpeeches().get(getColumnIndex(flowingRegion));
-    }
-
-    public void addExtensionFlowingRegion(ExtensionFlowingRegion extensionFlowingRegion) {
-        int rowIndex = getRowIndex(extensionFlowingRegion.getBase());
-        int extColumnIndex = getColumnIndex(extensionFlowingRegion.getBase()) + 2;
-
-        flowGrid.add(extensionFlowingRegion, rowIndex, extColumnIndex);
     }
 
     private static final String AFF_REGION_STYLECLASS = "affRegion";

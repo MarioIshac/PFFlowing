@@ -1,6 +1,5 @@
 package me.theeninja.pfflowing.gui;
 
-import me.theeninja.pfflowing.flowing.Defensive;
 import me.theeninja.pfflowing.flowing.DefensiveSpeech;
 import me.theeninja.pfflowing.flowing.RefutationSpeech;
 import me.theeninja.pfflowing.utils.Pair;

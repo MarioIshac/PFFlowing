@@ -36,7 +36,8 @@ public class FlowingRegionAdapter extends TypeAdapter<FlowingRegion> {
         jsonReader.beginObject();
 
         Utils.expect(jsonReader, TYPE_NAME);
-        String className = jsonReader.nextString();
+        String flowingRegionTypeString = jsonReader.nextString();
+        FlowingRegionType flowingRegionType = FlowingRegionType.valueOf(flowingRegionTypeString);
 
         Utils.expect(jsonReader, TEXT_NAME);
         String text = jsonReader.nextString();
@@ -52,10 +53,12 @@ public class FlowingRegionAdapter extends TypeAdapter<FlowingRegion> {
 
         jsonReader.endObject();
 
-        FlowingRegion flowingRegion = new FlowingRegion(text);
+        FlowingRegion flowingRegion = new FlowingRegion(text, flowingRegionType);
         FlowGrid.setColumnIndex(flowingRegion, column);
         FlowGrid.setRowIndex(flowingRegion, row);
         flowingRegion.getProperties().put(FlowingRegion.QUESTION_KEY, question);
+
+        return null;
     }
 
     public static void addJSON(JsonWriter jsonWriter, FlowingRegion flowingRegion) throws IOException {
@@ -72,8 +75,6 @@ public class FlowingRegionAdapter extends TypeAdapter<FlowingRegion> {
         String question = (String) questionObject;
 
         jsonWriter.name(QUESTION).value(question);
-
-        List<Card> cards = flowingRegion.getAssociatedCards();
 
         jsonWriter.endObject();
     }

@@ -29,8 +29,9 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
 
     private final Decoration hasCardsDecoration;
     public static final String QUESTION_KEY = "question";
+    private final FlowingRegionType flowingRegionType;
 
-    PopOver currentShownPopover;
+    private PopOver currentShownPopover;
 
     @Expose
     @SerializedName("fullText")
@@ -54,12 +55,13 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
     @SerializedName("associatedCards")
     private final ObservableList<Card> associatedCards;
 
-    protected FlowingRegion(String text) {
-        this(text, FXCollections.observableArrayList());
+    public FlowingRegion(String text, FlowingRegionType flowingRegionType) {
+        this(text, flowingRegionType, FXCollections.observableArrayList());
     }
 
-    protected FlowingRegion(String text, ObservableList<Card> associatedCards) {
+    public FlowingRegion(String text, FlowingRegionType flowingRegionType, ObservableList<Card> associatedCards) {
         super();
+        this.flowingRegionType = flowingRegionType;
 
         int sideLength = FlowDisplayController.FLOWGRID_VERTICAL_GAP;
 
@@ -144,7 +146,7 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
 
     @Override
     public FlowingRegion duplicate() {
-        FlowingRegion duplicate = new FlowingRegion(getText());
+        FlowingRegion duplicate = new FlowingRegion(getText(), getFlowingRegionType(), getAssociatedCards());
         duplicate.setStyle(this.getStyle());
         FlowGrid.setColumnIndex(duplicate, FlowGrid.getColumnIndex(this));
         FlowGrid.setRowIndex(duplicate, FlowGrid.getRowIndex(this));
@@ -248,5 +250,21 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
             Decorator.addDecoration(this, hasCardsDecoration);
         else
             Decorator.removeDecoration(this, hasCardsDecoration);
+    }
+
+    public FlowingRegionType getFlowingRegionType() {
+        return flowingRegionType;
+    }
+
+    public boolean isProactive() {
+        return getFlowingRegionType() == FlowingRegionType.PROACTIVE;
+    }
+
+    public boolean isOffensive() {
+        return getFlowingRegionType() == FlowingRegionType.REFUTATION;
+    }
+
+    public boolean isExtension() {
+        return getFlowingRegionType() == FlowingRegionType.EXTENSION;
     }
 }

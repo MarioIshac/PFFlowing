@@ -114,20 +114,24 @@ public class FlowGrid extends GridPane {
         return getRelativeFlowingRegion(node, Direction.DOWN);
     }
 
-    public Optional<OffensiveFlowingRegion> getRefutation(FlowingRegion flowingRegion) {
+    public Optional<FlowingRegion> getRefutation(FlowingRegion flowingRegion) {
         Optional<FlowingRegion> rightFlowingRegion = getFlowingRegion(
                 FlowGrid.getColumnIndex(flowingRegion) + REF_COL_OFFSET,
                 FlowGrid.getRowIndex(flowingRegion));
 
-        return rightFlowingRegion.map(OffensiveFlowingRegion.class::cast);
+        return rightFlowingRegion
+                .map(FlowingRegion.class::cast)
+                .filter(FlowingRegion::isOffensive);
     }
 
-    public Optional<ExtensionFlowingRegion> getExtension(FlowingRegion flowingRegion) {
+    public Optional<FlowingRegion> getExtension(FlowingRegion flowingRegion) {
         Optional<FlowingRegion> rightFlowingRegion = getFlowingRegion(
                 FlowGrid.getColumnIndex(flowingRegion) + EXT_COL_OFFSET,
                 FlowGrid.getRowIndex(flowingRegion));
 
-        return rightFlowingRegion.map(ExtensionFlowingRegion.class::cast);
+        return rightFlowingRegion
+                .map(FlowingRegion.class::cast)
+                .filter(FlowingRegion::isExtension);
     }
 
     public List<FlowingRegion> getPostLink(FlowingRegion flowingRegion) {
