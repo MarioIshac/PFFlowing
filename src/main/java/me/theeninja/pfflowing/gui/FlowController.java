@@ -1,6 +1,5 @@
 package me.theeninja.pfflowing.gui;
 
-import com.google.common.collect.ImmutableMap;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -42,6 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -61,9 +61,9 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
     private ObjectProperty<UseType> useType = new SimpleObjectProperty<>(UseType.NONE);
-    private final ImmutableMap<KeyCodeCombination, Runnable> GLOBAL_KEY_CODES = ImmutableMap.of(
-        KeyCodeCombinationUtils.TOGGLE_FULLSCREEN, () -> getPFFlowing().toggleFullscreen()
-        /*KeyCodeCombinationUtils.SAVE, () -> {
+    private final Map<KeyCodeCombination, Runnable> GLOBAL_KEY_CODES = Map.of(
+        KeyCodeCombinationUtils.TOGGLE_FULLSCREEN, () -> getFlowApp().toggleFullscreen(),
+        KeyCodeCombinationUtils.SAVE, () -> {
                 try {
                     saveSelectedRound();
                 } catch (IOException e) {
@@ -76,12 +76,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            },
-        KeyCodeCombinationUtils.SWITCH_SPEECHLIST, () -> {
-                RoundTab roundTab = (RoundTab) roundsBar.getSelectionModel().getSelectedItem();
-                Round selectedRound = roundTab.getRound();
-                selectedRound.setDisplayedSide(selectedRound.getDisplayedSide().getOpposite());
-            }*/
+            }
     );
 
     private void onRegionRemovalRemoveDragSupport(Node node) {
@@ -152,11 +147,11 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         FileChooser.ExtensionFilter eflowExtensionFilter = new FileChooser.ExtensionFilter("EFlow files (*.eflow)", "*.eflow");
         getFileChooser().getExtensionFilters().add(eflowExtensionFilter);
 
-        CardSelectorController cardSelectorController = new CardSelectorController(getPFFlowing());
+        CardSelectorController cardSelectorController = new CardSelectorController(getFlowApp());
         setUpController(cardSelectorController, "/gui/cardSelector/card_selector.fxml", this::setCardSelectorController);
         getCorrelatingView().setLeft(cardSelectorController.getCorrelatingView());
 
-        NavigatorController navigatorController = new NavigatorController(getPFFlowing());
+        NavigatorController navigatorController = new NavigatorController(getFlowApp());
         setUpController(navigatorController, "/gui/navigator/navigator.fxml", this::setNavigatorController);
         getCorrelatingView().setTop(navigatorController.getCorrelatingView());
 
@@ -250,7 +245,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     public void saveRoundAs() throws IOException {
         getFileChooser().setTitle(SAVE_TITLE);
-        File file = getFileChooser().showSaveDialog(getPFFlowing().getStage());
+        File file = getFileChooser().showSaveDialog(getFlowApp().getStage());
 
         // no file chosen
         if (file == null)
@@ -268,11 +263,25 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
     public void saveSelectedRound() throws IOException {
-        RoundTab roundTab = (RoundTab) roundsBar.getSelectionModel().getSelectedItem();
-        Round targetRound = roundTab.getRound();
+        Round selectedRound = getSelectedRound();
 
-        String json = EFlow.getInstance().getGSON().toJson(targetRound, Round.class);
-        Files.write(targetRound.getPath(), json.getBytes());
+        // Indicates this round has not been saved before
+        if (selectedRound.getPath() == null) {
+            Stage allocatedStage = new Stage();
+            File file = getFileChooser().showSaveDialog(allocatedStage);
+
+            if (file == null)
+                return;
+
+            Path returnedPath = file.toPath();
+
+            selectedRound.setPath(returnedPath);
+        }
+
+        else {
+            String json = EFlow.getInstance().getGSON().toJson(selectedRound, Round.class);
+            Files.write(selectedRound.getPath(), json.getBytes());
+        }
     }
 
     private static final String OPEN_ROUND_TITLE = "Open an EFlow Round";
@@ -280,7 +289,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     public void openRound() throws IOException {
         getFileChooser().setTitle(OPEN_ROUND_TITLE);
-        File file = getFileChooser().showOpenDialog(getPFFlowing().getStage());
+        File file = getFileChooser().showOpenDialog(getFlowApp().getStage());
 
         // no file chosen
         if (file == null)
@@ -310,7 +319,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     public void openTournament() throws IOException {
         getDirectoryChooser().setTitle(OPEN_TOURNAMENT_TITLE);
-        File directory = getDirectoryChooser().showDialog(getPFFlowing().getStage());
+        File directory = getDirectoryChooser().showDialog(getFlowApp().getStage());
 
         // no directory chosen
         if (directory == null)
@@ -417,7 +426,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         this.useType.set(useType);
     }
 
-    public FlowApp getPFFlowing() {
+    public FlowApp getFlowApp() {
         return flowApp;
     }
 
