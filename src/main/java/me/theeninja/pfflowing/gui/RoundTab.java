@@ -22,4 +22,8 @@ public class RoundTab extends Tab {
     public Round getRound() {
         return round;
     }
+
+    public void forceContentRefresh() {
+        setContent(round.getSelectedController().getCorrelatingView());
+    }
 }

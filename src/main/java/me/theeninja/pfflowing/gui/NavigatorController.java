@@ -20,6 +20,7 @@ import me.theeninja.pfflowing.flowingregions.Blocks;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.flowingregions.CardProcessor;
 import me.theeninja.pfflowing.gui.cardparser.CardParserController;
+import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.tournament.Round;
 import me.theeninja.pfflowing.utils.Utils;
 
@@ -65,8 +66,6 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
         this.flowApp = flowApp;
     }
 
-    private boolean doesFlowFileExist;
-
     @FXML
     public void newFlow(ActionEvent actionEvent) {
 
@@ -82,9 +81,9 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     }
 
     @FXML
-    public void openTournament(ActionEvent actionEvent) {
+    public void openDirectory(ActionEvent actionEvent) {
         try {
-            getFlowApp().getFlowController().openTournament();
+            getFlowApp().getFlowController().openDirectory();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -92,11 +91,11 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
     @FXML
     public void saveFlow(ActionEvent actionEvent) {
-
-    }
-
-    @FXML
-    public void saveFlowAs(ActionEvent actionEvent) {
+        try {
+            getFlowApp().getFlowController().saveSelectedRound();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -152,88 +151,114 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     }
 
     @FXML
-    public void openParserPopupGD() {
-        try {
-            // Build a new authorized API client service.
-            Drive service = GDriveConnector.getDriveService();
+    public void openParserPopupGD(Side side) {
+        promptForBlocksCreation(blocks -> {
+            try {
+                // Build a new authorized API client service.
+                Drive service = GDriveConnector.getDriveService();
 
-            Drive.Files serviceFiles = service.files();
+                Drive.Files serviceFiles = service.files();
 
-            FileList result = serviceFiles.list()
-                    //.setPageSize(10)
-                    .setQ("(mimeType='application/vnd.google-apps.document')")
-                    .setFields("nextPageToken, files(id, name, createdTime)")
-                    .execute();
+                FileList result = null;
 
-            List<File> files = result.getFiles();
+                result = serviceFiles.list()
+                        //.setPageSize(10)
+                        .setQ("(mimeType='application/vnd.google-apps.document')")
+                        .setFields("nextPageToken, files(id, name, createdTime)")
+                        .execute();
 
-            if (files.isEmpty())
-                System.out.println("No files found.");
-            else {
-                FXMLLoader fxmlLoader = new FXMLLoader(NavigatorController.class.getResource("/gui/dri ve/drive_picker.fxml"));
-                GDriveFilePickerController pickerController = new GDriveFilePickerController(files);
-                fxmlLoader.setController(pickerController);
-                fxmlLoader.load();
+                List<File> files = result.getFiles();
 
-                Scene scene = new Scene(pickerController.getCorrelatingView());
-                Stage stage = new Stage();
-                stage.setScene(scene);
-                stage.show();
+                if (files.isEmpty())
+                    System.out.println("No files found.");
+                else {
+                    FXMLLoader fxmlLoader = new FXMLLoader(NavigatorController.class.getResource("/gui/dri ve/drive_picker.fxml"));
+                    GDriveFilePickerController pickerController = new GDriveFilePickerController(files);
+                    fxmlLoader.setController(pickerController);
+                    fxmlLoader.load();
 
-                pickerController.getCorrelatingView().addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-                    if (keyEvent.getCode() == KeyCode.ENTER) {
-                        try {
-                            System.out.println("enter is pressed");
-                            TreeItem<File> selectedTreeItem = pickerController.getCorrelatingView().getSelectionModel().getSelectedItem();
-                            File selectedFile = selectedTreeItem.getValue();
+                    Scene scene = new Scene(pickerController.getCorrelatingView());
+                    Stage stage = new Stage();
+                    stage.setScene(scene);
+                    stage.show();
 
-                            String fileId = selectedFile.getId();
-
-                            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                            serviceFiles
-                                    .export(fileId, "text/html")
-                                    .executeMediaAndDownloadTo(outputStream);
-                            byte[] bytes = outputStream.toByteArray();
-
-                            String html = new String(bytes);
-
-                            Stage stage_ = new Stage();
-
-                            FXMLLoader fxmlLoader_ = new FXMLLoader(getClass().getResource("/gui/cardParser/card_parser.fxml"));
-                            CardParserController cardParserController = new CardParserController(getFlowApp(), generateOnFinish(stage));
-                            fxmlLoader_.setController(cardParserController);
-
+                    pickerController.getCorrelatingView().addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
+                        if (keyEvent.getCode() == KeyCode.ENTER) {
                             try {
-                                fxmlLoader_.load();
+                                System.out.println("enter is pressed");
+                                TreeItem<File> selectedTreeItem = pickerController.getCorrelatingView().getSelectionModel().getSelectedItem();
+                                File selectedFile = selectedTreeItem.getValue();
+
+                                String fileId = selectedFile.getId();
+
+                                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                                serviceFiles
+                                        .export(fileId, "text/html")
+                                        .executeMediaAndDownloadTo(outputStream);
+                                byte[] bytes = outputStream.toByteArray();
+
+                                String html = new String(bytes);
+
+                                Stage stage_ = new Stage();
+
+                                FXMLLoader fxmlLoader_ = new FXMLLoader(getClass().getResource("/gui/cardParser/card_parser.fxml"));
+                                CardParserController cardParserController = new CardParserController(getFlowApp(), blocks);
+                                fxmlLoader_.setController(cardParserController);
+
+                                try {
+                                    fxmlLoader_.load();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                                Scene scene_ = new Scene(cardParserController.getCorrelatingView());
+                                stage_.setScene(scene_);
+
+                                stage_.show();
+                                stage_.toFront();
+
+                                cardParserController.loadHTML(html);
+                                cardParserController.startProcess();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-
-                            Scene scene_ = new Scene(cardParserController.getCorrelatingView());
-                            stage_.setScene(scene_);
-
-                            stage_.show();
-                            stage_.toFront();
-
-                            cardParserController.loadHTML(html);
-                            cardParserController.startProcess();
-                        } catch (IOException e) {
-                            e.printStackTrace();
                         }
-                    }
-                });
+                    });
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+        });
+    }
+
+    public void promptForBlocksCreation(Consumer<Blocks> blocks) {
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/cardParser/block_prompt.fxml"));
+        BlockPrompterController blockPrompterController = new BlockPrompterController(blocks);
+        fxmlLoader.setController(blockPrompterController);
+
+        try {
+            fxmlLoader.load();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Stage stage = new Stage();
+        Scene scene = new Scene(blockPrompterController.getCorrelatingView());
+        stage.setScene(scene);
+
+        stage.show();
     }
 
     @FXML
     public void openParserPopupFile() {
+        promptForBlocksCreation(this::parseBlocksFile);
+    }
+
+    private void parseBlocksFile(Blocks blocks) {
         Stage stage = new Stage();
 
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/cardParser/card_parser.fxml"));
-        CardParserController cardParserController = new CardParserController(getFlowApp(), generateOnFinish(stage));
+        CardParserController cardParserController = new CardParserController(getFlowApp(), blocks);
         fxmlLoader.setController(cardParserController);
 
         try {
@@ -258,11 +283,6 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     @FXML
     public void newRound(ActionEvent actionEvent) {
         getFlowApp().getFlowController().promptRoundAddition();
-    }
-
-    @FXML
-    public void newTournament(ActionEvent actionEvent) {
-        getFlowApp().getFlowController().newTournament();
     }
 
     @Override

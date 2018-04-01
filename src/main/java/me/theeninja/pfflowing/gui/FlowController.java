@@ -1,11 +1,7 @@
 package me.theeninja.pfflowing.gui;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.beans.value.ObservableValue;
+import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -17,21 +13,16 @@ import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.configuration.InternalConfiguration;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.tournament.Round;
-import me.theeninja.pfflowing.tournament.UseType;
-import me.theeninja.pfflowing.utils.Pair;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.io.File;
@@ -39,12 +30,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class FlowController implements Initializable, SingleViewController<FlowingPane> {
@@ -60,23 +49,8 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         this.flowApp = flowApp;
     }
 
-    private ObjectProperty<UseType> useType = new SimpleObjectProperty<>(UseType.NONE);
     private final Map<KeyCodeCombination, Runnable> GLOBAL_KEY_CODES = Map.of(
-        KeyCodeCombinationUtils.TOGGLE_FULLSCREEN, () -> getFlowApp().toggleFullscreen(),
-        KeyCodeCombinationUtils.SAVE, () -> {
-                try {
-                    saveSelectedRound();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            },
-        KeyCodeCombinationUtils.OPEN, () -> {
-                try {
-                    openRound();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+        KeyCodeCombinationUtils.TOGGLE_FULLSCREEN, () -> getFlowApp().toggleFullscreen()
     );
 
     private void onRegionRemovalRemoveDragSupport(Node node) {
@@ -110,8 +84,10 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     private EventHandler<KeyEvent> getKeyEventHandler() {
         return keyEvent -> {
             GLOBAL_KEY_CODES.forEach((key, value) -> {
-                if (key.match(keyEvent))
+                if (key.match(keyEvent)) {
                     value.run();
+                    keyEvent.consume();
+                }
             });
 
             if (!roundsBar.getTabs().isEmpty()) {
@@ -156,9 +132,37 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         getCorrelatingView().setTop(navigatorController.getCorrelatingView());
 
         getNavigatorController().getCorrelatingView().setPrefHeight(Region.USE_PREF_SIZE);
-        roundsBar.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        roundsBar.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
 
-        useTypeProperty().addListener(this::onUseTypeChanged);
+        roundsBar.getTabs().addListener(Utils.generateListChangeListener(this::onTabAdded, this::onTabRemoved));
+    }
+
+    private final ListChangeListener<? super Node> onChildrenChange = Utils.generateListChangeListener(
+            this::onRegionRemovalRemoveDragSupport,
+            this::onRegionAdditionAddDragSupport
+    );
+
+    private void onTabAdded(Tab tab) {
+        if (!(tab instanceof RoundTab))
+            throw new UnsupportedOperationException("Cannot add non-RoundTab to roundsBar");
+
+        RoundTab roundTab = (RoundTab) tab;
+        Round round = roundTab.getRound();
+
+        for (FlowDisplayController controller : round.getSideControllers()) {
+            controller.getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
+            controller.flowGrid.getChildren().addListener(onChildrenChange);
+        }
+    }
+
+    private void onTabRemoved(Tab tab) {
+        RoundTab roundTab = (RoundTab) tab;
+        Round round = roundTab.getRound();
+
+        for (FlowDisplayController controller : round.getSideControllers()) {
+            controller.getCorrelatingView().maxWidthProperty().unbind();
+            controller.flowGrid.getChildren().removeListener(onChildrenChange);
+        }
     }
 
     private <T> void setUpController(T controllerInstance, String fileName, Consumer<T> setter) {
@@ -210,17 +214,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         round.setDisplayedSide(side);
 
         roundsBar.getTabs().add(roundTab);
-
-        for (FlowDisplayController controller : round.getSideControllers()) {
-            controller.getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
-            controller.flowGrid.getChildren().addListener(Utils.generateListChangeListener(
-                this::onRegionRemovalRemoveDragSupport,
-                this::onRegionAdditionAddDragSupport)
-            );
-        }
-
-        round.getAffController().getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
-        round.getNegController().getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
     }
 
     private void addDragSupport(FlowingRegion flowingRegion) {
@@ -243,61 +236,57 @@ public class FlowController implements Initializable, SingleViewController<Flowi
             return file;
     }
 
-    public void saveRoundAs() throws IOException {
-        getFileChooser().setTitle(SAVE_TITLE);
-        File file = getFileChooser().showSaveDialog(getFlowApp().getStage());
-
-        // no file chosen
-        if (file == null)
-            return; // assume that user cancelled saving
-
-        File eflowFile = getEFlowTypeFile(file);
-
-        Path path = eflowFile.toPath();
-
-        RoundTab roundTab = (RoundTab) roundsBar.getSelectionModel().getSelectedItem();
-        Round round = roundTab.getRound();
-
-        String json = EFlow.getInstance().getGSON().toJson(round, Round.class);
-        Files.write(path, json.getBytes());
-    }
-
     public void saveSelectedRound() throws IOException {
         Round selectedRound = getSelectedRound();
 
         // Indicates this round has not been saved before
         if (selectedRound.getPath() == null) {
             Stage allocatedStage = new Stage();
+
+            getFileChooser().setTitle(SAVE_TITLE);
+
             File file = getFileChooser().showSaveDialog(allocatedStage);
 
             if (file == null)
                 return;
 
-            Path returnedPath = file.toPath();
+            File eFlowFile = getEFlowTypeFile(file);
+            Path returnedPath = eFlowFile.toPath();
 
             selectedRound.setPath(returnedPath);
         }
 
-        else {
-            String json = EFlow.getInstance().getGSON().toJson(selectedRound, Round.class);
-            Files.write(selectedRound.getPath(), json.getBytes());
-        }
+        String json = EFlow.getInstance().getGSON().toJson(selectedRound, Round.class);
+        Files.write(selectedRound.getPath(), json.getBytes());
     }
 
     private static final String OPEN_ROUND_TITLE = "Open an EFlow Round";
     private static final String OPEN_TOURNAMENT_TITLE = "Open an EFlow Tournament";
 
     public void openRound() throws IOException {
+        System.out.println("Open round called");
         getFileChooser().setTitle(OPEN_ROUND_TITLE);
-        File file = getFileChooser().showOpenDialog(getFlowApp().getStage());
+
+        Stage allocatedStage = new Stage();
+        File file = getFileChooser().showOpenDialog(allocatedStage);
 
         // no file chosen
         if (file == null)
             return; // assume that user cancelled opening
 
         File eflowFile = getEFlowTypeFile(file);
-
         Path path = eflowFile.toPath();
+
+        Round existingOpenedRound = getRoundByPath(path);
+
+        // Indicates that this round is already opened
+        if (existingOpenedRound != null) {
+            // Rather than open second instance of round, select first instance
+            RoundTab roundTab = getTab(existingOpenedRound);
+            roundsBar.getSelectionModel().select(roundTab);
+
+            return;
+        }
 
         byte[] jsonBytes = Files.readAllBytes(path);
         String json = new String(jsonBytes);
@@ -305,19 +294,48 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         Round round = EFlow.getInstance().getGSON().fromJson(json, Round.class);
         round.setPath(path);
 
-        if (getUseType().isInUse()) {
+        System.out.println("Aff flow grid" + round.getAffController().flowGrid);
 
-        }
-        else {
-            RoundTab roundTab = new RoundTab(round);
-            roundsBar.tabMinWidthProperty().bind(roundsBar.widthProperty());
-            roundsBar.tabMaxWidthProperty().bind(roundsBar.tabMinWidthProperty());
-            setUseType(UseType.ROUND);
-            roundsBar.getTabs().add(roundTab);
-        }
+        RoundTab roundTab = new RoundTab(round);
+        roundsBar.getTabs().add(roundTab);
+
+        round.setDisplayedSide(round.getSide());
     }
 
-    public void openTournament() throws IOException {
+    public RoundTab getTab(Round round) {
+        for (Tab tab : roundsBar.getTabs()) {
+            RoundTab roundTab = (RoundTab) tab;
+
+            if (roundTab.getRound() == round)
+                return roundTab;
+        }
+
+        return null;
+    }
+
+    public List<Round> getRoundsOnBar() {
+        return roundsBar.getTabs().stream()
+                .map(RoundTab.class::cast)
+                .map(RoundTab::getRound)
+                .collect(Collectors.toList());
+    }
+
+    public Round getRoundByPath(Path path) {
+        List<Round> rounds = getRoundsOnBar();
+
+        for (Round round : rounds) {
+            // if round is not associated with path, skip it
+            if (round.getPath() == null)
+                continue;
+
+            if (round.getPath().equals(path))
+                return round;
+        }
+
+        return null;
+    }
+
+    public void openDirectory() throws IOException {
         getDirectoryChooser().setTitle(OPEN_TOURNAMENT_TITLE);
         File directory = getDirectoryChooser().showDialog(getFlowApp().getStage());
 
@@ -325,74 +343,19 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         if (directory == null)
             return; // assume that user cancelled opening
 
-        Path tournamentPath = directory.toPath();
+        Path directoryPath = directory.toPath();
 
-        List<Path> roundPaths = Files.walk(tournamentPath).filter(Files::isRegularFile).collect(Collectors.toList());
+        List<Path> roundPaths = Files.walk(directoryPath).filter(Files::isRegularFile).collect(Collectors.toList());
 
-        if (getUseType().isInUse()) {
+        for (Path roundPath : roundPaths) {
+            byte[] jsonBytes = Files.readAllBytes(roundPath);
+            String json = new String(jsonBytes);
 
+            Round round = EFlow.getInstance().getGSON().fromJson(json, Round.class);
+            round.setPath(roundPath);
+            RoundTab roundTab = new RoundTab(round);
+            roundsBar.getTabs().add(roundTab);
         }
-        else {
-            for (Path roundPath : roundPaths) {
-                byte[] jsonBytes = Files.readAllBytes(roundPath);
-                String json = new String(jsonBytes);
-
-                Round round = EFlow.getInstance().getGSON().fromJson(json, Round.class);
-                round.setPath(roundPath);
-                RoundTab roundTab = new RoundTab(round);
-                roundsBar.getTabs().add(roundTab);
-            }
-            setUseType(UseType.TOURNAMENT);
-        }
-    }
-
-    public void newTournament() {
-        Stage stage = new Stage();
-        VBox prompt = new VBox();
-        HBox tournamentRequest = new HBox();
-        Scene scene = new Scene(prompt);
-
-        StringProperty directory = new SimpleStringProperty();
-
-        Label tournamentRequestLabel = new Label("Tournament Name:");
-        Button directorySelector = new Button("Directory");
-        Label directoryViewer = new Label();
-        directoryViewer.textProperty().bind(directory);
-
-        directorySelector.setOnAction(actionEvent -> {
-            File file = getDirectoryChooser().showDialog(stage);
-            directory.set(file.getAbsolutePath());
-        });
-
-        TextField tournamentRequestField = new TextField();
-
-        Button finish = new Button("Finish");
-
-        tournamentRequest.getChildren().addAll(tournamentRequestLabel, tournamentRequestField);
-
-        finish.setOnAction(actionEvent -> {
-            Path parentDirectoryPath = Paths.get(directory.get());
-            String tournamentName = tournamentRequestField.getText();
-            Path entireDirectoryPath = parentDirectoryPath.resolve(tournamentName);
-            try {
-                Files.createDirectory(entireDirectoryPath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            stage.hide();
-
-            setUseType(UseType.TOURNAMENT);
-        });
-
-        prompt.getChildren().addAll(
-                tournamentRequest,
-                directorySelector,
-                directoryViewer,
-                finish
-        );
-
-        stage.setScene(scene);
-        stage.show();
     }
 
     public void setFileChooser(FileChooser fileChooser) {
@@ -414,48 +377,8 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         this.directoryChooser = directoryChooser;
     }
 
-    public UseType getUseType() {
-        return useType.get();
-    }
-
-    public ObjectProperty<UseType> useTypeProperty() {
-        return useType;
-    }
-
-    public void setUseType(UseType useType) {
-        this.useType.set(useType);
-    }
-
     public FlowApp getFlowApp() {
         return flowApp;
-    }
-
-    public void info(String text) {
-        notify(text, Level.INFO);
-    }
-
-    public void warn(String text) {
-        notify(text, Level.WARNING);
-    }
-
-    public void error(String text) {
-        notify(text, Level.SEVERE);
-    }
-
-    private void notify(String text, Level level) {
-        Label notificationLabel = new Label(text);
-        notificationLabel.prefWidthProperty().bind(getCorrelatingView().widthProperty());
-
-        Pair<Color, Color> colorPair = InternalConfiguration.LEVEL_COLORS.get(level);
-        notificationLabel.setTextFill(colorPair.getFirst());
-        notificationLabel.setBackground(Utils.generateBackgroundOfColor(colorPair.getSecond()));
-
-        resetNotification();
-        notificationDisplay.getChildren().add(notificationLabel);
-    }
-
-    private void resetNotification() {
-        notificationDisplay.getChildren().clear();
     }
 
     public CardSelectorController getCardSelectorController() {
@@ -472,23 +395,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     public NavigatorController getNavigatorController() {
         return navigatorController;
-    }
-
-    private void onUseTypeChanged(ObservableValue<? extends UseType> observable, UseType oldValue, UseType newValue) {
-        switch (newValue) {
-            case ROUND: {
-                roundsBar.tabMinWidthProperty().unbind();
-                roundsBar.tabMinWidthProperty().bind(roundsBar.widthProperty().subtract(PIXELS_TO_REMOVE_DROPDOWN));
-                break;
-            }
-            case TOURNAMENT: {
-                roundsBar.tabMinWidthProperty().unbind();
-                break;
-            }
-            case NONE: {
-                break;
-            }
-        }
     }
 
     public Round getSelectedRound() {

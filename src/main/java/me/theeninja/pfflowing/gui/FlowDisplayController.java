@@ -30,7 +30,6 @@ import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.decoration.Decoration;
-import org.controlsfx.control.decoration.Decorator;
 import org.controlsfx.control.decoration.StyleClassDecoration;
 
 import java.io.IOException;
@@ -42,9 +41,9 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static javafx.scene.layout.GridPane.*;
-import static me.theeninja.pfflowing.gui.KeyCodeCombinationUtils.*;
 
 
 /**
@@ -263,6 +262,97 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
     public void setOnDisplay(boolean onDisplay) {
         this.onDisplay.set(onDisplay);
+    }
+
+    private class Split extends Action {
+        private final FlowingRegion flowingRegion;
+
+        private final Map<FlowingRegion, List<Integer>> updateMap = new HashMap<>();
+
+        private final List<FlowingRegion> addedRegions = new ArrayList<>();
+        private final List<FlowingRegion> removedRegions = new ArrayList<>();
+
+        public Split(FlowingRegion flowingRegion, int split) throws SplitException {
+            if (flowingRegion.getFlowingRegionType() != FlowingRegionType.PROACTIVE)
+                throw new SplitException("Cannot split non-defensive flowing region");
+
+            this.flowingRegion = flowingRegion;
+
+            getRemovedRegions().add(getFlowingRegion());
+
+            String flowingRegionText = flowingRegion.getText();
+
+            String firstPart = flowingRegionText.substring(0, split);
+            String secondPart = flowingRegionText.substring(split);
+
+            FlowingRegion firstRegion = new FlowingRegion(firstPart, FlowingRegionType.PROACTIVE);
+            FlowingRegion secondRegion = new FlowingRegion(secondPart, FlowingRegionType.PROACTIVE);
+
+            getAddedRegions().add(firstRegion);
+            getAddedRegions().add(secondRegion);
+
+            int firstRowIndex = FlowGrid.getRowIndex(flowingRegion);
+            int secondRowIndex = firstRowIndex + 1;
+
+            int baseColumn = FlowGrid.getColumnIndex(flowingRegion);
+
+            FlowGrid.setConstraints(firstRegion, baseColumn, firstRowIndex);
+            FlowGrid.setConstraints(secondRegion, baseColumn, secondRowIndex);
+
+            IntStream.range(secondRowIndex, flowGrid.getRowCount())
+                    .mapToObj(flowGrid::getRowChildren)
+                    .filter(FlowingRegion.class::isInstance)
+                    .map(FlowingRegion.class::cast)
+                    .forEach(region -> {
+                        int originalRowIndex = FlowGrid.getRowIndex(region);
+                        int newRowIndex = originalRowIndex + 1;
+                        getUpdateMap().put(region, List.of(originalRowIndex, newRowIndex));
+                    });
+
+        }
+
+        @Override
+        public void execute() {
+            flowGrid.getChildren().addAll(getAddedRegions());
+            flowGrid.getChildren().removeAll(getRemovedRegions());
+
+            getUpdateMap().forEach((region, integers) -> {
+                int newRowIndex = integers.get(FINAL_ROW_POSITION);
+                FlowGrid.setRowIndex(region, newRowIndex);
+            });
+        }
+
+        @Override
+        public void unexecute() {
+            flowGrid.getChildren().addAll(getAddedRegions());
+            flowGrid.getChildren().addAll(getRemovedRegions());
+
+            getUpdateMap().forEach((region, integers) -> {
+                int oldRowIndex = integers.get(PREVIOUS_ROW_POSITION);
+                FlowGrid.setRowIndex(region, oldRowIndex);
+            });
+        }
+
+        @Override
+        public String getName() {
+            return "Split";
+        }
+
+        public FlowingRegion getFlowingRegion() {
+            return flowingRegion;
+        }
+
+        public List<FlowingRegion> getAddedRegions() {
+            return addedRegions;
+        }
+
+        public List<FlowingRegion> getRemovedRegions() {
+            return removedRegions;
+        }
+
+        public Map<FlowingRegion, List<Integer>> getUpdateMap() {
+            return updateMap;
+        }
     }
 
     /**
@@ -545,14 +635,12 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         @Override
         public void execute() {
-            Decorator.addDecoration(getBaseFlowingRegion(), questionDecoration);
-            baseFlowingRegion.getProperties().put(FlowingRegion.QUESTION_KEY, getQuestionMessage());
+            baseFlowingRegion.setQuestionText(questionMessage);
         }
 
         @Override
         public void unexecute() {
-            Decorator.removeDecoration(getBaseFlowingRegion(), questionDecoration);
-            baseFlowingRegion.getProperties().remove(FlowingRegion.QUESTION_KEY);
+            baseFlowingRegion.setQuestionText(null);
         }
 
         @Override
@@ -960,15 +1048,59 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         return selectedFlowingRegions;
     }
 
+    private class Edit extends Action {
+        private final FlowingRegion flowingRegion;
+        private final String newText;
+        private final String oldText;
+
+        public Edit(FlowingRegion flowingRegion, String newText) {
+            this.flowingRegion = flowingRegion;
+            this.newText = newText;
+            this.oldText = flowingRegion.getFullText();
+        }
+
+
+        @Override
+        public void execute() {
+            getFlowingRegion().setFullText(getNewText());
+        }
+
+        @Override
+        public void unexecute() {
+            getFlowingRegion().setFullText(getOldText());
+        }
+
+        @Override
+        public String getName() {
+            return "Edit";
+        }
+
+        public FlowingRegion getFlowingRegion() {
+            return flowingRegion;
+        }
+
+        public String getNewText() {
+            return newText;
+        }
+
+        public String getOldText() {
+            return oldText;
+        }
+    }
+
     public void attemptEdit() {
         FlowingRegion editedFlowingRegion = getLastSelected();
 
         TextArea textArea = getFlowingRegionWriter(getSpeechList().getSpeech(editedFlowingRegion), false, flowingTextArea -> {
             String nonTrimmedText = flowingTextArea.getText();
-            editedFlowingRegion.setText(nonTrimmedText.trim());
+            String newText = nonTrimmedText.trim();
+
+            Edit editAction = new Edit(editedFlowingRegion, newText);
+            getActionManager().perform(editAction);
         }, getRowIndex(editedFlowingRegion));
 
         textArea.setText(editedFlowingRegion.getFullText());
+        textArea.positionCaret(textArea.getLength());
 
         flowGrid.getChildren().add(textArea);
         textArea.requestFocus();
@@ -976,22 +1108,38 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
     private static final Logger logger = Logger.getLogger(FlowDisplayController.class.getSimpleName());
 
-    public void addCardSelectorMenu(FlowingTextArea textArea) {
-        ContextMenu contextMenu = new ContextMenu();
-    }
-
-    public void addCardSelectorSupport(FlowingTextArea textArea) {
-        textArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-            if (!textArea.isCardSelectionMode() && keyEvent.getCode() == CARD_SELECTOR) {
-                addCardSelectorMenu(textArea);
-                textArea.setCardSelectionMode(true);
-            }
-        });
-    }
-
     private boolean areSameSpeech(List<FlowingRegion> flowingRegions) {
         return flowingRegions.stream()
                 .allMatch(flowingRegion -> getColumnIndex(flowingRegions.get(0)).equals(getColumnIndex(flowingRegion)));
+    }
+
+    public void attemptSplit() {
+        FlowingRegion selectedFlowingRegion = getLastSelected();
+
+        TextArea textArea = getFlowingRegionWriter(getSpeechList().getSpeech(selectedFlowingRegion), false, flowingTextArea -> {
+
+            System.out.println("split attempted");
+
+            int caretPosition = flowingTextArea.getCaretPosition();
+
+            try {
+                Action splitAction = new Split(selectedFlowingRegion, caretPosition);
+                getActionManager().perform(splitAction);
+            } catch (SplitException splitException) {
+                notify(splitException.getMessage(), Level.SEVERE);
+            }
+        }, getRowIndex(selectedFlowingRegion));
+
+        textArea.setEditable(false);
+        textArea.setMouseTransparent(true);
+
+        textArea.setText(selectedFlowingRegion.getFullText());
+
+        // put it in the middle in order to make a split convenient regardless of final caret position
+        textArea.positionCaret(textArea.getLength() / 2);
+
+        flowGrid.getChildren().add(textArea);
+        textArea.requestFocus();
     }
 
     public void attemptMerge() {
@@ -1107,8 +1255,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             // newValue will only change to false upon loss of focus obtained from FlowingTextArea#requestFocus();
             // even though textArea will not be focused on its creation, this does not trigger the listener
             textArea.focusedProperty().addListener(this::onFocusChanged);
-
-            addCardSelectorSupport(textArea);
         }
 
         public FlowingTextArea getFlowingTextArea() {
@@ -1268,10 +1414,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     private ColumnConstraints firstColumnConstraint;
 
     private void onColumnBoundsChanged(int newStart, int newFinish) {
-        System.out.println("column bounds onSelectedSpeechChange with " + newStart + " and " + newFinish);
-
         int numberOfColumns = getNumberOfColumns();
-        System.out.println("number of columns");
 
         Speech selectedSpeech = getSpeechList().getSelectedSpeech();
         int baseColumnIndex = selectedSpeech == null ? 0 : selectedSpeech.getColumn();
@@ -1282,8 +1425,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
             ColumnConstraints columnConstraints = flowGrid.getColumnConstraints().get(column);
             boolean includeOnFlowGrid = isInColumns(newStart, newFinish, column);
-
-            System.out.println("does " + column + " count " + includeOnFlowGrid);
 
             if (includeOnFlowGrid)
                 columnConstraints.prefWidthProperty().bind(flowGrid.widthProperty().divide(numberOfColumns));

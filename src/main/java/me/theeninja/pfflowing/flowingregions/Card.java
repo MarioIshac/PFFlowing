@@ -13,6 +13,8 @@ public class Card {
     @SerializedName("htmlContent")
     private String htmlContent;
 
+    private Side side;
+
     public Card(String representation, String htmlContent) {
         this.representation = representation;
         this.htmlContent = htmlContent;
@@ -37,5 +39,13 @@ public class Card {
     @Override
     public String toString() {
         return getRepresentation();
+    }
+
+    public Side getSide() {
+        return side;
+    }
+
+    public void setSide(Side side) {
+        this.side = side;
     }
 }

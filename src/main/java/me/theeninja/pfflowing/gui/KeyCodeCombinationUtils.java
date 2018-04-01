@@ -22,6 +22,7 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination MERGE = new KeyCodeCombination(KeyCode.M, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination QUESTION = new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination EDIT = new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
+    public static final KeyCodeCombination SPLIT = new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN);
 
     public static final KeyCode CARD_SELECTOR = KeyCode.SEMICOLON;
 
@@ -42,12 +43,6 @@ public class KeyCodeCombinationUtils {
 
     public static final KeyCodeCombination EXPAND = new KeyCodeCombination(KeyCode.O, KeyCodeCombination.CONTROL_DOWN);
     public static final KeyCodeCombination SELECT_ALL = new KeyCodeCombination(KeyCode.A, KeyCombination.CONTROL_DOWN);
-
-    public static final KeyCodeCombination SAVE = new KeyCodeCombination(KeyCode.S, KeyCodeCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);;
-    public static final KeyCodeCombination NEW = new KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
-    public static final KeyCodeCombination OPEN = new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
-
-
 }
 
 

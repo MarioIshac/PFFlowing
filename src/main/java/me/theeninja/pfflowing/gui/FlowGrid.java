@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FlowGrid extends GridPane {
+    public static final String FLOWING_REGIONS = "flowing_regions";
+
     public static final int REF_COL_OFFSET = 1;
     public static final int EXT_COL_OFFSET = 2;
 

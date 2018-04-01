@@ -30,7 +30,8 @@ public class KeyEventProcessor {
             EXPAND, FlowDisplayController::attemptExpansion).put(
             SELECT_ALL, FlowDisplayController::selectAll).put(
             SHIFT_DISPLAY_LEFT, FlowDisplayController::shiftLeft).put(
-            SHIFT_DISPLAY_RIGHT, FlowDisplayController::shiftRight)
+            SHIFT_DISPLAY_RIGHT, FlowDisplayController::shiftRight).put(
+            SPLIT, FlowDisplayController::attemptSplit)
     .build();
 
     private static final Map<KeyCodeCombination, Consumer<ActionManager>> KEYCODE_ACTIONMANAGER_MAP = Map.of(

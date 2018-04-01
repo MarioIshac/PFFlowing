@@ -12,7 +12,6 @@ import javafx.stage.Stage;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.speech.Side;
-import me.theeninja.pfflowing.tournament.UseType;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -54,58 +53,12 @@ public class RoundPrompterController implements SingleViewController<VBox>, Init
         sideChooser.getItems().addAll(Side.values());
     }
 
-    @FXML
     public void finish() {
         String roundName = roundNameField.getText();
         Side side = sideChooser.getValue();
 
-        Runnable options[][] = {
-                {
-                        () -> { // add round to new tournament with something in use
-                            FlowApp newApplication = new FlowApp();
-                            Stage allocatedStage = new Stage();
-                            newApplication.start(allocatedStage);
-                            newApplication.getFlowController().addRound(roundName, side);
-                            newApplication.getFlowController().setUseType(UseType.TOURNAMENT);
-                        },
-
-                        () -> { // add round to new tournament with nothing in use
-                            getFlowController().addRound(roundName, side);
-                            getFlowController().setUseType(UseType.TOURNAMENT);
-                        }
-                },
-
-                {
-                        () -> { // don't add round to new tournament with something in use
-                            FlowApp newApplication = new FlowApp();
-                            Stage allocatedStage = new Stage();
-                            newApplication.start(allocatedStage);
-                            newApplication.getFlowController().addRound(roundName, side);
-                            newApplication.getFlowController().setUseType(UseType.ROUND);
-                        },
-
-                        () -> { // don't add round to new tournament with nothing in use
-                            getFlowController().addRound(roundName, side);
-                            getFlowController().setUseType(UseType.ROUND);
-                        }
-                }
-        };
-
-        options[newTournamentCheckBox.isSelected()         ? 0 : 1]
-               [getFlowController().getUseType().isInUse() ? 0 : 1].run();
+        getFlowController().addRound(roundName, side);
     }
-
-    /**
-     * 4 options:
-     *
-     * <ol>
-     *      <li> Add new round to existing tournament in current stage </li>
-     *      <li> Add new round without tournament to current stage </li>
-     *      <li> Add new round to new tournament in new stage </li>
-     *      <li> Add new round without tournament to new stage </li>
-     * </ol>
-     */
-
 
     public FlowController getFlowController() {
         return flowController;

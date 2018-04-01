@@ -1,6 +1,8 @@
 package me.theeninja.pfflowing.tournament;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -15,6 +17,11 @@ import java.util.List;
 import java.util.Map;
 
 public class Round {
+    public static final String NAME = "name";
+    public static final String SIDE = "side";
+    public static final String AFF_FLOWING_GRID = "affFlowingGrid";
+    public static final String NEG_FLOWING_GRID = "negFlowingGrid";
+
     private ObjectProperty<Path> path = new SimpleObjectProperty<>();
     private StringProperty name = new SimpleStringProperty();
     private final Side side;
@@ -39,8 +46,9 @@ public class Round {
 
     public Round(FlowGrid affFlowGrid, FlowGrid negFlowGrid, Side side) {
         this(side);
-        getAffController().flowGrid.getChildren().addAll(affFlowGrid.getChildren());
-        getNegController().flowGrid.getChildren().addAll(negFlowGrid.getChildren());
+
+        getAffController().flowGrid.getChildren().setAll(affFlowGrid.getChildren());
+        getNegController().flowGrid.getChildren().setAll(negFlowGrid.getChildren());
     }
 
     public FlowDisplayController getAffController() {

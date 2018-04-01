@@ -14,6 +14,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import me.theeninja.pfflowing.EFlow;
+import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.utils.Utils;
@@ -21,35 +22,29 @@ import me.theeninja.pfflowing.utils.Utils;
 import java.net.URL;
 import java.util.*;
 
-public class CardsDetailerController implements Initializable, Detailer {
+public class CardsDetailerController implements Initializable, Detailer, SingleViewController {
     private final FlowingRegion flowingRegion;
 
-    private void onKeyPressed(KeyEvent keyEvent) {
-        // Handles card switch intentions
-        if (NEXT.match(keyEvent)) {
-            int currentIndex = getFlowingRegion().getAssociatedCards().indexOf(getCurrentCard());
+    private final Map<KeyCodeCombination, Runnable> KEYCOMBS = Map.of(
+            NEXT, () -> {
+                int currentIndex = getFlowingRegion().getAssociatedCards().indexOf(getCurrentCard());
 
-            if (currentIndex == flowingRegion.getAssociatedCards().size() - 1)
-                return;
+                if (currentIndex == getFlowingRegion().getAssociatedCards().size() - 1)
+                    return;
 
-            next();
+                next();
+            },
+            PREVIOUS, () -> {
+                int currentIndex = getFlowingRegion().getAssociatedCards().indexOf(getCurrentCard());
 
-        }
-        else if (PREVIOUS.match(keyEvent)) {
-            int currentIndex = getFlowingRegion().getAssociatedCards().indexOf(getCurrentCard());
+                if (currentIndex == 0)
+                    return;
 
-            if (currentIndex == 0)
-                return;
-
-            previous();
-        }
-
-        // Handles zoom change intentions
-        else if (ZOOM_IN.match(keyEvent))
-            zoomIn();
-        else if (ZOOM_OUT.match(keyEvent))
-            zoomOut();
-    }
+                previous();
+            },
+            ZOOM_IN, this::zoomIn,
+            ZOOM_OUT, this::zoomOut
+    );
 
     private static final double ZOOM_FACTOR = 1.1;
 
@@ -71,17 +66,22 @@ public class CardsDetailerController implements Initializable, Detailer {
     private void onCurrentCardChanged(ObservableValue<? extends Card> observable, Card oldValue, Card newValue) {
         WebView webView = cardWebViews.get(newValue);
 
-        webViewContainer.getChildren().setAll(Collections.singleton(webView));
+        if (newValue != null) {
+            webViewContainer.getChildren().setAll(Collections.singleton(webView));
 
-        int newIndex = getFlowingRegion().getAssociatedCards().indexOf(newValue);
+            int newIndex = getFlowingRegion().getAssociatedCards().indexOf(newValue);
 
-        next.setVisible(true);
-        previous.setVisible(true);
+            next.setVisible(true);
+            previous.setVisible(true);
 
-        if (newIndex == getFlowingRegion().getAssociatedCards().size() - 1)
-            next.setVisible(false);
-        if (newIndex == 0)
-            previous.setVisible(false);
+            if (newIndex == getFlowingRegion().getAssociatedCards().size() - 1)
+                next.setVisible(false);
+            if (newIndex == 0)
+                previous.setVisible(false);
+        }
+        else {
+            webViewContainer.getChildren().clear();
+        }
     }
 
     @FXML
@@ -122,6 +122,15 @@ public class CardsDetailerController implements Initializable, Detailer {
     private static final KeyCodeCombination NEXT = new KeyCodeCombination(KeyCode.RIGHT);
     private static final KeyCodeCombination PREVIOUS = new KeyCodeCombination(KeyCode.LEFT);
 
+    private void onKeyPressed(KeyEvent keyEvent) {
+        KEYCOMBS.forEach((keyCodeCombination, runnable) -> {
+            if (keyCodeCombination.match(keyEvent)) {
+                runnable.run();
+                keyEvent.consume();
+            }
+        });
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         root.addEventHandler(KeyEvent.KEY_PRESSED, this::onKeyPressed);
@@ -146,6 +155,7 @@ public class CardsDetailerController implements Initializable, Detailer {
 
         WebView webView = new WebView();
         webView.fontScaleProperty().bind(EFlow.getInstance().getConfiguration().getFontScale().valueProperty());
+        webView.setPrefHeight(400);
         webView.getEngine().loadContent(card.getHTMLContent());
 
         cardWebViews.put(card, webView);
@@ -172,5 +182,10 @@ public class CardsDetailerController implements Initializable, Detailer {
     @Override
     public boolean hasDetail() {
         return !getFlowingRegion().getAssociatedCards().isEmpty();
+    }
+
+    @Override
+    public Node getCorrelatingView() {
+        return root;
     }
 }

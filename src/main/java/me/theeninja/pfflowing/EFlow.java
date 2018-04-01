@@ -3,10 +3,9 @@ package me.theeninja.pfflowing;
 import com.google.gson.Gson;
 import me.theeninja.pfflowing.configuration.Configuration;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
-import me.theeninja.pfflowing.flowing.FlowingRegionAdapter;
-import me.theeninja.pfflowing.gui.FlowGrid;
-import me.theeninja.pfflowing.gui.FlowingGridAdapter;
-import me.theeninja.pfflowing.gui.RoundAdapter;
+import me.theeninja.pfflowing.flowing.FlowingRegionDeserializer;
+import me.theeninja.pfflowing.flowing.FlowingRegionSerializer;
+import me.theeninja.pfflowing.gui.*;
 import me.theeninja.pfflowing.tournament.Round;
 import org.apache.commons.lang3.SystemUtils;
 import org.hildan.fxgson.FxGson;
@@ -15,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,11 +42,19 @@ public class EFlow {
     private Gson newGson() {
         return FxGson.fullBuilder()
                 .excludeFieldsWithoutExposeAnnotation()
-                .registerTypeAdapter(FlowingRegion.class, new FlowingRegionAdapter())
-                .registerTypeAdapter(FlowGrid.class,      new FlowingGridAdapter())
-                .registerTypeAdapter(Round.class,         new RoundAdapter())
+
+                .registerTypeAdapter(FlowingRegion.class, new FlowingRegionSerializer())
+                .registerTypeAdapter(FlowingRegion.class, new FlowingRegionDeserializer())
+
+                .registerTypeAdapter(FlowGrid.class, new FlowingGridSerializer())
+                .registerTypeAdapter(FlowGrid.class, new FlowingGridDeserializer())
+
+                .registerTypeAdapter(Round.class,         new RoundSerializer())
+                .registerTypeAdapter(Round.class,         new RoundDeserializer())
 
                 .setPrettyPrinting()
+
+                .serializeNulls()
 
                 .create();
     }

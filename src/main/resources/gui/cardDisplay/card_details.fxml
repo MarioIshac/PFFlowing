@@ -6,17 +6,17 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import java.net.URL?>
 <VBox xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            prefHeight="400.0" prefWidth="600.0"
-            fx:id="root">
+      xmlns:fx="http://javafx.com/fxml"
+      fx:id="root">
     <VBox fx:id="webViewContainer">
         <!-- Webview here -->
     </VBox>
-    <HBox> <!-- regions are used as spacers to make alignment pleasing -->
+    <HBox id="button_box"> <!-- regions are used as spacers to make alignment pleasing -->
         <Region HBox.hgrow="ALWAYS" />
         <Button fx:id="previous"
-                text="Prevois"
+                text="Previous"
                 onAction="#previous"/>
         <Region HBox.hgrow="ALWAYS" />
         <Button fx:id="next"
@@ -24,4 +24,8 @@
                 onAction="#next" />
         <Region HBox.hgrow="ALWAYS" />
     </HBox>
+
+    <stylesheets>
+        <URL value="@card_details.css"/>
+    </stylesheets>
 </VBox>

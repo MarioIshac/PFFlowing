@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="me.theeninja.pfflowing.gui.BlockPrompterController"
+            fx:id="root">
+    <HBox>
+        <Label text="Block File Name" />
+        <TextField fx:id="blockFileRequest" />
+    </HBox>
+    <HBox>
+        <Label text="Side" />
+        <ComboBox fx:id="sideChooser" />
+    </HBox>
+    <HBox alignment="CENTER_RIGHT">
+        <Button text="Finish" fx:id="finishButton" onAction="#finish"/>
+    </HBox>
+</VBox>

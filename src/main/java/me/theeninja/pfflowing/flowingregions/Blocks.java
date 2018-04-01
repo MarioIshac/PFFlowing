@@ -4,42 +4,37 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import me.theeninja.pfflowing.speech.Side;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Blocks {
+    public Blocks(String blocksName, Side blocksSide) {
+        this.name = blocksName;
+        this.side = blocksSide;
+        this.cards = new ArrayList<>();
+    }
+
     @Expose
     @SerializedName("name")
-    private String name;
+    private final String name;
 
     @Expose
     @SerializedName("side")
-    private Side side;
+    private final Side side;
 
     @Expose
     @SerializedName("cards")
-    private List<Card> cards;
+    private final List<Card> cards;
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public List<Card> getCards() {
         return cards;
     }
 
-    public void setCards(List<Card> cards) {
-        this.cards = cards;
-    }
-
     public Side getSide() {
         return side;
-    }
-
-    public void setSide(Side side) {
-        this.side = side;
     }
 }

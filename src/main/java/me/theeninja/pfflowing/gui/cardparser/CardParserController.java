@@ -12,6 +12,7 @@ import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.flowingregions.Blocks;
 import me.theeninja.pfflowing.flowingregions.Card;
+import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 import org.apache.tika.io.IOUtils;
 import org.w3c.dom.Attr;
@@ -32,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class CardParserController implements SingleViewController<BorderPane>, Initializable {
     private final FlowApp flowApp;
-    private final Consumer<List<Card>> onQuit;
+    private final Blocks blocks;
 
     @FXML public TreeView<Card> parsedCardsColumn;
     @FXML public TreeItem<Card> parsedCardsRoot;
@@ -43,9 +44,9 @@ public class CardParserController implements SingleViewController<BorderPane>, I
     @FXML public ProgressBar progressBar;
     @FXML public VBox rightContainer;
 
-    public CardParserController(FlowApp flowApp, Consumer<List<Card>> onQuit) {
+    public CardParserController(FlowApp flowApp, Blocks blocks) {
         this.flowApp = flowApp;
-        this.onQuit = onQuit;
+        this.blocks = blocks;
     }
 
     private String snapSelectionToWordJS;
@@ -94,10 +95,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
     public FlowApp getFlowApp() {
         return flowApp;
-    }
-
-    public Consumer<List<Card>> getOnQuit() {
-        return onQuit;
     }
 
     public String getSelectHTMLJS() {
@@ -183,8 +180,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
         cardNameRequest.requestFocus();
     }
 
-    private boolean inQuit = false;
-
     private void onAttemptFinish() {
         cardNameRequest.setText(Utils.ZERO_LENGTH_STRING);
         cardNameRequest.setVisible(true);
@@ -192,15 +187,13 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
         cardNameRequest.setOnAction(actionEvent -> {
             try {
-                Blocks blocks = new Blocks();
-                blocks.setName(cardNameRequest.getText());
-
                 Path cardsPath = EFlow.getInstance().getFullAppPath().resolve(EFlow.BLOCKS_DIRECTORY);
                 String withExtension = Utils.addExtension(blocks.getName(), "json");
                 Path filePath = Paths.get(withExtension);
                 Path fullPath = cardsPath.resolve(filePath);
 
-                blocks.setCards(getParsedCards());
+                blocks.getCards().addAll(getParsedCards());
+                getParsedCards().forEach(card -> card.setSide(blocks.getSide()));
 
                 if (Files.exists(fullPath)) // name already in use
                     return;
@@ -209,11 +202,6 @@ public class CardParserController implements SingleViewController<BorderPane>, I
 
                 String json = EFlow.getInstance().getGSON().toJson(blocks, Blocks.class);
                 Files.write(fullPath, json.getBytes());
-
-                if (!inQuit) {
-                    getOnQuit().accept(getParsedCards());
-                    inQuit = true;
-                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
