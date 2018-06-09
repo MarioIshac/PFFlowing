@@ -156,6 +156,11 @@ public class CardsDetailerController implements Initializable, Detailer, SingleV
         WebView webView = new WebView();
         webView.fontScaleProperty().bind(EFlow.getInstance().getConfiguration().getFontScale().valueProperty());
         webView.setPrefHeight(400);
+
+        System.out.println("Card is null? " + card == null);
+        System.out.println("Card name " + card.getRepresentation());
+        System.out.println("Content is null? " + card.getHTMLContent() == null);
+
         webView.getEngine().loadContent(card.getHTMLContent());
 
         cardWebViews.put(card, webView);

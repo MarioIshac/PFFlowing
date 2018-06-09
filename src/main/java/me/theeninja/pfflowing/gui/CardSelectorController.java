@@ -1,20 +1,21 @@
 package me.theeninja.pfflowing.gui;
 
-import javafx.event.EventHandler;
+import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.input.*;
-import me.theeninja.pfflowing.DependentController;
+import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.flowingregions.Blocks;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.utils.Utils;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
@@ -27,7 +28,25 @@ public class CardSelectorController implements Initializable, SingleViewControll
     }
 
     public void addBlocks(Blocks blocks) {
-        blocks.getCards().stream().map(TreeItem::new).forEach(root.getChildren()::add);
+        String blocksName = blocks.getName();
+        Card blockHeader = new Card(blocksName, null);
+
+        TreeItem<Card> dummyBlockHeader = new TreeItem<>(blockHeader);
+
+        // Set existing tree item children to associated block cards
+        setTreeItemChildren(dummyBlockHeader, blocks.getCards());
+
+        // If blocks is edited, reset the header children to the cards
+        blocks.getCards().addListener(Utils.generateListChangeListener(
+            () -> setTreeItemChildren(dummyBlockHeader, blocks.getCards())
+        ));
+
+        root.getChildren().add(dummyBlockHeader);
+    }
+
+    private void setTreeItemChildren(TreeItem<Card> dummyBlockHeader, List<Card> cards) {
+        List<TreeItem<Card>> treeItems = cards.stream().map(TreeItem::new).collect(Collectors.toList());
+        dummyBlockHeader.getChildren().setAll(treeItems);
     }
 
     @FXML
@@ -44,11 +63,7 @@ public class CardSelectorController implements Initializable, SingleViewControll
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         cardSelectorTreeView.setShowRoot(false);
-        cardSelectorTreeView.setCellFactory(cardTreeView -> {
-            CardTreeCell cardTreeCell = new CardTreeCell();
-            cardTreeCell.prefWidthProperty().bind(cardSelectorTreeView.prefWidthProperty());
-            return cardTreeCell;
-        });
+        cardSelectorTreeView.setCellFactory(this::newCardTreeCell);
         root.setExpanded(true);
         getCorrelatingView().setFocusTraversable(false);
     }
@@ -59,6 +74,9 @@ public class CardSelectorController implements Initializable, SingleViewControll
 
     public List<Card> getCards() {
         return root.getChildren().stream()
+                // Filters out root and the dummy block headers
+                .map(TreeItem::getChildren)
+                .flatMap(List::stream)
                 .map(TreeItem::getValue)
                 .collect(Collectors.toList());
     }
@@ -70,5 +88,12 @@ public class CardSelectorController implements Initializable, SingleViewControll
         }
 
         return null;
+    }
+
+    private TreeCell<Card> newCardTreeCell(TreeView<Card> cardTreeView) {
+        CardTreeCell cardTreeCell = new CardTreeCell();
+        cardTreeCell.prefWidthProperty().bind(cardSelectorTreeView.prefWidthProperty());
+
+        return cardTreeCell;
     }
 }

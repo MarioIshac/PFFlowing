@@ -1,6 +1,7 @@
 package me.theeninja.pfflowing.gui;
 
 import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
 import javafx.beans.property.*;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -55,6 +56,8 @@ import static javafx.scene.layout.GridPane.*;
  */
 public class FlowDisplayController implements Initializable, SingleViewController<FlowDisplay> {
     public static final int FLOWGRID_VERTICAL_GAP = 7;
+
+    private final Map<Speech, Timeline> speechTimerMap = new HashMap<>();
 
     private BooleanProperty onDisplay;
 
@@ -264,6 +267,10 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         this.onDisplay.set(onDisplay);
     }
 
+    public Map<Speech, Timeline> getSpeechTimerMap() {
+        return speechTimerMap;
+    }
+
     private class Split extends Action {
         private final FlowingRegion flowingRegion;
 
@@ -355,6 +362,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         }
     }
 
+
     /**
      * Merging action. The process of merging involves collecting all the contents in the rows of all the flowing regions
      * into the row belonging to the top-most (determined by lowest row index) flowing region.
@@ -369,6 +377,12 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         private final int keptRow;
 
+        /**
+         * Constructs a merge action given {@code flowingRegions}
+         *
+         * @param flowingRegions regions to select
+         * @throws MergeException
+         */
         Merge(List<FlowingRegion> flowingRegions) throws MergeException {
             // Represents the top most row of the flowing regions subject to merging
             keptRow = flowingRegions.stream().map(FlowGrid::getRowIndex).reduce(Integer::min).get();
@@ -658,14 +672,12 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     private class Extend extends Action {
-        private List<FlowingRegion> baseFlowingRegions;
-        private Speech speech;
-        private List<FlowingRegion> extendFlowingRegions;
-        private List<FlowingLink> flowingLinks;
+        private final List<FlowingRegion> baseFlowingRegions;
+        private final List<FlowingRegion> extendFlowingRegions;
+        private List<FlowLink> flowLinks = new ArrayList<>();
 
         Extend(List<FlowingRegion> baseFlowingRegions) {
             this.baseFlowingRegions = baseFlowingRegions;
-            this.speech = getSpeechList().getSpeech(baseFlowingRegions.get(0)); // speech guaranteed to be the same for all selected
             this.extendFlowingRegions = this.baseFlowingRegions.stream()
                     .map(FlowingRegion::duplicate)
                     .map(this::newExtensionFromBase)
@@ -675,14 +687,14 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         @Override
         public void execute() {
             flowGrid.getChildren().addAll(extendFlowingRegions);
-            PauseTransition pauseTransition = new PauseTransition(Duration.seconds(0.25));
-            pauseTransition.setOnFinished(this::onPauseTransitionFinish);
-            pauseTransition.play();
+            addFlowLinks();
+
         }
 
         @Override
         public void unexecute() {
             flowGrid.getChildren().removeAll(this.extendFlowingRegions);
+            removeFlowLinks();
         }
 
         @Override
@@ -690,20 +702,28 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             return "Extend " + baseFlowingRegions.size() + " regions";
         }
 
-        private void onPauseTransitionFinish(ActionEvent actionEvent) {
-            /*this.flowingLinks = this.extendFlowingRegions.stream().map(extensionFlowingRegion -> {
-                Speech secondSpeech = getSpeechList().getSpeech(extensionFlowingRegion);
-                int secondSpeechIndex
-                int row = getRowIndex(extensionFlowingRegion);
+        private void addFlowLinks() {
+            for (int index = 0; index < extendFlowingRegions.size(); index++) {
+                FlowingRegion base = baseFlowingRegions.get(index);
+                FlowingRegion extension = extendFlowingRegions.get(index);
 
-                return new FlowingLink(firstSpeech.getColumn(), secondSpeech.getColumn(), row, FlowDisplayController.this);
-            }).collect(Collectors.toList());
+                FlowLink flowLink = new FlowLink(base, extension);
+                flowLinks.add(flowLink);
+            }
 
-            flowGrid.getChildren().addAll(flowingLinks);*/
+            flowLinks.stream()
+                    .map(FlowLink::getLines)
+                    .flatMap(List::stream)
+                    .forEach(flowGrid.getChildren()::add);
+        }
+
+        private void removeFlowLinks() {
+            flowGrid.getChildren().removeAll(flowLinks);
+
         }
 
         private FlowingRegion newExtensionFromBase(FlowingRegion baseFlowingRegion) {
-            FlowingRegion extension = new FlowingRegion("extension", FlowingRegionType.EXTENSION);
+            FlowingRegion extension = new FlowingRegion("Extend", FlowingRegionType.EXTENSION);
 
             int baseRowIndex = FlowGrid.getRowIndex(baseFlowingRegion);
             int baseColIndex = FlowGrid.getColumnIndex(baseFlowingRegion);
@@ -997,7 +1017,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         flowGrid.setVgap(FLOWGRID_VERTICAL_GAP);
 
         speechLabels.minWidthProperty().bind(flowDisplay.widthProperty());
-
         speechLabels.setBackground(Utils.generateBackgroundOfColor(Color.LIGHTBLUE));
 
         EFlow.getInstance()

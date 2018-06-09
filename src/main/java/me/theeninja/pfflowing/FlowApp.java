@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import me.theeninja.pfflowing.gui.*;
 
 import java.io.IOException;

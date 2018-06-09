@@ -18,14 +18,16 @@
         <MenuItem text="Print"  onAction="#printFlow"/>
         <MenuItem text="Email" onAction="#emailFlow"/>
         <MenuItem text="Configure" onAction="#configure" />
-        <Menu text="Parser">
-            <Menu text="New From...">
-                <MenuItem text="Google Drive" onAction="#openParserPopupGD" />
-                <MenuItem text="File System" onAction="#openParserPopupFile"/>
-                <MenuItem text="One Drive" />
-            </Menu>
-            <MenuItem text="Open" />
-            <Menu fx:id="openRecent" text="Open Recent" />
+        <Menu text="Blocks">
+            <!-- <Menu text="New From...">
+                <MenuItem text="Google Drive" onAction="#onNewBlocks" userData="0"/>
+                <MenuItem text="File System" onAction="#onNewBlocks" userData="1"/>
+                <MenuItem text="One Drive" onAction="#onNewBlocks" userData="2"/>
+            </Menu> -->
+            <MenuItem text="New" onAction="#onNewBlocks" />
+            <MenuItem text="Edit" onAction="#onEditBlocks"/>
+            <MenuItem text="Load" onAction="#onLoadBlocks"/>
+            <Menu fx:id="openRecent" text="Load Recent" />
         </Menu>
     </Menu>
     <Menu text="Edit">
@@ -42,9 +44,7 @@
         <MenuItem text="Merge" onAction="#merge" />
         <MenuItem text="Question" onAction="#question" />
     </Menu>
-    <Menu text="Help">
-        <!-- Filled out by application -->
-    </Menu>
+    <Menu text="Help" onAction="#onHelpClicked" />
 
     <stylesheets>
         <URL value="@navigator.css" />

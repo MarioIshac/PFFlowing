@@ -6,10 +6,10 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx"
+<?import javafx.scene.web.WebView?>
+<TabPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="me.theeninja.pfflowing.gui.CardDisplayController"
-            prefHeight="400.0" prefWidth="600.0"
-            fx:id="cardDisplay">
-
-</VBox>
+            fx:controller="me.theeninja.pfflowing.gui.HelperController"
+            fx:id="helperView"
+            side="LEFT">
+</TabPane>

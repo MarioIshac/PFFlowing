@@ -1,62 +1,79 @@
 package me.theeninja.pfflowing.gui;
 
-import com.google.api.services.drive.Drive;
-import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import me.theeninja.pfflowing.*;
 import me.theeninja.pfflowing.configuration.ConfigEditorController;
-import me.theeninja.pfflowing.drive.google.GDriveConnector;
-import me.theeninja.pfflowing.drive.GDriveFilePickerController;
 import me.theeninja.pfflowing.flowingregions.Blocks;
-import me.theeninja.pfflowing.flowingregions.Card;
-import me.theeninja.pfflowing.flowingregions.CardProcessor;
-import me.theeninja.pfflowing.gui.cardparser.CardParserController;
-import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.gui.cardparser.BlocksParserController;
 import me.theeninja.pfflowing.tournament.Round;
 import me.theeninja.pfflowing.utils.Utils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
 public class NavigatorController implements SingleViewController<MenuBar>, Initializable {
     private final FlowApp flowApp;
 
-    @FXML
-    public Menu openRecent;
+    @FXML public Menu openRecent;
+    @FXML public MenuItem undoItem;
+    @FXML public MenuItem redoItem;
 
-    @FXML
-    public MenuItem undoItem;
+    private static int compareByLastModifiedTime(Path o1, Path o2) {
+        try {
+            return Files.getLastModifiedTime(o1).compareTo(Files.getLastModifiedTime(o2));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
 
-    @FXML
-    public MenuItem redoItem;
+        return 0;
+    }
+
+    private final static int RECENT_SIZE = 5;
 
     public void loadOpenRecent() {
         try {
             Path cardsPath = EFlow.getInstance().getCardsPath();
+
             Files.walk(cardsPath)
                     .filter(path -> Utils.hasExtension(path.getFileName().toString(), "json"))
+                    .sorted((NavigatorController::compareByLastModifiedTime))
+                    .limit(RECENT_SIZE)
                     .map(Utils::readAsString)
                     .map(json -> EFlow.getInstance().getGSON().fromJson(json, Blocks.class))
-                    .forEach(this::addLoadBlockMenuItem);
+                    .map(this::getLoadMenuItem)
+                    .forEach(openRecent.getItems()::add);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @FXML
+    public void onHelpClicked(ActionEvent actionEvent) {
+
+    }
+
+    @FXML
+    public void onLoadBlocks(ActionEvent actionEvent) {
+        Blocks blocks = requestForBlocks();
+        loadBlocks(blocks);
+    }
+
+    @FXML
+    public void onEditBlocks(ActionEvent actionEvent) {
+        Blocks blocks = requestForBlocks();
+        openBlocksEditor(blocks);
     }
 
     @FXML
@@ -150,91 +167,76 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
         getSelectedController().selectAll();
     }
 
+    // ------------------------- //
+    // -BLOCK RELATED FUNCTIONS- //
+    // ------------------------- //
+
+    /**
+     * Open parser popup.
+     *
+     * @param actionEvent The action event that contains what option to use regarding fetching a file to parse
+     *                    (options are between Offline System, Google Drive, One Drive).
+     */
+    /**@FXML
+    private void openParserPopup(ActionEvent actionEvent) {
+        MenuItem node = (MenuItem) actionEvent.getSource();
+        Object userData = node.getUserData();
+        String typeOfOpenStr = (String) userData;
+        int typeOfOpen = Integer.parseInt(typeOfOpenStr);
+
+        Consumer<Consumer<String>> htmlConsumerConsumer = MEDIUM_HTML_CONSUMER_BLOCKS.get(typeOfOpen);
+        htmlConsumerConsumer.accept(htmlResult -> promptForNewBlocks(this::openBlocksEditor));
+    } */
+
     @FXML
-    public void openParserPopupGD(Side side) {
-        promptForBlocksCreation(blocks -> {
-            try {
-                // Build a new authorized API client service.
-                Drive service = GDriveConnector.getDriveService();
-
-                Drive.Files serviceFiles = service.files();
-
-                FileList result = null;
-
-                result = serviceFiles.list()
-                        //.setPageSize(10)
-                        .setQ("(mimeType='application/vnd.google-apps.document')")
-                        .setFields("nextPageToken, files(id, name, createdTime)")
-                        .execute();
-
-                List<File> files = result.getFiles();
-
-                if (files.isEmpty())
-                    System.out.println("No files found.");
-                else {
-                    FXMLLoader fxmlLoader = new FXMLLoader(NavigatorController.class.getResource("/gui/dri ve/drive_picker.fxml"));
-                    GDriveFilePickerController pickerController = new GDriveFilePickerController(files);
-                    fxmlLoader.setController(pickerController);
-                    fxmlLoader.load();
-
-                    Scene scene = new Scene(pickerController.getCorrelatingView());
-                    Stage stage = new Stage();
-                    stage.setScene(scene);
-                    stage.show();
-
-                    pickerController.getCorrelatingView().addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-                        if (keyEvent.getCode() == KeyCode.ENTER) {
-                            try {
-                                System.out.println("enter is pressed");
-                                TreeItem<File> selectedTreeItem = pickerController.getCorrelatingView().getSelectionModel().getSelectedItem();
-                                File selectedFile = selectedTreeItem.getValue();
-
-                                String fileId = selectedFile.getId();
-
-                                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                                serviceFiles
-                                        .export(fileId, "text/html")
-                                        .executeMediaAndDownloadTo(outputStream);
-                                byte[] bytes = outputStream.toByteArray();
-
-                                String html = new String(bytes);
-
-                                Stage stage_ = new Stage();
-
-                                FXMLLoader fxmlLoader_ = new FXMLLoader(getClass().getResource("/gui/cardParser/card_parser.fxml"));
-                                CardParserController cardParserController = new CardParserController(getFlowApp(), blocks);
-                                fxmlLoader_.setController(cardParserController);
-
-                                try {
-                                    fxmlLoader_.load();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-
-                                Scene scene_ = new Scene(cardParserController.getCorrelatingView());
-                                stage_.setScene(scene_);
-
-                                stage_.show();
-                                stage_.toFront();
-
-                                cardParserController.loadHTML(html);
-                                cardParserController.startProcess();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+    public void onNewBlocks(ActionEvent actionEvent) {
+        promptForNewBlocks(this::openBlocksEditor);
     }
 
-    public void promptForBlocksCreation(Consumer<Blocks> blocks) {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/cardParser/block_prompt.fxml"));
-        BlockPrompterController blockPrompterController = new BlockPrompterController(blocks);
-        fxmlLoader.setController(blockPrompterController);
+    /**
+     * Asks the user through a file chooser to open a block file. This block file is parsed through
+     * GSON.
+     *
+     * @return The blocks object that correlates to the JSON of the file that was opened.
+     */
+    public Blocks requestForBlocks() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(EFlow.getInstance().getCardsPath().toFile());
+
+        Stage allocatedStage = new Stage();
+        java.io.File file = fileChooser.showOpenDialog(allocatedStage);
+        Path path = file.toPath();
+
+        byte[] jsonBytes = null;
+
+        try {
+            jsonBytes = Files.readAllBytes(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String jsonString = new String(jsonBytes);
+
+        Blocks blocks = EFlow.getInstance().getGSON().fromJson(jsonString, Blocks.class);
+
+        return blocks;
+    }
+
+    // editBlocks(Blocks)
+    // loadBlocks(Blocks)
+    // newHTML /* GD, OFF, OD */ -> String
+
+    /**
+     * Shows a prompt for creating a new block file. Upon submission of this prompt, {@code blocksConsumer}
+     * accepts the created {@link Blocks}.
+     *
+     * @param blocksConsumer The consumer of the created blocks. This is called after the prompt's submission.
+     */
+    public void promptForNewBlocks(Consumer<Blocks> blocksConsumer) {
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/prompter/block_prompt.fxml"));
+        BlocksCreatorController blocksCreatorController = new BlocksCreatorController(blocksConsumer);
+
+        fxmlLoader.setController(blocksCreatorController);
 
         try {
             fxmlLoader.load();
@@ -243,23 +245,35 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
         }
 
         Stage stage = new Stage();
-        Scene scene = new Scene(blockPrompterController.getCorrelatingView());
+        Scene scene = new Scene(blocksCreatorController.getCorrelatingView());
         stage.setScene(scene);
 
         stage.show();
+
+        blocksCreatorController.finishButton.addEventHandler(ActionEvent.ACTION, actionEvent -> stage.hide());
     }
 
-    @FXML
-    public void openParserPopupFile() {
-        promptForBlocksCreation(this::parseBlocksFile);
+
+    /**
+     * Adds the given blocks to the instance of {@link CardSelectorController} within the
+     * parent view.
+     *
+     * @param blocks The blocks to add.
+     */
+    private void loadBlocks(Blocks blocks) {
+        getFlowApp().getFlowController().getCardSelectorController().addBlocks(blocks);
     }
 
-    private void parseBlocksFile(Blocks blocks) {
+    private void openBlocksEditor(Blocks blocks) {
         Stage stage = new Stage();
 
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/cardParser/card_parser.fxml"));
-        CardParserController cardParserController = new CardParserController(getFlowApp(), blocks);
-        fxmlLoader.setController(cardParserController);
+        BlocksParserController blocksParserController = new BlocksParserController(
+            getFlowApp(),
+            blocks,
+            stage::hide
+        );
+        fxmlLoader.setController(blocksParserController);
 
         try {
             fxmlLoader.load();
@@ -267,17 +281,13 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
             e.printStackTrace();
         }
 
-        Scene scene = new Scene(cardParserController.getCorrelatingView());
+        Scene scene = new Scene(blocksParserController.getCorrelatingView());
         stage.setScene(scene);
 
         stage.show();
         stage.toFront();
 
-        Path path = cardParserController.promptFile();
-        String html = CardProcessor.toHTML(path);
-
-        cardParserController.loadHTML(html);
-        cardParserController.startProcess();
+        blocksParserController.startProcess();
     }
 
     @FXML
@@ -299,20 +309,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
         loadOpenRecent();
     }
 
-    private Consumer<List<Card>> generateOnFinish(Stage stage) {
-        return cards -> {
-            CardSelectorController cardSelectorController = getFlowApp().getFlowController().getCardSelectorController();
-            TreeItem<Card> treeViewRoot = cardSelectorController.getCorrelatingView().getRoot();
-
-            cards.stream().map(TreeItem::new)
-                    .peek(treeItem -> System.out.println(treeItem.getValue().toString()))
-                    .forEach(treeViewRoot.getChildren()::add);
-
-            stage.hide();
-        };
-    }
-
-    private void addLoadBlockMenuItem(Blocks blocks) {
+    private MenuItem getLoadMenuItem(Blocks blocks) {
         MenuItem blocksMenuItem = new MenuItem();
         blocksMenuItem.setText(blocks.getName());
 
@@ -320,7 +317,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
             getFlowApp().getFlowController().getCardSelectorController().addBlocks(blocks)
         );
 
-        openRecent.getItems().add(blocksMenuItem);
+        return blocksMenuItem;
     }
 
     @FXML

@@ -28,7 +28,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Provides helper methods that assist in the functionality of this application.
+ * Provides helperView methods that assist in the functionality of this application.
  *
  * @author TheeNinja
  */
@@ -191,7 +191,7 @@ public final class Utils {
         property.setValue(observableValue.getValue());
     }
 
-    private static final char EXTENSION_SEPERATOR = '.';
+    public static final char EXTENSION_SEPERATOR = '.';
 
     public static boolean hasExtension(String name, String extension) {
         return name.endsWith(EXTENSION_SEPERATOR + extension);

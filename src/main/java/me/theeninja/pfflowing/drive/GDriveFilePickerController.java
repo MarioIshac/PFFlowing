@@ -1,82 +1,89 @@
 package me.theeninja.pfflowing.drive;
 
-import com.google.api.client.util.DateTime;
+import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
-import javafx.beans.property.ReadOnlyStringWrapper;
+import com.google.api.services.drive.model.FileList;
 import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.TreeTableView;
+import javafx.scene.web.WebView;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.configuration.InternalConfiguration;
+import me.theeninja.pfflowing.drive.google.GDriveConnector;
+import netscape.javascript.JSObject;
+import org.apache.tika.io.IOUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.text.DateFormat;
 import java.util.*;
 
-public class GDriveFilePickerController implements Initializable, SingleViewController<TreeTableView<File>> {
-    private final List<File> files;
-
-    public GDriveFilePickerController(List<File> files) {
-        this.files = files;
-    }
-
+public class GDriveFilePickerController implements Initializable, SingleViewController<WebView> {
     @FXML
-    public TreeTableView<File> picker;
+    public WebView drivePicker;
 
-    private ObservableValue<String> getDateCellValueFactory(TreeTableColumn.CellDataFeatures<File, String> param) {
-        DateTime dateTime = param.getValue().getValue().getCreatedTime();
-        Date date = new Date(dateTime.getValue());
-        String strDate = InternalConfiguration.DATE_FORMAT.format(date);
-
-        return new ReadOnlyStringWrapper(strDate);
+    private void onLoadWorkerStateChanged(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
+        JSObject window = (JSObject) getCorrelatingView().getEngine().executeScript("window");
+        JavaBridge bridge = new JavaBridge();
+        window.setMember("java", bridge);
+        getCorrelatingView().getEngine().executeScript("console.log = function(message)\n" +
+                "{\n" +
+                "    java.log(message);\n" +
+                "};");
     }
 
-    private ObservableValue<String> getNameCellValueFactory(TreeTableColumn.CellDataFeatures<File, String> param) {
-        System.out.println("a " + param);
-        System.out.println("b " + param.getValue());
-        System.out.println("c " + param.getValue().getValue());
-
-        String name = param.getValue().getValue().getName();
-
-        return new ReadOnlyStringWrapper(name);
+    private class JavaBridge {
+        public void log(String text) {
+            System.out.println(text);
+        }
     }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        File dummyFile = new File();
-        dummyFile.setName("");
-        dummyFile.setCreatedTime(new DateTime(1));
+        InputStream pickerJSStream = GDriveFilePickerController.class.getResourceAsStream("/gui/drive/drive_picker.html");
+        String pickerJS = null;
 
-        TreeItem<File> root = new TreeItem<>();
+        try {
+            pickerJS = IOUtils.toString(pickerJSStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        TreeTableColumn<File, String> nameColumn = new TreeTableColumn<>("Name");
+        //getCorrelatingView().getEngine().loadContent(pickerJS);
 
-        nameColumn.setPrefWidth(150);
-        nameColumn.setCellValueFactory(this::getNameCellValueFactory);
+        try {
+            // Build a new authorized API client service.
+            Drive service = GDriveConnector.getDriveService();
 
-        TreeTableColumn<File, String> dateColumn = new TreeTableColumn<>("Date");
-        dateColumn.setPrefWidth(190);
-        dateColumn.setCellValueFactory(this::getDateCellValueFactory);
+            // Print the names and IDs for up to 10 files.
+            FileList result = service.files().list()
+                    .setPageSize(10)
+                    .setFields("nextPageToken, files(id, name)")
+                    .execute();
+            List<File> files = result.getFiles();
+            if (files == null || files.size() == 0)
+            {
+                System.out.println("No files found.");
+            }
+            else
+            {
+                System.out.println("Files:");
+                for (File file : files)
+                {
+                    System.out.printf("%s (%s)\n", file.getName(), file.getId());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        files.stream().map(TreeItem::new).forEach(root.getChildren()::add);
+        System.out.println(pickerJS);
 
-        picker.setRoot(root);
-        picker.getColumns().add(nameColumn);
-        picker.getColumns().add(dateColumn);
-
-        root.setExpanded(true);
-        picker.setShowRoot(false);
-    }
-
-    public List<File> getFiles() {
-        return files;
+        getCorrelatingView().getEngine().getLoadWorker().stateProperty().addListener(this::onLoadWorkerStateChanged);
     }
 
     @Override
-    public TreeTableView<File> getCorrelatingView() {
-        return picker;
+    public WebView getCorrelatingView() {
+        return drivePicker;
     }
 }

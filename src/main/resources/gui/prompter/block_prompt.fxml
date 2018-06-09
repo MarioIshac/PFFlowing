@@ -6,10 +6,10 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import java.net.URL?>
 <VBox xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="me.theeninja.pfflowing.gui.BlockPrompterController"
-            fx:id="root">
+      xmlns:fx="http://javafx.com/fxml"
+      fx:id="root">
     <HBox>
         <Label text="Block File Name" />
         <TextField fx:id="blockFileRequest" />
@@ -21,4 +21,8 @@
     <HBox alignment="CENTER_RIGHT">
         <Button text="Finish" fx:id="finishButton" onAction="#finish"/>
     </HBox>
+
+    <stylesheets>
+        <URL value="@new_prompt.css" />
+    </stylesheets>
 </VBox>

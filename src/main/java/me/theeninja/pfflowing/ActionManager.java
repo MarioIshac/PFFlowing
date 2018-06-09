@@ -30,6 +30,13 @@ public class ActionManager {
         getDoneActions().push(action);
     }
 
+    /**
+     * Done
+     * Write
+     *
+     *
+     */
+
     public LinkedList<Action> getDoneActions() {
         return this.doneActions;
     }

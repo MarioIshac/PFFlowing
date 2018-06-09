@@ -9,7 +9,6 @@
 <?import javafx.scene.web.WebView?>
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            prefHeight="400.0" prefWidth="600.0"
             fx:id="cardParserArea">
     <left>
         <VBox>
@@ -21,12 +20,13 @@
     </left>
     <right>
         <VBox fx:id="rightContainer">
+            <!-- The text serves as the default text, will change later -->
+            <HBox>
+                <ComboBox fx:id="parserOptionChooser" />
+                <Button fx:id="fileChooser" text="Select" onAction="#onFileChooserClick" />
+            </HBox>
             <ProgressBar fx:id="progressBar" />
             <WebView fx:id="documentDisplay" />
-            <HBox fx:id="cardOptions">
-                <Button text="Shrink" />
-                <Button text="Expand" />
-            </HBox>
         </VBox>
     </right>
 </BorderPane>

@@ -61,8 +61,14 @@ public class Configuration {
             Font.font(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
     );
 
+    @SerializedName("fontScale")
+    @Expose
     private Configurable<Double> fontScale = new Configurable<>(
-            new Descriptor("Font", "Card Display Font Scale", "Font"),
+            new Descriptor(
+                    "Font",
+                    "Card Display Font Scale",
+                    "Determines how the scale which should be applied to the default font size of" +
+                            "the application."),
             0.75
     );
 

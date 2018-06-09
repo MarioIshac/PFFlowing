@@ -16,6 +16,7 @@ import javafx.scene.layout.Region;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import me.theeninja.pfflowing.Action;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
@@ -56,22 +57,35 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     private void onRegionRemovalRemoveDragSupport(Node node) {
         if (node instanceof FlowingRegion) {
             FlowingRegion flowingRegion = (FlowingRegion) node;
-            addDragSupport(flowingRegion);
+            removeDragSupport(flowingRegion);
         }
     }
 
     private void onRegionAdditionAddDragSupport(Node node) {
         if (node instanceof FlowingRegion) {
             FlowingRegion flowingRegion = (FlowingRegion) node;
-            removeDragSupport(flowingRegion);
+            addDragSupport(flowingRegion);
         }
     }
 
     private void onDragOver(DragEvent dragEvent) {
+        System.out.println("Dragged over");
+
         Object source = dragEvent.getGestureSource();
 
         if (!(source instanceof CardTreeCell))
             return; // drag was initiated from an irrelevant component on the scene
+
+        System.out.println("1");
+
+        CardTreeCell cardTreeCell = (CardTreeCell) source;
+        Card card = cardTreeCell.getTreeItem().getValue();
+
+        if (card.getRepresentation() == null)
+            return; // transfer was initiated from dummy card associated
+                    // with header tree item, not content tree item
+
+        System.out.println("2");
 
         dragEvent.acceptTransferModes(TransferMode.ANY);
     }
@@ -138,8 +152,8 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
     private final ListChangeListener<? super Node> onChildrenChange = Utils.generateListChangeListener(
-            this::onRegionRemovalRemoveDragSupport,
-            this::onRegionAdditionAddDragSupport
+            this::onRegionAdditionAddDragSupport,
+            this::onRegionRemovalRemoveDragSupport
     );
 
     private void onTabAdded(Tab tab) {
@@ -302,6 +316,10 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         round.setDisplayedSide(round.getSide());
     }
 
+    /**
+     * @param round The round which is associated with the tab.
+     * @return The round tab containing the round's content.
+     */
     public RoundTab getTab(Round round) {
         for (Tab tab : roundsBar.getTabs()) {
             RoundTab roundTab = (RoundTab) tab;
@@ -313,6 +331,11 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         return null;
     }
 
+    /**
+     * Maps each round tab to their associated round, and returns all rounds.
+     *
+     * @return All rounds represented by the rounds bar.
+     */
     public List<Round> getRoundsOnBar() {
         return roundsBar.getTabs().stream()
                 .map(RoundTab.class::cast)
@@ -320,6 +343,10 @@ public class FlowController implements Initializable, SingleViewController<Flowi
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @param path The path that is associated with the round.
+     * @return null
+     */
     public Round getRoundByPath(Path path) {
         List<Round> rounds = getRoundsOnBar();
 
@@ -422,13 +449,44 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
         Card card = getCardSelectorController().getCard(cardName);
 
-        // should never happen, as cardName was derived from a card, hence reversing the process should work
-        if (card == null)
-            return;
-
         if (flowingRegion.getAssociatedCards().contains(card))
             return; // if card has already been added, do not readd
 
-        flowingRegion.getAssociatedCards().add(card);
+        Action modifyCard = new ModifyCard(flowingRegion, card);
+
+        getSelectedRound().getSelectedController().getActionManager().perform(modifyCard);
+    }
+
+    private class ModifyCard extends Action {
+        private final FlowingRegion targetFlowingRegion;
+        private final Card card;
+
+        ModifyCard(FlowingRegion flowingRegion, Card card) {
+            this.targetFlowingRegion = flowingRegion;
+            this.card = card;
+        }
+
+        @Override
+        public void execute() {
+            getTargetFlowingRegion().getAssociatedCards().add(card);
+        }
+
+        @Override
+        public void unexecute() {
+            getTargetFlowingRegion().getAssociatedCards().remove(card);
+        }
+
+        @Override
+        public String getName() {
+            return "Card(s) Change";
+        }
+
+        public FlowingRegion getTargetFlowingRegion() {
+            return targetFlowingRegion;
+        }
+
+        public Card getCard() {
+            return card;
+        }
     }
 }

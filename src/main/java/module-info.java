@@ -22,4 +22,5 @@ module PFFlowing {
     requires google.oauth.client.jetty;
     requires google.oauth.client;
     requires google.api.services.drive.v3.rev93;
+    requires jdk.jsobject;
 }
