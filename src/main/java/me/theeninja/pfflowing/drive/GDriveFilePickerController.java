@@ -22,34 +22,9 @@ public class GDriveFilePickerController implements Initializable, SingleViewCont
     @FXML
     public WebView drivePicker;
 
-    private void onLoadWorkerStateChanged(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
-        JSObject window = (JSObject) getCorrelatingView().getEngine().executeScript("window");
-        JavaBridge bridge = new JavaBridge();
-        window.setMember("java", bridge);
-        getCorrelatingView().getEngine().executeScript("console.log = function(message)\n" +
-                "{\n" +
-                "    java.log(message);\n" +
-                "};");
-    }
-
-    private class JavaBridge {
-        public void log(String text) {
-            System.out.println(text);
-        }
-    }
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         InputStream pickerJSStream = GDriveFilePickerController.class.getResourceAsStream("/gui/drive/drive_picker.html");
-        String pickerJS = null;
-
-        try {
-            pickerJS = IOUtils.toString(pickerJSStream);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        //getCorrelatingView().getEngine().loadContent(pickerJS);
 
         try {
             // Build a new authorized API client service.
