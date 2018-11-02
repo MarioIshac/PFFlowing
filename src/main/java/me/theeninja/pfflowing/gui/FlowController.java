@@ -2,7 +2,6 @@ package me.theeninja.pfflowing.gui;
 
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -21,7 +20,6 @@ import me.theeninja.pfflowing.Action;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.bluetooth.EFlowConnector;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.printing.RoundPrinter;
@@ -141,8 +139,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     public void attemptBluetoothShare() {
         Thread thread = new Thread(() -> {
             try {
-                EFlowConnector eFlowConnector = new EFlowConnector("E0997131968B", getSelectedRound());
-                eFlowConnector.start();
+                EFlow.getInstance().getEFlowConnector().getFlowSender().connect();
             }
             catch (IOException e) {
                 e.printStackTrace();

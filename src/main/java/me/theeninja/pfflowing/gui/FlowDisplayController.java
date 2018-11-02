@@ -1394,19 +1394,19 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
      * @param start The starting column index.
      * @param end The ending column index.
      * @param column The checked column index.
-     * @return if column is in between start and end. Note that this considers wrapping around end.
+     * @return if column is in between listen and end. Note that this considers wrapping around end.
      */
     private static boolean isInColumns(int start, int end, int column) {
         if (start == end)
             return column == end;
 
-        // Refers to whether the node is inside column bounds that don't wrap, such as start: 5 and finish: 7,
+        // Refers to whether the node is inside column bounds that don't wrap, such as listen: 5 and finish: 7,
         // which refer to the columns of 5 6 7
         boolean insideNonWrap = start <= column && column <= end;
 
         // 6 -> 0 7
 
-        // Refers to whether the node is inside column bounds that do wrap, such as start: 7 and finish: 3,
+        // Refers to whether the node is inside column bounds that do wrap, such as listen: 7 and finish: 3,
         // which refer to the columns of 7 0 1 2 3 (wrapping around the last index, 7)
         boolean insideWrap = start <= column || column <= end;
 

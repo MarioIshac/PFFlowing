@@ -15,7 +15,7 @@ public class EFlowReceiver extends ServerRequestHandler {
         this.streamConnectionNotifier = (SessionNotifier) Connector.open(serverURL);
     }
 
-    private void start() {
+    public void listen() {
         Thread thread = new Thread(() -> {
             while (true) {
                 try {

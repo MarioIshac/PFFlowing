@@ -1,14 +1,13 @@
 package me.theeninja.pfflowing;
 
 import com.google.gson.Gson;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
+import me.theeninja.pfflowing.bluetooth.EFlowConnector;
 import me.theeninja.pfflowing.configuration.Configuration;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowing.FlowingRegionDeserializer;
@@ -20,7 +19,6 @@ import org.hildan.fxgson.FxGson;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,6 +52,7 @@ public class EFlow {
 
     private final static EFlow instance = new EFlow();
     private final Gson gson;
+    private EFlowConnector eFlowConnector;
     private final Configuration configuration;
 
     public static final String APPLICATION_NAME = "EFlow";
@@ -94,12 +93,19 @@ public class EFlow {
     }
 
     private EFlow() {
-        gson = newGson();
+        this.gson = newGson();
+
+        try {
+            this.eFlowConnector = new EFlowConnector("7C5CF8F97625");
+            getEFlowConnector().getFlowReceiver().listen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         if (isFirstTime())
-            handleFirstTime();
+            this.handleFirstTime();
 
-        configuration = loadConfiguration();
+        this.configuration = loadConfiguration();
     }
 
     public static void main(String[] args) {
@@ -174,5 +180,9 @@ public class EFlow {
 
     public Gson getGSON() {
         return gson;
+    }
+
+    public EFlowConnector getEFlowConnector() {
+        return eFlowConnector;
     }
 }

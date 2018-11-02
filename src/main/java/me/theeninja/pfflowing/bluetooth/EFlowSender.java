@@ -29,14 +29,8 @@ public class EFlowSender {
     private static final int[] ATTRIBUTES = {SERVICE_NAME_ATTRIBUTE};
 
     private final ClientSession clientSession;
-    private final Round round;
 
-    public Round getRound() {
-        return round;
-    }
-
-    EFlowSender(String deviceAddress, Round round) throws IOException {
-        this.round = round;
+    EFlowSender(String deviceAddress) throws IOException {
         String obexURL = EFlowConnector.getOBEXURL(deviceAddress);
 
         System.out.println("a " + obexURL);
@@ -51,15 +45,15 @@ public class EFlowSender {
     public void connect() throws IOException {
         HeaderSet requestHeaderSet = getClientSession().createHeaderSet();
 
-        requestHeaderSet.setHeader(HeaderSet.NAME, getRound().getName());
+        requestHeaderSet.setHeader(HeaderSet.NAME, "Name");
 
         System.out.println("c");
-        //HeaderSet responseHeaderSet = getClientSession().connect(requestHeaderSet);
+        HeaderSet responseHeaderSet = getClientSession().connect(requestHeaderSet);
         System.out.println("d");
 
-        /* if (responseHeaderSet.getResponseCode() != ResponseCodes.OBEX_HTTP_OK) {
+        if (responseHeaderSet.getResponseCode() != ResponseCodes.OBEX_HTTP_OK) {
             throw new BluetoothConnectionException(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
-        } */
+        }
 
        putData(Map.of(
            HeaderSet.NAME, "myName"
