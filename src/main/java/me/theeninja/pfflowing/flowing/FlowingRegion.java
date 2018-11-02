@@ -1,15 +1,15 @@
 package me.theeninja.pfflowing.flowing;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Rectangle;
 import me.theeninja.pfflowing.Duplicable;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.configuration.InternalConfiguration;
@@ -17,28 +17,26 @@ import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.gui.*;
 import me.theeninja.pfflowing.utils.Utils;
 import org.controlsfx.control.PopOver;
-import org.controlsfx.control.decoration.Decoration;
-import org.controlsfx.control.decoration.Decorator;
-import org.controlsfx.control.decoration.GraphicDecoration;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
+public class FlowingRegion extends VBox implements Duplicable<FlowingRegion> {
 
     public static final String TEXT_NAME = "text";
     public static final String COLUMN_NAME = "column";
     public static final String ROW_NAME = "row";
     public static final String TYPE_NAME = "type";
-    public static final String QUESTION = "question";
     public static final String ASSOCIATED_CARDS = "associatedCards";
+    public static final String ASSOCIATED_QUESTIONS = "associatedQuestions";
 
-    private final Decoration hasCardsDecoration;
-    public static final String QUESTION_KEY = "question";
     private final FlowingRegionType flowingRegionType;
 
-    private PopOver currentShownPopover;
+    private final Label reasoningLabel = new Label();
+    private final VBox cardsBox = new VBox();
+    private final VBox questionsBox = new VBox();
 
     private StringProperty fullText = new SimpleStringProperty();
 
@@ -50,69 +48,141 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
     private StringProperty shortenedText = new SimpleStringProperty();
 
     /**
-     * Represents whether the flowing region is expanded on the flow grid.
-     * Since this is set to a default value (false) when a flowing region is loaded on the
+     * Represents whether the actions region is expanded on the flow grid.
+     * Since this is set to a default value (false) when a actions region is loaded on the
      * flow grid, no need to serialize.
      */
     private BooleanProperty expanded = new SimpleBooleanProperty();
 
     private final ObservableList<Card> associatedCards;
-
-    private StringProperty questionText = new SimpleStringProperty();
+    private final ObservableList<String> associatedQuestions;
 
     public FlowingRegion(String text, FlowingRegionType flowingRegionType) {
-        this(text, flowingRegionType, FXCollections.observableArrayList());
+        this(
+            text,
+            flowingRegionType,
+            FXCollections.observableArrayList(),
+            FXCollections.observableArrayList()
+        );
     }
 
-    public FlowingRegion(String text, FlowingRegionType flowingRegionType, ObservableList<Card> associatedCards) {
-        super();
+    private <T> Consumer<T> newOnAdded(final VBox container) {
+        return addedValue -> {
+            SupplementalBox<T> valueBox = new SupplementalBox<>(addedValue);
+
+            container.getChildren().add(valueBox);
+
+            // Setting 1-indexed order to pre-size + 1 is same as setting to post-size
+            valueBox.setRank(container.getChildren().size());
+        };
+    }
+
+    private <T> Consumer<T> newOnRemoved(final VBox container) {
+        return removedValue -> {
+            final List<Node> valuesBox = container.getChildren();
+
+            for (int i = 0; i < valuesBox.size(); i++) {
+                @SuppressWarnings("unchecked")
+                final SupplementalBox<T> cardBox = (SupplementalBox<T>) valuesBox.get(i);
+
+                cardBox.setRank(i + 1);
+
+                if (cardBox.getValue() == removedValue) {
+                    valuesBox.remove(cardBox);
+                    i--;
+                }
+            }
+        };
+    }
+
+    private static class SupplementalBox<T> extends HBox {
+        private T value;
+
+        private IntegerProperty rank = new SimpleIntegerProperty();
+
+        SupplementalBox(T value) {
+            this.value = value;
+
+            setSpacing(10);
+
+            Label rankLabel = new Label();
+            rankLabel.setStyle("-fx-color: green");
+            rankLabel.textProperty().bind(rankProperty().asString());
+
+            Label valueLabel = new Label(value.toString());
+            valueLabel.fontProperty().bind(EFlow.getInstance().getConfiguration().getCardLabelsFont().valueProperty());
+
+            // Makes it so delete-button is at rightmost part of HBox
+            Region separatorRegion = new Region();
+            HBox.setHgrow(separatorRegion, Priority.ALWAYS);
+
+            getChildren().addAll(rankLabel, valueLabel, separatorRegion);
+
+        }
+
+        public int getRank() {
+            return rankProperty().get();
+        }
+
+        private IntegerProperty rankProperty() {
+            return rank;
+        }
+
+        public void setRank(int rank) {
+            this.rank.set(rank);
+        }
+
+        public T getValue() {
+            return value;
+        }
+    }
+
+    public FlowingRegion(String text, FlowingRegionType flowingRegionType, ObservableList<Card> associatedCards, ObservableList<String> associatedQuestions) {
         this.flowingRegionType = flowingRegionType;
 
-        int sideLength = FlowDisplayController.FLOWGRID_VERTICAL_GAP;
-
-        Rectangle rectangle = new Rectangle(sideLength, sideLength);
-        rectangle.fillProperty().bind(
-            EFlow.getInstance().getConfiguration().getCardColor().valueProperty()
-        );
-        hasCardsDecoration = new GraphicDecoration(rectangle, Pos.BOTTOM_RIGHT);
-
-        setWrapText(true);
+        getReasoningLabel().setWrapText(true);
 
         // Listener must be added first, before setting full text
         addFullTextListener();
         setFullText(text);
 
-        fontProperty().bind(EFlow.getInstance().getConfiguration().getFont().valueProperty());
+        getReasoningLabel().fontProperty().bind(EFlow.getInstance().getConfiguration().getReasoningFont().valueProperty());
 
         setExpanded(false);
 
         this.associatedCards = associatedCards;
+        this.associatedQuestions = associatedQuestions;
 
-        getAssociatedCards().addListener(Utils.generateListChangeListener(this::onSizeChange));
+        getAssociatedCards().addListener(Utils.generateListChangeListener(
+            newOnAdded(cardsBox),
+            newOnRemoved(cardsBox)
+        ));
+
+        getAssociatedQuestions().addListener(Utils.generateListChangeListener(
+            newOnAdded(questionsBox),
+            newOnRemoved(questionsBox)
+        ));
 
         addDetailerSupport();
+
+        getChildren().addAll(getReasoningLabel(), getCardsBox(), questionsBox);
+    }
+
+    public ObservableList<String> getAssociatedQuestions() {
+        return this.associatedQuestions;
     }
 
     private void addDetailerSupport() {
         CardsDetailerController cardsDetailerController = getCardsDetailerController();
-        QuestionDetailerController questionDetailerController = getQuestionDetailerController();
 
         VBox popOverVBox = new VBox();
         PopOver popOver = new PopOver(popOverVBox);
 
         expandedProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
-                if (cardsDetailerController.hasDetail()) {
-                    cardsDetailerController.setCurrentCard(getAssociatedCards().get(0));
-                    popOverVBox.getChildren().add(cardsDetailerController.getCorrelatingView());
-                }
-
-                if (questionDetailerController.hasDetail())
-                    popOverVBox.getChildren().add(questionDetailerController.getCorrelatingView());
-
-                if (!popOverVBox.getChildren().isEmpty()) {
-                    popOver.show(this);
-                }
+            if (newValue && cardsDetailerController.hasDetail()) {
+                cardsDetailerController.setCurrentCard(getAssociatedCards().get(0));
+                popOverVBox.getChildren().add(cardsDetailerController.getCorrelatingView());
+                popOver.show(this);
             }
             else {
                 popOver.hide();
@@ -140,7 +210,12 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
 
     @Override
     public FlowingRegion duplicate() {
-        FlowingRegion duplicate = new FlowingRegion(getText(), getFlowingRegionType(), getAssociatedCards());
+        FlowingRegion duplicate = new FlowingRegion(
+            getFullText(),
+            getFlowingRegionType(),
+            getAssociatedCards(),
+            getAssociatedQuestions()
+        );
         duplicate.setStyle(this.getStyle());
         FlowGrid.setColumnIndex(duplicate, FlowGrid.getColumnIndex(this));
         FlowGrid.setRowIndex(duplicate, FlowGrid.getRowIndex(this));
@@ -200,9 +275,9 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
 
     public void setExpanded(boolean expanded) {
         if (expanded)
-            textProperty().bind(fullTextProperty());
+            getReasoningLabel().textProperty().bind(fullTextProperty());
         else
-            textProperty().bind(shortenedTextProperty());
+            getReasoningLabel().textProperty().bind(shortenedTextProperty());
         this.expanded.set(expanded);
     }
 
@@ -211,7 +286,7 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
     }
 
     private CardsDetailerController getCardsDetailerController() {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/cardDisplay/card_details.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/card_display/card_details.fxml"));
         CardsDetailerController flowingRegionDetailController = new CardsDetailerController(this);
         fxmlLoader.setController(flowingRegionDetailController);
 
@@ -222,27 +297,6 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
         }
 
         return flowingRegionDetailController;
-    }
-
-    private QuestionDetailerController getQuestionDetailerController() {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/flow/question_detailer.fxml"));
-        QuestionDetailerController questionDetailerController = new QuestionDetailerController(this);
-        fxmlLoader.setController(questionDetailerController);
-
-        try {
-            fxmlLoader.load();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return questionDetailerController;
-    }
-
-    private void onSizeChange() {
-        if (!getAssociatedCards().isEmpty())
-            Decorator.addDecoration(this, hasCardsDecoration);
-        else
-            Decorator.removeDecoration(this, hasCardsDecoration);
     }
 
     public FlowingRegionType getFlowingRegionType() {
@@ -261,15 +315,11 @@ public class FlowingRegion extends Label implements Duplicable<FlowingRegion> {
         return getFlowingRegionType() == FlowingRegionType.EXTENSION;
     }
 
-    public String getQuestionText() {
-        return questionText.get();
+    public Label getReasoningLabel() {
+        return reasoningLabel;
     }
 
-    public StringProperty questionTextProperty() {
-        return questionText;
-    }
-
-    public void setQuestionText(String questionText) {
-        this.questionText.set(questionText);
+    public VBox getCardsBox() {
+        return cardsBox;
     }
 }

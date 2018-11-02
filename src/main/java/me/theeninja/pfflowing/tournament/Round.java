@@ -15,6 +15,7 @@ import me.theeninja.pfflowing.speech.Side;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Round {
     public static final String NAME = "name";
@@ -31,16 +32,16 @@ public class Round {
     private final ObjectProperty<FlowDisplayController> selectedController = new SimpleObjectProperty<>();
 
     public Round(Side side) {
-        affController = FlowDisplayController.newController(Side.AFFIRMATIVE);
-        negController = FlowDisplayController.newController(Side.NEGATION);
+        this.affController = FlowDisplayController.newController(Side.AFFIRMATIVE);
+        this.negController = FlowDisplayController.newController(Side.NEGATION);
 
         this.side = side;
 
         displayedSideProperty().addListener(this::onDisplayedSideChanged);
 
         SIDE_CONTROLLER_MAP = ImmutableMap.of(
-                Side.AFFIRMATIVE, getAffController(),
-                Side.NEGATION, getNegController()
+            Side.AFFIRMATIVE, getAffController(),
+            Side.NEGATION, getNegController()
         );
     }
 
@@ -117,7 +118,7 @@ public class Round {
         setSelectedController(SIDE_CONTROLLER_MAP.get(newValue));
     }
 
-    public List<FlowDisplayController> getSideControllers() {
-        return List.of(getAffController(), getNegController());
+    public Set<FlowDisplayController> getSideControllers() {
+        return Set.of(getAffController(), getNegController());
     }
 }

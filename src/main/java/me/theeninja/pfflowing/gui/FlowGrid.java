@@ -40,8 +40,8 @@ public class FlowGrid extends GridPane {
         return getChildren().stream()
             .filter(FlowGrid::isOnGrid)
             .filter(node -> {
-                Integer columnIndex = FlowGrid.getColumnIndex(node);
-                Integer rowIndex = FlowGrid.getRowIndex(node);
+                int columnIndex = FlowGrid.getColumnIndex(node);
+                int rowIndex = FlowGrid.getRowIndex(node);
 
                 return columnIndex == column && rowIndex == row;
             }).findFirst();
@@ -56,8 +56,8 @@ public class FlowGrid extends GridPane {
     }
 
     public Optional<FlowingRegion> getRelativeFlowingRegion(FlowingRegion flowingRegion, Direction direction) {
-        int column = FlowGrid.getColumnIndex(flowingRegion);
-        int row = FlowGrid.getRowIndex(flowingRegion);
+        Integer column = FlowGrid.getColumnIndex(flowingRegion);
+        Integer row = FlowGrid.getRowIndex(flowingRegion);
 
         return getRelativeFlowingRegion(column, row, direction);
     }

@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 public class FlowApp extends Application {
-
-
     private final Logger logger = Logger.getLogger(getClass().getSimpleName());
 
     private ActionManager actionManager;
@@ -71,6 +69,8 @@ public class FlowApp extends Application {
         getStage().setFullScreen(true);
         getStage().setFullScreenExitKeyCombination(KeyCodeCombination.NO_MATCH);
         getStage().show();
+
+        EFlow.setAsFullscreenToggler(getStage());
 
         setActionManager(new ActionManager());
     }

@@ -12,6 +12,9 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination SHIFT_DISPLAY_RIGHT = new KeyCodeCombination(KeyCode.PERIOD, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination SHIFT_DISPLAY_LEFT  = new KeyCodeCombination(KeyCode.COMMA,  KeyCombination.CONTROL_DOWN);
 
+    public static final KeyCodeCombination PRINT = new KeyCodeCombination(KeyCode.P, KeyCombination.CONTROL_DOWN);
+    public static final KeyCodeCombination FULLSCREEN_TOGGLER = new KeyCodeCombination(KeyCode.F11);
+
     // FlowApp-Management Keys
     public static final KeyCodeCombination REFUTE = new KeyCodeCombination(KeyCode.R, KeyCombination.CONTROL_DOWN);
     public static final KeyCodeCombination EXTEND = new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN);
@@ -24,13 +27,13 @@ public class KeyCodeCombinationUtils {
     public static final KeyCodeCombination EDIT = new KeyCodeCombination(KeyCode.E, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
     public static final KeyCodeCombination SPLIT = new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN);
 
-    public static final KeyCode CARD_SELECTOR = KeyCode.SEMICOLON;
-
     public static final KeyCombination.Modifier SELECT = KeyCombination.CONTROL_DOWN;
     public static final KeyCombination.Modifier TOGGLE_SELECT_MULTIPLE = KeyCombination.CONTROL_DOWN;
 
     public static final KeyCodeCombination SWITCH_SPEECHLIST = new KeyCodeCombination(KeyCode.N, KeyCombination.SHIFT_DOWN);
     public static final KeyCombination.Modifier SPEECH_SELECTOR = KeyCombination.SHIFT_DOWN;
+
+    public static final KeyCodeCombination BLUETOOTH_SHARE = new KeyCodeCombination(KeyCode.B, KeyCombination.SHIFT_DOWN, KeyCodeCombination.CONTROL_DOWN);
 
     // Application keys
     public static final KeyCodeCombination TOGGLE_FULLSCREEN = new KeyCodeCombination(KeyCode.F11);

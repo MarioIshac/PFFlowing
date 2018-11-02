@@ -5,7 +5,6 @@ import javafx.scene.paint.Color;
 import me.theeninja.pfflowing.speech.Side;
 
 public abstract class Speech {
-
     public static final int SPEECH_SIZE = 8;
 
     private SimpleIntegerProperty availableRow = new SimpleIntegerProperty(0);

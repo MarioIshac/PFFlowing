@@ -44,7 +44,10 @@
         <MenuItem text="Merge" onAction="#merge" />
         <MenuItem text="Question" onAction="#question" />
     </Menu>
-    <Menu text="Help" onAction="#onHelpClicked" />
+    <Menu text="Help">
+        <MenuItem text="Features" onAction="#onHelpClicked" />
+        <MenuItem text="Links" />
+    </Menu>
 
     <stylesheets>
         <URL value="@navigator.css" />

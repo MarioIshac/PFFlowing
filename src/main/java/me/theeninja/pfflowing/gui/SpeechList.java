@@ -24,7 +24,7 @@ public class SpeechList extends ArrayList<SpeechPair> {
     public static final String HEADER_NUMBER_SEPERATOR = " ";
 
     /**
-     * GDriveConnector subround refers to a specific exchange between speakers in a round excluding crossfires. There are 4:
+     * GoogleDriveConnector subround refers to a specific exchange between speakers in a round excluding crossfires. There are 4:
      * <ol>
      *     <li>Constructive Speeches</li>
      *     <li>Rebuttal Speeches</li>
@@ -63,21 +63,8 @@ public class SpeechList extends ArrayList<SpeechPair> {
         firstSpeech.availableRowProperty().bind(firstSpeech.defensiveRegionsNumberProperty());
     }
 
-    public Speech getOpposite(Speech speech) {
-        System.out.println("Opposite" + speech.getLabelText());
-        Pair<DefensiveSpeech, RefutationSpeech> pair = getPair(speech);
-        if (speech instanceof DefensiveSpeech)
-            return pair.getSecond();
-        else
-            return pair.getFirst();
-    }
-
     private Pair<DefensiveSpeech, RefutationSpeech> getPair(Speech speech) {
-        System.out.println(this.size());
-        System.out.println("Pair" + speech.getLabelText());
         for (SpeechPair pair : this) {
-            System.out.println(pair.getFirst().getLabelText());
-            System.out.println(pair.getSecond().getLabelText());
             if (pair.contains(speech))
                 return pair;
         }
@@ -120,7 +107,6 @@ public class SpeechList extends ArrayList<SpeechPair> {
     }
 
     public Speech getSpeech(FlowingRegion flowingRegion) {
-        System.out.println("Yo" + FlowGrid.getColumnIndex(flowingRegion));
         for (Speech speech : getSpeeches())
             if (speech.getColumn() == FlowGrid.getColumnIndex(flowingRegion))
                 return speech;

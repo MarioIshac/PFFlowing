@@ -4,7 +4,6 @@ package me.theeninja.pfflowing;
  * Represents an action that is both undoable and redoable.
  */
 public abstract class Action {
-
     /**
      * Executions the procedure outlined in the Action through this method.
      */

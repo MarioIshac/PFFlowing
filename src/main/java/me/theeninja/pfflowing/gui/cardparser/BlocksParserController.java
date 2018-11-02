@@ -1,151 +1,59 @@
 package me.theeninja.pfflowing.gui.cardparser;
 
-import com.google.api.services.drive.Drive;
-import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.web.WebView;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import me.theeninja.pfflowing.EFlow;
-import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.drive.GDriveFilePickerController;
-import me.theeninja.pfflowing.drive.google.GDriveConnector;
 import me.theeninja.pfflowing.flowingregions.Blocks;
 import me.theeninja.pfflowing.flowingregions.Card;
-import me.theeninja.pfflowing.flowingregions.CardProcessor;
-import me.theeninja.pfflowing.gui.NavigatorController;
+import me.theeninja.pfflowing.gui.KeyCodeCombinationUtils;
 import me.theeninja.pfflowing.utils.Utils;
 import org.apache.tika.io.IOUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-import javax.security.auth.callback.Callback;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class BlocksParserController implements SingleViewController<BorderPane>, Initializable {
-    private final FlowApp flowApp;
+public class BlocksParserController implements SingleViewController<HBox>, Initializable {
     private final Blocks blocks;
     private final Runnable cleanUp;
 
-    private void getHTMLOffline(Consumer<String> htmlConsumer) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Selected File to Parse into Block");
-
-        Stage allocatedStage = new Stage();
-        java.io.File file = fileChooser.showOpenDialog(allocatedStage);
-        Path path = file.toPath();
-
-        String html = CardProcessor.toHTML(path);
-
-        htmlConsumer.accept(html);
-    }
-
-    private void getHTMLGoogleDrive(Consumer<String> htmlConsumer) {
-        try {
-            FXMLLoader fxmlLoader = new FXMLLoader(NavigatorController.class.getResource("/gui/drive/drive_picker.fxml"));
-            GDriveFilePickerController pickerController = new GDriveFilePickerController();
-            fxmlLoader.setController(pickerController);
-            fxmlLoader.load();
-
-            Scene scene = new Scene(pickerController.getCorrelatingView());
-            Stage stage = new Stage();
-            stage.setScene(scene);
-            stage.show();
-
-            /*// Build a new authorized API client service.
-            Drive service = GDriveConnector.getDriveService();
-
-            Drive.Files serviceFiles = service.files();
-
-            FileList result = serviceFiles.list()
-                    //.setPageSize(10)
-                    .setQ("(mimeType='application/vnd.google-apps.document')")
-                    .setFields("nextPageToken, files(id, name, createdTime)")
-                    .execute();
-
-            List<File> files = result.getFiles();
-
-            if (files.isEmpty())
-                System.out.println("No files found.");
-            else {
-                FXMLLoader fxmlLoader = new FXMLLoader(NavigatorController.class.getResource("/gui/drive/drive_picker.fxml"));
-                GDriveFilePickerController pickerController = new GDriveFilePickerController(files);
-                fxmlLoader.setController(pickerController);
-                fxmlLoader.load();
-
-                Scene scene = new Scene(pickerController.getCorrelatingView());
-                Stage stage = new Stage();
-                stage.setScene(scene);
-                stage.show();
-
-                pickerController.getCorrelatingView().addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-                    if (keyEvent.getCode() == KeyCode.ENTER) {
-                        try {
-                            System.out.println("enter is pressed");
-                            TreeItem<File> selectedTreeItem = pickerController.getCorrelatingView().getSelectionModel().getSelectedItem();
-                            File selectedFile = selectedTreeItem.getValue();
-
-                            String fileId = selectedFile.getId();
-
-                            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                            serviceFiles
-                                    .export(fileId, "text/html")
-                                    .executeMediaAndDownloadTo(outputStream);
-                            byte[] bytes = outputStream.toByteArray();
-
-                            String html = new String(bytes);
-
-                            htmlConsumer.accept(html);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            } */
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void getHTMLOneDrive(Consumer<String> htmlAcceptor) {
-        htmlAcceptor.accept(null);
-    }
-
-
-    private final Map<Host, Consumer<Consumer<String>>> MEDIUM_HTML_CONSUMER_BLOCKS = Map.of(
-            Host.GOOGLE_DRIVE, this::getHTMLGoogleDrive,
-            Host.FILE_SYSTEM, this::getHTMLOffline,
-            Host.ONE_DRIVE, this::getHTMLOneDrive
+    /**
+     * Represents what action to take based on the given host.
+     */
+    private final Map<Host, Supplier<FileFetcher<?>>> MEDIUM_HTML_CONSUMER_BLOCKS = Map.of(
+        Host.GOOGLE_DRIVE, GoogleDriveFetcher::new,
+        Host.FILE_SYSTEM, OfflineFileFetcher::new,
+        Host.ONE_DRIVE, OneDriveFetcher::new
     );
 
     @FXML public TreeView<Card> parsedCardsColumn;
     @FXML public TreeItem<Card> parsedCardsRoot;
     @FXML public TextField cardNameRequest;
 
-    @FXML public BorderPane cardParserArea;
+    @FXML public HBox cardParserArea;
     @FXML public WebView documentDisplay;
     @FXML public ProgressBar progressBar;
     @FXML public VBox rightContainer;
 
-    public BlocksParserController(FlowApp flowApp, Blocks blocks, Runnable cleanUp) {
-        this.flowApp = flowApp;
+    public BlocksParserController(Blocks blocks, Runnable cleanUp) {
         this.blocks = blocks;
         this.cleanUp = cleanUp;
     }
@@ -156,81 +64,193 @@ public class BlocksParserController implements SingleViewController<BorderPane>,
     @FXML
     public Button fileChooser;
 
-    @FXML
-    public void onFileChooserClick(ActionEvent actionEvent) {
-        Host host = parserOptionChooser.getValue();
+    private static final String[] RESPONSE_HEADER = {"A2", "F2", "I2"};
 
-        Consumer<Consumer<String>> htmlFetcher = MEDIUM_HTML_CONSUMER_BLOCKS.get(host);
-        htmlFetcher.accept(this::loadHTML);
+    private static boolean unwrapOnce(Elements headers) {
+        boolean[] haveUniqueParents = new boolean[headers.size()];
+        Arrays.fill(haveUniqueParents, true);
+
+        for (int headerIndex = 0; headerIndex < headers.size(); headerIndex++) {
+            Element header = headers.get(headerIndex);
+            Element parentHeader = header.parent();
+
+            for (int otherHeaderIndex = 0; otherHeaderIndex < headers.size(); otherHeaderIndex++) {
+                if (headerIndex == otherHeaderIndex) {
+                    continue;
+                }
+
+                Element otherHeader = headers.get(otherHeaderIndex);
+                Element otherParentHeader = otherHeader.parent();
+
+                if (parentHeader == otherParentHeader) {
+                    haveUniqueParents[headerIndex] = false;
+                    haveUniqueParents[otherHeaderIndex] = false;
+                }
+            }
+        }
+
+        for (int headerIndex = 0; headerIndex < headers.size(); headerIndex++) {
+            boolean hasUniqueParent = haveUniqueParents[headerIndex];
+
+            if (hasUniqueParent) {
+                Element header = headers.get(headerIndex);
+                Element headerParent = header.parent();
+                headers.set(headerIndex, headerParent);
+            }
+        }
+
+        int count = 0;
+
+        for (int index = 0; index < haveUniqueParents.length; index++) {
+            boolean hasUniqueParent = haveUniqueParents[index];
+
+            if (!hasUniqueParent) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    @FXML public ComboBox<Host> parserOptionChooser;
+    private static void unwrap(Elements headers) {
+        boolean unwrappingFinished;
+
+        do {
+            unwrappingFinished = unwrapOnce(headers);
+        }
+        while (!unwrappingFinished);
+    }
+
+    private void attemptAutomaticParse(final String html) {
+        final Document document = Jsoup.parse(html);
+
+        final Elements headers = document
+                .select("*:containsOwn(" + RESPONSE_HEADER[0] + ")")
+                .stream()
+                .collect(Collectors.toCollection(Elements::new));
+
+        unwrap(headers);
+
+        System.out.println("Printing headers' outer htmls");
+        headers.forEach(header -> System.out.println(header.outerHtml()));
+
+        for (int headerIndex = 0; headerIndex < headers.size() - 1; headerIndex++) {
+            final int nextHeaderIndex = headerIndex + 1;
+
+            final Element header = headers.get(headerIndex);
+            final Element nextHeader = headers.get(nextHeaderIndex);
+
+            final Elements childrenAtLevel = header.parent().children(); // firstHeader.siblings
+
+            int startIndex = childrenAtLevel.indexOf(header);
+            int endIndex = childrenAtLevel.lastIndexOf(nextHeader);
+
+            if (startIndex == -1 || endIndex == -1) {
+                continue;
+            }
+
+            final Elements associatedContent = childrenAtLevel.subList(startIndex, endIndex).stream().collect(Collectors.toCollection(Elements::new));
+            final String cardRepresentation = nextHeader.text();
+
+            final Card card = new Card(cardRepresentation, associatedContent.outerHtml());
+
+            final TreeItem<Card> treeItem = new TreeItem<>(card);
+            parsedCardsRoot.getChildren().add(treeItem);
+        }
+    }
+
+    private final StringProperty loadedHTML = new SimpleStringProperty();
+
+    @FXML
+    public void onAutomaticParseRequest(ActionEvent actionEvent) {
+        attemptAutomaticParse(getLoadedHTML());
+    }
+
+    @FXML
+    public void onFileChooserClick(ActionEvent actionEvent) {
+        String hostRep = parserOptionChooser.getValue();
+        Host host = Host.getHost(hostRep);
+
+        FileFetcher<?> fileFetcher = MEDIUM_HTML_CONSUMER_BLOCKS.get(host).get();
+
+        try {
+            fileFetcher.feedFetchedHTML(this::loadHTML);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML public ComboBox<String> parserOptionChooser;
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        parserOptionChooser.getItems().setAll(Host.values());
+        getParsedCards().addAll(blocks.getCards());
+
+        parserOptionChooser.setMinWidth(Region.USE_PREF_SIZE);
+
+        for (Host host : Host.values()) {
+            parserOptionChooser.getItems().add(host.getRepresentation());
+        }
+
+        parserOptionChooser.getSelectionModel().selectFirst();
 
         fileChooser.prefWidthProperty().bind(rightContainer.widthProperty());
 
-        InputStream first = getClass().getResourceAsStream("snap_selection_to_word.js");
-        InputStream second = getClass().getResourceAsStream("select_html.js");
+        InputStream snapSelectionToWordIS = getClass().getResourceAsStream("snap_selection_to_word.js");
+        InputStream selectHTMLIS = getClass().getResourceAsStream("select_html.js");
 
         try {
-            setSnapSelectionToWordJS(IOUtils.toString(first, StandardCharsets.UTF_8.name()));
-            setSelectHTMLJS(IOUtils.toString(second, StandardCharsets.UTF_8.name()));
+            this.snapSelectionToWordJS = IOUtils.toString(snapSelectionToWordIS);
+            this.selectHTMLJS = IOUtils.toString(selectHTMLIS);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         parsedCardsColumn.setShowRoot(false);
 
-        documentDisplay.addEventHandler(MouseEvent.MOUSE_RELEASED, mouseEvent -> {
-            documentDisplay.getEngine().executeScript(getSnapSelectionToWordJS());
-        });
-
-        progressBar.prefWidthProperty().bind(rightContainer.widthProperty());
-
-        // Essential that the user is able to reach as much of the to-be-parsed document as possible
-        VBox.setVgrow(documentDisplay, Priority.ALWAYS);
-
-        rightContainer.prefWidthProperty().bind(cardParserArea.widthProperty().subtract(parsedCardsColumn.widthProperty()));
+        documentDisplay.addEventHandler(MouseEvent.MOUSE_RELEASED, this::onMouseSelectorReleased);
 
         cardNameRequest.setVisible(false);
+
+        parsedCardsColumn.addEventHandler(KeyEvent.KEY_PRESSED, this::onRemoveParsedCard);
+
+        loadedHTMLProperty().addListener((observable, oldValue, newValue) -> {
+           documentDisplay.getEngine().loadContent(newValue);
+        });
+    }
+
+    public String getLoadedHTML() {
+        return loadedHTML.get();
+    }
+
+    public StringProperty loadedHTMLProperty() {
+        return loadedHTML;
     }
 
     public void loadHTML(String string) {
-        documentDisplay.getEngine().loadContent(string);
-    }
-
-    public FlowApp getFlowApp() {
-        return flowApp;
+        loadedHTMLProperty().set(string);
     }
 
     public String getSelectHTMLJS() {
         return selectHTMLJS;
     }
 
-    public void setSelectHTMLJS(String selectHTMLJS) {
-        this.selectHTMLJS = selectHTMLJS;
+    private void onMouseSelectorReleased(MouseEvent mouseEvent) {
+        documentDisplay.getEngine().executeScript(getSnapSelectionToWordJS());
     }
 
-    private class CardTreeItem extends TreeItem<Card> {
-        private static final String RENAME = "Rename";
-        private static final String RESELECT = "Reselect";
+    private void onRemoveParsedCard(KeyEvent keyEvent) {
+        if (KeyCodeCombinationUtils.DELETE.match(keyEvent)) {
+            TreeItem<Card> selectedTreeItem = parsedCardsColumn.getSelectionModel().getSelectedItem();
 
-        CardTreeItem(Card card) {
-            super(card);
-
-            Card deleteDummyCard = new Card("Delete", null);
-            TreeItem<Card> deleteTreeItem = new TreeItem<>(deleteDummyCard);
+            parsedCardsRoot.getChildren().remove(selectedTreeItem);
         }
     }
 
     private final static KeyCodeCombination QUIT = new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN);
-
     private final static KeyCodeCombination PARSE_CARD_PERFORMER = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
 
     private Map<KeyCodeCombination, Runnable> PARSER_ACTIONS = Map.of(
@@ -238,17 +258,9 @@ public class BlocksParserController implements SingleViewController<BorderPane>,
         QUIT, this::onAttemptFinish
     );
 
-    public Path promptFile() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Select File to Parse");
-        return fileChooser.showOpenDialog(getFlowApp().getStage()).toPath();
-    }
-
     public List<Card> getParsedCards() {
         return parsedCardsRoot.getChildren().stream()
-                .filter(CardTreeItem.class::isInstance)
-                .map(CardTreeItem.class::cast)
-                .map(CardTreeItem::getValue)
+                .map(TreeItem::getValue)
                 .collect(Collectors.toList());
     }
 
@@ -256,7 +268,7 @@ public class BlocksParserController implements SingleViewController<BorderPane>,
      * {@inheritDoc}
      */
     @Override
-    public BorderPane getCorrelatingView() {
+    public HBox getCorrelatingView() {
         return cardParserArea;
     }
 
@@ -264,20 +276,27 @@ public class BlocksParserController implements SingleViewController<BorderPane>,
         return snapSelectionToWordJS;
     }
 
-    public void setSnapSelectionToWordJS(String snapSelectionToWordJS) {
-        this.snapSelectionToWordJS = snapSelectionToWordJS;
-    }
-
     private void onCardParsed() {
         String cardContent = getSelectedHTML();
+
         cardNameRequest.setOnAction(actionEvent -> {
             Card card = new Card(cardNameRequest.getText(), cardContent);
             cardNameRequest.setText(Utils.ZERO_LENGTH_STRING);
 
             clearSelection();
 
-            CardTreeItem cardTreeItem = new CardTreeItem(card);
-            parsedCardsRoot.getChildren().add(cardTreeItem);
+            TreeItem<Card> selectedTreeItem = parsedCardsColumn.getSelectionModel().getSelectedItem();
+
+            // Means that user wishes to parse new card
+            if (selectedTreeItem == null) {
+                TreeItem<Card> cardTreeItem = new TreeItem<>(card);
+                parsedCardsRoot.getChildren().add(cardTreeItem);
+            }
+
+            // Means that user wishes to reparse existing card
+            else {
+                selectedTreeItem.setValue(card);
+            }
 
             cardNameRequest.setVisible(false);
             documentDisplay.requestFocus();
@@ -288,8 +307,6 @@ public class BlocksParserController implements SingleViewController<BorderPane>,
     }
 
     private void onAttemptFinish() {
-        System.out.println("Finish attempted");
-
         Path cardsPath = EFlow.getInstance().getFullAppPath().resolve(EFlow.BLOCKS_DIRECTORY);
         String withExtension = Utils.addExtension(blocks.getName(), "json");
         Path filePath = Paths.get(withExtension);
@@ -321,10 +338,6 @@ public class BlocksParserController implements SingleViewController<BorderPane>,
                 keyEvent.consume();
             });
         });
-    }
-
-    private String getSelectedText() {
-        return (String) documentDisplay.getEngine().executeScript("window.getSelection().toString()");
     }
 
     private String getSelectedHTML() {

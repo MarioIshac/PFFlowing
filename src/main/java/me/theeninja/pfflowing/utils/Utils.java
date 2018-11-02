@@ -47,7 +47,7 @@ public final class Utils {
      * Generates a background of the given color.
      *
      * @param color
-     * @return GDriveConnector background of the color specified.
+     * @return GoogleDriveConnector background of the color specified.
      */
     public static Background generateBackgroundOfColor(Color color) {
         return new Background(new BackgroundFill(color, CornerRadii.EMPTY, Insets.EMPTY));
@@ -117,6 +117,7 @@ public final class Utils {
     public static <T> T getLastElement(List<T> list) {
         if (list.isEmpty())
             return null;
+
         return list.get(list.size() - 1);
     }
 

@@ -47,18 +47,18 @@ public class Configuration {
             Color.BLUE
     );
 
-    @SerializedName("cardColor")
+    @SerializedName("reasoningFont")
     @Expose
-    private Configurable<Color> cardColor = new Configurable<>(
-            new Descriptor("Color", "Card Color", "Question Color"),
-            Color.GREEN
+    private Configurable<Font> reasoningFont = new Configurable<>(
+            new Descriptor("Font", "Reasoning Font", "Font"),
+            Font.font(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
     );
 
-    @SerializedName("font")
+    @SerializedName("cardLabelsFont")
     @Expose
-    private Configurable<Font> font = new Configurable<>(
-            new Descriptor("Font", "Global Font", "Font"),
-            Font.font(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
+    private Configurable<Font>  cardLabelsFont = new Configurable<>(
+            new Descriptor("Font", "Card Labels Font", "Font"),
+            Font.font(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE * .8)
     );
 
     @SerializedName("fontScale")
@@ -84,8 +84,12 @@ public class Configuration {
         return backgroundColor;
     }
 
-    public Configurable<Font> getFont() {
-        return font;
+    public Configurable<Font> getReasoningFont() {
+        return reasoningFont;
+    }
+
+    public Configurable<Font> getCardLabelsFont() {
+        return cardLabelsFont;
     }
 
     public Configurable<Double> getFontScale() {
@@ -102,13 +106,5 @@ public class Configuration {
 
     public void setQuestionColor(Configurable<Color> questionColor) {
         this.questionColor = questionColor;
-    }
-
-    public Configurable<Color> getCardColor() {
-        return cardColor;
-    }
-
-    public void setCardColor(Configurable<Color> cardColor) {
-        this.cardColor = cardColor;
     }
 }

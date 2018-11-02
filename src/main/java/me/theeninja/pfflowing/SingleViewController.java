@@ -3,7 +3,7 @@ package me.theeninja.pfflowing;
 import javafx.scene.Node;
 
 /**
- * GDriveConnector controller of one, main view.
+ * GoogleDriveConnector controller of one, main view.
  *
  * @param <ViewType> The type of node being controlled.
  * @author TheeNinja

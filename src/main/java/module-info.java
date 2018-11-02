@@ -1,4 +1,4 @@
-module PFFlowing {
+module EFlow {
     requires javafx.base;
     requires javafx.graphics;
     requires commons.collections4;
@@ -7,7 +7,6 @@ module PFFlowing {
     requires bluecove;
     requires tika.core;
     requires jsoup;
-    requires java.xml;
     requires guava;
     requires javafx.controls;
     requires javafx.web;
@@ -23,4 +22,5 @@ module PFFlowing {
     requires google.oauth.client;
     requires google.api.services.drive.v3.rev93;
     requires jdk.jsobject;
+    requires java.desktop;
 }

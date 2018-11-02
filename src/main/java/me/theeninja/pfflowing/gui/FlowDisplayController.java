@@ -6,7 +6,6 @@ import javafx.beans.property.*;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -48,8 +47,8 @@ import static javafx.scene.layout.GridPane.*;
 
 
 /**
- * The controller for the actual flowing area on the application. This controller
- * is responsible for managing the relations between all flowing regions that exist within its
+ * The controller for the actual actions area on the application. This controller
+ * is responsible for managing the relations between all actions regions that exist within its
  * managed flow display.
  *
  * @author TheeNinja
@@ -111,7 +110,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     private void onFlowingRegionRemoved(Node node) {
         if (node instanceof FlowingRegion) {
             FlowingRegion flowingRegion = (FlowingRegion) node;
-            flowingRegion.textFillProperty().unbind();
+            flowingRegion.getReasoningLabel().textFillProperty().unbind();
             flowingRegion.prefWidthProperty().unbind();
         }
     }
@@ -164,8 +163,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     public void attemptExpansion() {
-        System.out.println("Attempting extension");
-
         for (FlowingRegion flowingRegion : getSelectedFlowingRegions())
             flowingRegion.setExpanded(!flowingRegion.getExpanded());
     }
@@ -191,8 +188,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             getSelectedFlowingRegions().remove(node);
         }
     }
-
-
 
     private void onChildChangeListener(Node node) {
         if (!(node instanceof FlowingRegion))
@@ -247,7 +242,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
                     EFlow.getInstance().getConfiguration().getAffColor().valueProperty() :
                     EFlow.getInstance().getConfiguration().getNegColor().valueProperty();
 
-            flowingRegion.textFillProperty().bind(observedColor);
+            flowingRegion.getReasoningLabel().textFillProperty().bind(observedColor);
 
             ColumnConstraints columnConstraints = flowGrid.getColumnConstraints().get(column);
 
@@ -281,13 +276,13 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         public Split(FlowingRegion flowingRegion, int split) throws SplitException {
             if (flowingRegion.getFlowingRegionType() != FlowingRegionType.PROACTIVE)
-                throw new SplitException("Cannot split non-defensive flowing region");
+                throw new SplitException("Cannot split non-defensive actions region");
 
             this.flowingRegion = flowingRegion;
 
             getRemovedRegions().add(getFlowingRegion());
 
-            String flowingRegionText = flowingRegion.getText();
+            String flowingRegionText = flowingRegion.getFullText();
 
             String firstPart = flowingRegionText.substring(0, split);
             String secondPart = flowingRegionText.substring(split);
@@ -364,8 +359,8 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
 
     /**
-     * Merging action. The process of merging involves collecting all the contents in the rows of all the flowing regions
-     * into the row belonging to the top-most (determined by lowest row index) flowing region.
+     * Merging action. The process of merging involves collecting all the contents in the rows of all the actions regions
+     * into the row belonging to the top-most (determined by lowest row index) actions region.
      * @author TheeNinja
      */
     private class Merge extends Action {
@@ -384,7 +379,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
          * @throws MergeException
          */
         Merge(List<FlowingRegion> flowingRegions) throws MergeException {
-            // Represents the top most row of the flowing regions subject to merging
+            // Represents the top most row of the actions regions subject to merging
             keptRow = flowingRegions.stream().map(FlowGrid::getRowIndex).reduce(Integer::min).get();
 
             removedRegions = flowingRegions.stream()
@@ -458,9 +453,9 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
             }
 
-            // If this passes, indicates that the list of flowing regions were different types
+            // If this passes, indicates that the list of actions regions were different types
             if (flowingRegion == null)
-                throw new MergeException("Multiple types of flowing regions within single speech");
+                throw new MergeException("Multiple types of actions regions within single speech");
 
             return flowingRegion;
         }
@@ -496,16 +491,16 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     /**
-     * Generates a map that represents what changes would occur to the flowing grid upon removing
+     * Generates a map that represents what changes would occur to the actions grid upon removing
      * a list of rows from {@code flowGrid}. However, we must take into account a row that may
      * be inserted in the case of actions such as merge, which collapses rows (listed as {@code removedRows}).
      *
      * Note that this method should be called before {@code removedRows} are removed.
      *
      * @param removedRows The rows that will be removed from the {@code flowGrid}.
-     * @return a map consisting of each affected flowing region as a key and a list of two integers as each value,
-     *         containing two elements. The first element represents the original row of the flowing region. The
-     *         second element represents the new row of the flowing region, dependent on {@code removedRows}.
+     * @return a map consisting of each affected actions region as a key and a list of two integers as each value,
+     *         containing two elements. The first element represents the original row of the actions region. The
+     *         second element represents the new row of the actions region, dependent on {@code removedRows}.
      */
     private Map<FlowingRegion, List<Integer>> getUpdateMap(List<Integer> removedRows) {
         Map<FlowingRegion, List<Integer>> map = new HashMap<>();
@@ -513,8 +508,8 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         for (Speech speech : getSpeechList().getSpeeches()) {
             List<Node> speechChildren = flowGrid.getColumnChildren(speech.getColumn());
             List<FlowingRegion> flowingRegions = Utils.getOfType(
-                    speechChildren,
-                    FlowingRegion.class
+                speechChildren,
+                FlowingRegion.class
             );
 
             for (FlowingRegion flowingRegion : flowingRegions) {
@@ -537,6 +532,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
                 map.put(flowingRegion, List.of(previousRow, finalRow));
             }
         }
+
         return map;
     }
 
@@ -577,8 +573,8 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
     /**
      * Refutes all selected nodes in a position relative to the last selected node. This is done by:
-     * 1) constructing a flowing region writer that, when submitted, yields an offensive flowing region
-     * 2) constructing a visual link between the newly created offensive flowing region and the selected nodes
+     * 1) constructing a actions region writer that, when submitted, yields an offensive actions region
+     * 2) constructing a visual link between the newly created offensive actions region and the selected nodes
      */
     private class Refute extends Action {
 
@@ -631,30 +627,23 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     private class Question extends Action {
-        private KeyCodeCombination SHOW_QUESTION = new KeyCodeCombination(KeyCode.SLASH, KeyCombination.SHIFT_DOWN);
-
-        private static final String MARKED_CLASS = "marked";
-
-        private final Decoration questionDecoration;
-
         private final FlowingRegion baseFlowingRegion;
         private final String questionMessage;
 
         Question(FlowingRegion baseFlowingRegion, String questionMessage) {
-            this.questionDecoration = new StyleClassDecoration("questionDecoration");
-
             this.baseFlowingRegion = baseFlowingRegion;
             this.questionMessage = questionMessage;
         }
 
         @Override
         public void execute() {
-            baseFlowingRegion.setQuestionText(questionMessage);
+            System.out.println("Executed");
+            getBaseFlowingRegion().getAssociatedQuestions().add(getQuestionMessage());
         }
 
         @Override
         public void unexecute() {
-            baseFlowingRegion.setQuestionText(null);
+            getBaseFlowingRegion().getAssociatedQuestions().remove(getQuestionMessage());
         }
 
         @Override
@@ -662,11 +651,11 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             return "Question \"" + getActionIdentifier(getBaseFlowingRegion()) + "\"";
         }
 
-        public FlowingRegion getBaseFlowingRegion() {
+        FlowingRegion getBaseFlowingRegion() {
             return baseFlowingRegion;
         }
 
-        public String getQuestionMessage() {
+        String getQuestionMessage() {
             return questionMessage;
         }
     }
@@ -748,8 +737,8 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
            N
            S S N
            */
-            // Assuming that the user wishes to remove all selected, the right-most selected flowing region is part of the link of
-            // the left-most selected flowing region. Hence, I can expect this flowing region to be included twice in deletedFlowingRegions.
+            // Assuming that the user wishes to remove all selected, the right-most selected actions region is part of the link of
+            // the left-most selected actions region. Hence, I can expect this actions region to be included twice in deletedFlowingRegions.
             deletedFlowingRegions = flowingRegions.stream()
                     .map(flowGrid::getPostLink)
                     .flatMap(List::stream)
@@ -769,7 +758,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         public void execute() {
             flowGrid.getChildren().removeAll(deletedFlowingRegions);
 
-            // post-removal, visibly, a flowing region previously on row 2 will be "seen" on row 1.
+            // post-removal, visibly, a actions region previously on row 2 will be "seen" on row 1.
             // Yet, its row is still 2 within memory. Below corrects this issue.
 
             updateMap.forEach((flowingRegion, integers) -> {
@@ -803,7 +792,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             FlowGrid.setColumnIndex(getFlowingRegion(), speech.getColumn());
             FlowGrid.setRowIndex(getFlowingRegion(), speech.getAvailableRow());
 
-            /* Imagine a scenario like this, where R = defensive flowing region;
+            /* Imagine a scenario like this, where R = defensive actions region;
 
                  Column Index
                0 1 2 3 4 5 6 7
@@ -813,14 +802,14 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
                  R
                    R
 
-               We would expect a user would add another flowing region to a column index greater or equal to 2. However,
-               we must account for the fact that they may want to add another flowing region to column 0 (perhaps
+               We would expect a user would add another actions region to a column index greater or equal to 2. However,
+               we must account for the fact that they may want to add another actions region to column 0 (perhaps
                they forgot to flow something of the construction speech. In general, they may want to add something to
-               a column that does not have the most recently added defensive flowing regions.
+               a column that does not have the most recently added defensive actions regions.
 
-               To support this case, the following for-loop only runs if there are defensive flowing regions located
-               in the speeches after the speech that the user is adding a defensive flowing region to. We increment
-               the row indexes of all those defensive flowing regions by 1.
+               To support this case, the following for-loop only runs if there are defensive actions regions located
+               in the speeches after the speech that the user is adding a defensive actions region to. We increment
+               the row indexes of all those defensive actions regions by 1.
             */
             for (int column = speech.getColumn() + 1; column < Speech.SPEECH_SIZE; column++) {
                 List<FlowingRegion> affectedRegions =  flowGrid.getColumnChildren(column).stream()
@@ -873,9 +862,9 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     /**
-     * Houses a list of all flowing regions that are currently selected. This serves
-     * as input for many actions that occur throughout the flowing columns that require
-     * target flowing regions, i.e, merging/refuting/speech constructor/etc. GDriveConnector listener
+     * Houses a list of all actions regions that are currently selected. This serves
+     * as input for many actions that occur throughout the actions columns that require
+     * target actions regions, i.e, merging/refuting/speech constructor/etc. GoogleDriveConnector listener
      * is added to provide visual changes to the GUI when something is selected (it is
      * important to inform the user what they have selected currently in a visual
      * manner).
@@ -939,10 +928,8 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         FlowingRegion flowingRegion = getSelectedFlowingRegions().get(0);
 
-        System.out.println("Is fr null" + flowingRegion);
-
         if (flowGrid.getRefutation(flowingRegion).isPresent()) {
-            notify("Selected flowing region already refuted.", Level.SEVERE);
+            notify("Selected actions region already refuted.", Level.SEVERE);
             return;
         }
 
@@ -979,7 +966,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             notify("Atleast one selected already has been extended; unable to rextend", Level.SEVERE);
         }
 
-        // No need to reextend already extended flowing regions
+        // No need to reextend already extended actions regions
         List<FlowingRegion> flowingRegions = getSelectedFlowingRegions().stream().filter(
                 flowingRegion -> !flowGrid.getExtension(flowingRegion).isPresent()
         ).collect(Collectors.toList());
@@ -1137,8 +1124,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         TextArea textArea = getFlowingRegionWriter(getSpeechList().getSpeech(selectedFlowingRegion), false, flowingTextArea -> {
 
-            System.out.println("split attempted");
-
             int caretPosition = flowingTextArea.getCaretPosition();
 
             try {
@@ -1252,7 +1237,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             textArea = new FlowingTextArea();
             textArea.setWrapText(true);
 
-            textArea.fontProperty().bind(EFlow.getInstance().getConfiguration().getFont().valueProperty());
+            textArea.fontProperty().bind(EFlow.getInstance().getConfiguration().getReasoningFont().valueProperty());
 
             textArea.prefWidthProperty().bind(textArea.maxWidthProperty());
             textArea.setPrefHeight(12);
@@ -1300,7 +1285,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     private SpeechList speechList;
 
     /**
-     * Represents the keyboard combination required to submit a text area (and thus generate a flowing region).
+     * Represents the keyboard combination required to submit a text area (and thus generate a actions region).
      * This differs from the {@code ENTER} {@link KeyCode} because that is used for creating a newline within
      * the textarea, not for submission.
      */
@@ -1343,9 +1328,9 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     /**
-     * Adds a {@link FlowingTextArea} (the flowing region writer) to the flowing column. This flowing region writer
-     * is designed so that on user submission, the text entered into the flowing region writer
-     * would be used to create a flowing region representing what the user typed.
+     * Adds a {@link FlowingTextArea} (the actions region writer) to the actions column. This actions region writer
+     * is designed so that on user submission, the text entered into the actions region writer
+     * would be used to create a actions region representing what the user typed.
      */
     public TextArea getFlowingRegionWriter(Speech speech, boolean createNewOne, Consumer<FlowingTextArea> postEnterAction, int rowIndex) {
         FlowingTextArea textArea = new FlowingTextAreaGenerator().getFlowingTextArea();
@@ -1366,10 +1351,10 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
      */
     public void addProactiveFlowingRegionWriter(Speech speech) {
         // A node will only be present at this position if the previously added text area hasn't been submitted. This
-        // leads to the assumption that a user has attempted to add a flowing region when they haven't finished submission
+        // leads to the assumption that a user has attempted to add a actions region when they haven't finished submission
         // of the previous ProactiveWrite action.
         if (flowGrid.getNode(speech.getColumn(), speech.getAvailableRow()).isPresent())
-            return; // do not add allow the user to have two flowing writers / text areas at once
+            return; // do not add allow the user to have two actions writers / text areas at once
 
         TextArea textArea = getFlowingRegionWriter(speech, isCaseWriteMode(), flowingTextArea -> {
             FlowingRegion defensiveFlowingRegion = new FlowingRegion(flowingTextArea.getText(), FlowingRegionType.PROACTIVE);
@@ -1506,12 +1491,13 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     public int wrap(int columnNumber) {
-        System.out.println("a");
+
         while (columnNumber < 0)
             columnNumber += Speech.SPEECH_SIZE;
+
         while (columnNumber >= Speech.SPEECH_SIZE)
             columnNumber -= Speech.SPEECH_SIZE;
-        System.out.println("b");
+
         return columnNumber;
     }
 
@@ -1554,9 +1540,13 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         List<Node> list = flowGrid.getColumnChildren(column);
         list.sort(Comparator.comparing(FlowGrid::getColumnIndex));
         Collections.reverse(list);
-        for (Node node : list)
-            if (node instanceof FlowingRegion)
+
+        for (Node node : list) {
+            if (node instanceof FlowingRegion) {
                 return Optional.of((FlowingRegion) node);
+            }
+        }
+
         return Optional.empty();
     }
 

@@ -16,14 +16,6 @@
         <TextField fx:id="roundNameField" HBox.hgrow="ALWAYS" />
     </HBox>
     <HBox spacing="5">
-        <Label styleClass="promptLabel" text="New Tournament" />
-        <CheckBox fx:id="newTournamentCheckBox" />
-    </HBox>
-    <HBox fx:id="tournamentNameBox" spacing="5">
-        <Label styleClass="promptLabel" text="Tournament Name" />
-        <TextField fx:id="tournamentNameField" HBox.hgrow="ALWAYS" />
-    </HBox>
-    <HBox spacing="5">
         <Label styleClass="promptLabel" text="Side" />
         <ComboBox fx:id="sideChooser" />
     </HBox>

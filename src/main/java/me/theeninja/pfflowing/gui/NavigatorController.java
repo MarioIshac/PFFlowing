@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.Parent;
 import me.theeninja.pfflowing.*;
 import me.theeninja.pfflowing.configuration.ConfigEditorController;
 import me.theeninja.pfflowing.flowingregions.Blocks;
@@ -32,7 +33,8 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     private static int compareByLastModifiedTime(Path o1, Path o2) {
         try {
             return Files.getLastModifiedTime(o1).compareTo(Files.getLastModifiedTime(o2));
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             ex.printStackTrace();
         }
 
@@ -45,14 +47,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
         try {
             Path cardsPath = EFlow.getInstance().getCardsPath();
 
-            Files.walk(cardsPath)
-                    .filter(path -> Utils.hasExtension(path.getFileName().toString(), "json"))
-                    .sorted((NavigatorController::compareByLastModifiedTime))
-                    .limit(RECENT_SIZE)
-                    .map(Utils::readAsString)
-                    .map(json -> EFlow.getInstance().getGSON().fromJson(json, Blocks.class))
-                    .map(this::getLoadMenuItem)
-                    .forEach(openRecent.getItems()::add);
+            Files.walk(cardsPath).filter(path -> Utils.hasExtension(path.getFileName().toString(), "json")).sorted((NavigatorController::compareByLastModifiedTime)).limit(RECENT_SIZE).map(Utils::readAsString).map(json -> EFlow.getInstance().getGSON().fromJson(json, Blocks.class)).map(this::getLoadMenuItem).forEach(openRecent.getItems()::add);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -61,7 +56,21 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
     @FXML
     public void onHelpClicked(ActionEvent actionEvent) {
+        URL helperFXMLURL = getClass().getResource("/gui/helper.fxml");
+        FXMLLoader fxmlLoader = new FXMLLoader(helperFXMLURL);
 
+        try {
+            Parent rootNode = fxmlLoader.load();
+            Scene scene = new Scene(rootNode);
+            Stage stage = new Stage();
+            stage.setScene(scene);
+
+            EFlow.setAsFullscreenToggler(stage);
+
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -133,14 +142,16 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
             fxmlLoader.setController(configEditorController);
             fxmlLoader.load();
 
-            Stage stage = new Stage();
             Scene scene = new Scene(configEditorController.getCorrelatingView());
-
+            Stage stage = new Stage();
             stage.setScene(scene);
+
+            EFlow.setAsFullscreenToggler(stage);
 
             stage.show();
             stage.toFront();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -217,9 +228,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
         String jsonString = new String(jsonBytes);
 
-        Blocks blocks = EFlow.getInstance().getGSON().fromJson(jsonString, Blocks.class);
-
-        return blocks;
+        return EFlow.getInstance().getGSON().fromJson(jsonString, Blocks.class);
     }
 
     // editBlocks(Blocks)
@@ -267,9 +276,9 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
     private void openBlocksEditor(Blocks blocks) {
         Stage stage = new Stage();
 
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/cardParser/card_parser.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/blocks_parser/blocks_parser_home.fxml"));
+
         BlocksParserController blocksParserController = new BlocksParserController(
-            getFlowApp(),
             blocks,
             stage::hide
         );
@@ -286,6 +295,8 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
         stage.show();
         stage.toFront();
+
+        EFlow.setAsFullscreenToggler(stage);
 
         blocksParserController.startProcess();
     }

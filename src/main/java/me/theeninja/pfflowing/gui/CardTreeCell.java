@@ -13,27 +13,23 @@ public class CardTreeCell extends TreeCell<Card> {
         treeItemProperty().addListener(this::onParentTreeItemChanged);
     }
 
-    private void onDragDone(DragEvent dragEvent) {
-        System.out.println("Drag finished on node " + dragEvent.getGestureTarget());
-    }
-
     private void addDragSupport() {
         addEventHandler(MouseEvent.DRAG_DETECTED, this::onDragDetected);
-        addEventHandler(DragEvent.DRAG_DONE, this::onDragDone);
     }
 
     private void removeDragSupport() {
         removeEventHandler(MouseEvent.DRAG_DETECTED, this::onDragDetected);
-        removeEventHandler(DragEvent.DRAG_DONE, this::onDragDone);
     }
 
     @Override
     public void updateItem(Card item, boolean empty) {
         super.updateItem(item, empty);
-        if (item != null && !empty)
+        if (item != null && !empty) {
             setText(item.getRepresentation());
-        else
+        }
+        else {
             setText("");
+        }
     }
 
     private void onParentTreeItemChanged(ObservableValue<? extends TreeItem<Card>> observable, TreeItem<Card> oldValue, TreeItem<Card> newValue) {
@@ -76,8 +72,6 @@ public class CardTreeCell extends TreeCell<Card> {
     }
 
     private void onDragDetected(MouseEvent mouseEvent) {
-        System.out.println("Drag detected on card " + getTreeItem().getValue());
-
         Dragboard dragboard = startDragAndDrop(TransferMode.ANY);
         ClipboardContent content = new ClipboardContent();
 

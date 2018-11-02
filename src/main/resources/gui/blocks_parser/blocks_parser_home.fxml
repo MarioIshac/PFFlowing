@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:id="cardParserArea">
+    <VBox minWidth="200">
+        <TextField fx:id="cardNameRequest" />
+        <TreeView fx:id="parsedCardsColumn" VBox.vgrow="ALWAYS">
+            <TreeItem fx:id="parsedCardsRoot" />
+        </TreeView>
+    </VBox>
+    <VBox fx:id="rightContainer" HBox.hgrow="ALWAYS" >
+        <HBox>
+            <ComboBox fx:id="parserOptionChooser" />
+            <Button fx:id="fileChooser" text="Select" onAction="#onFileChooserClick" />
+            <Button fx:id="automaticParse" text="Automatic Parse" onAction="#onAutomaticParseRequest" />
+        </HBox>
+        <WebView fx:id="documentDisplay" VBox.vgrow="ALWAYS" />
+    </VBox>
+</HBox>

@@ -1,21 +1,18 @@
 package me.theeninja.pfflowing.gui;
 
-import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import me.theeninja.pfflowing.EFlow;
+import javafx.scene.input.KeyEvent;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.flowingregions.Blocks;
 import me.theeninja.pfflowing.flowingregions.Card;
-import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;

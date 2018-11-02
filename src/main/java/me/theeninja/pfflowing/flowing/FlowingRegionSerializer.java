@@ -34,9 +34,8 @@ public class FlowingRegionSerializer implements JsonSerializer<FlowingRegion> {
         int row = FlowGrid.getRowIndex(flowingRegion);
         jsonObject.add(ROW_NAME, context.serialize(row));
 
-        String question = flowingRegion.getQuestionText();
-
-        jsonObject.add(QUESTION, context.serialize(question));
+        List<String> questions = flowingRegion.getAssociatedQuestions();
+        jsonObject.add(ASSOCIATED_QUESTIONS, context.serialize(questions));
 
         List<Card> associatedCards = flowingRegion.getAssociatedCards();
         jsonObject.add(ASSOCIATED_CARDS, context.serialize(associatedCards));

@@ -1,6 +1,14 @@
 package me.theeninja.pfflowing;
 
 import com.google.gson.Gson;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
+import javafx.stage.Stage;
 import me.theeninja.pfflowing.configuration.Configuration;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowing.FlowingRegionDeserializer;
@@ -11,6 +19,8 @@ import org.apache.commons.lang3.SystemUtils;
 import org.hildan.fxgson.FxGson;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,6 +28,30 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EFlow {
+    public static void setAsFullscreenToggler(Stage stage) {
+        InputStream iconStream = EFlow.class.getResourceAsStream("/EFlowLogo.png");
+        Image icon = new Image(iconStream);
+        stage.getIcons().add(icon);
+
+        if (stage.getScene() == null)
+            throw new IllegalArgumentException("Stage must have associated scene");
+
+        Scene targetScene = stage.getScene();
+
+        if (targetScene.getRoot() == null)
+            throw new IllegalArgumentException("Stage's scene must have associated root");
+
+        Node targetNode = targetScene.getRoot();
+
+        targetNode.addEventHandler(KeyEvent.KEY_RELEASED, keyEvent -> {
+            if (keyEvent.getCode() != KeyCode.F11)
+                return;
+
+            boolean isFullScreen = stage.isFullScreen();
+            stage.setFullScreen(!isFullScreen);
+        });
+    }
+
     private final static EFlow instance = new EFlow();
     private final Gson gson;
     private final Configuration configuration;

@@ -1,4 +1,4 @@
-package me.theeninja.pfflowing.drive.google;
+package me.theeninja.pfflowing.gui.cardparser;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -14,14 +14,13 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.Drive;
 import me.theeninja.pfflowing.EFlow;
-import me.theeninja.pfflowing.drive.DriveConnector;
 
 import java.io.*;
 import java.util.List;
 
 // https://developers.google.com/drive/v3/web/manage-downloads
 
-public class GDriveConnector implements DriveConnector {
+public class GoogleDriveConnector {
     /** Directory to store user credentials for this application. */
     private static final java.io.File DATA_STORE_DIR = new java.io.File(
             System.getProperty("user.home"), ".credentials/EFlow");
@@ -61,7 +60,7 @@ public class GDriveConnector implements DriveConnector {
     public static Credential authorize() throws IOException {
         // Load client secrets.
         InputStream in =
-                GDriveConnector.class.getResourceAsStream("/gdrive_client_secret.json");
+                GoogleDriveConnector.class.getResourceAsStream("/gdrive_client_secret.json");
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
@@ -72,11 +71,8 @@ public class GDriveConnector implements DriveConnector {
                         .setDataStoreFactory(DATA_STORE_FACTORY)
                         .setAccessType("offline")
                         .build();
-        Credential credential = new AuthorizationCodeInstalledApp(
+        return new AuthorizationCodeInstalledApp(
                 flow, new LocalServerReceiver()).authorize("user");
-        System.out.println(
-                "Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
-        return credential;
     }
 
     /**
@@ -86,8 +82,8 @@ public class GDriveConnector implements DriveConnector {
      */
     public static Drive getDriveService() throws IOException {
         Credential credential = authorize();
-        return new Drive.Builder(
-                HTTP_TRANSPORT, JSON_FACTORY, credential)
+
+        return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(EFlow.APPLICATION_NAME)
                 .build();
     }

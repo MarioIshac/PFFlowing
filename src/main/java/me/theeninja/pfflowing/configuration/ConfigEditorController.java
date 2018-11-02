@@ -3,7 +3,6 @@ package me.theeninja.pfflowing.configuration;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import me.theeninja.pfflowing.SingleViewController;
@@ -33,7 +32,7 @@ public class ConfigEditorController implements SingleViewController<PropertyShee
         ConfigurationItem<Color> affColorItem = new ConfigurationItem<>(getConfiguration().getAffColor());
         ConfigurationItem<Color> negColorItem = new ConfigurationItem<>(getConfiguration().getNegColor());
         ConfigurationItem<Color> backgroundColorItem = new ConfigurationItem<>(getConfiguration().getBackgroundColor());
-        ConfigurationItem<Font> fontItem = new ConfigurationItem<Font>(getConfiguration().getFont());
+        ConfigurationItem<Font> fontItem = new ConfigurationItem<Font>(getConfiguration().getReasoningFont());
         propertySheet.getItems().addAll(affColorItem, negColorItem, backgroundColorItem, fontItem);
     }
 

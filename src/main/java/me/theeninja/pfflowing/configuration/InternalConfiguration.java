@@ -15,7 +15,7 @@ import java.util.logging.Level;
  */
 public class InternalConfiguration {
     /**
-     * Represents the amount of pixels between each speech (on the flowing grid, each column).
+     * Represents the amount of pixels between each speech (on the actions grid, each column).
      * The intention is to provide a clearer UI if the user prefers seperation.
      */
     public static final double SPEECH_SEPERATION = 30;
@@ -34,7 +34,7 @@ public class InternalConfiguration {
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
 
     /**
-     * Represents the seperator to be used when merging the condensing of multiple flowing regions.
+     * Represents the seperator to be used when merging the condensing of multiple actions regions.
      */
     public static final String MERGE_SEPERATOR = ". ";
 
