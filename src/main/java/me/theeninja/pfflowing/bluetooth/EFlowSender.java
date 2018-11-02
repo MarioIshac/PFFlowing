@@ -2,6 +2,7 @@ package me.theeninja.pfflowing.bluetooth;
 
 import me.theeninja.pfflowing.Action;
 import me.theeninja.pfflowing.EFlow;
+import me.theeninja.pfflowing.tournament.Round;
 
 import javax.bluetooth.BluetoothConnectionException;
 import javax.bluetooth.LocalDevice;
@@ -15,6 +16,7 @@ import javax.obex.ResponseCodes;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 ;
 
@@ -26,38 +28,76 @@ public class EFlowSender {
 
     private static final int[] ATTRIBUTES = {SERVICE_NAME_ATTRIBUTE};
 
-    public void sendMessageToDevice(String deviceAddress, Action action) throws IOException {
+    private final ClientSession clientSession;
+    private final Round round;
+
+    public Round getRound() {
+        return round;
+    }
+
+    EFlowSender(String deviceAddress, Round round) throws IOException {
+        this.round = round;
         String obexURL = EFlowConnector.getOBEXURL(deviceAddress);
 
-        System.out.println(obexURL);
+        System.out.println("a " + obexURL);
+        this.clientSession = (ClientSession) Connector.open(obexURL);
+        System.out.println("b");
+    }
 
-        ClientSession clientSession = (ClientSession) Connector.open(obexURL);
-        RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(clientSession);
+    public ClientSession getClientSession() {
+        return clientSession;
+    }
+
+    public void connect() throws IOException {
+        HeaderSet requestHeaderSet = getClientSession().createHeaderSet();
+
+        requestHeaderSet.setHeader(HeaderSet.NAME, getRound().getName());
+
+        System.out.println("c");
+        //HeaderSet responseHeaderSet = getClientSession().connect(requestHeaderSet);
+        System.out.println("d");
+
+        /* if (responseHeaderSet.getResponseCode() != ResponseCodes.OBEX_HTTP_OK) {
+            throw new BluetoothConnectionException(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
+        } */
+
+       putData(Map.of(
+           HeaderSet.NAME, "myName"
+       ), "Hello");
+    }
+
+    private void putAction(Action action) {
+
+    }
+
+    private void putData(Map<Integer, String> headerValues, String data) throws IOException {
+        RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(getClientSession());
         System.out.println("Friendly name " + remoteDevice.getFriendlyName(true));
 
-        HeaderSet requestHeaderSet = clientSession.createHeaderSet();
-        requestHeaderSet.setHeader(HeaderSet.NAME, /*action.getClass().getName()*/ "Action");
-        requestHeaderSet.setHeader(HeaderSet.TYPE, "text/json");
+        HeaderSet requestHeaderSet = getClientSession().createHeaderSet();
 
-        HeaderSet responseHeaderSet = clientSession.connect(requestHeaderSet);
+        for (Map.Entry<Integer, String> entry : headerValues.entrySet()) {
+            int headerKey = entry.getKey();
+            String headerValue = entry.getValue();
 
-        if (responseHeaderSet.getResponseCode() != ResponseCodes.OBEX_HTTP_OK) {
-            throw new BluetoothConnectionException(BluetoothConnectionException.UNACCEPTABLE_PARAMS);
+            requestHeaderSet.setHeader(headerKey, headerValue);
         }
 
-        //Create PUT Operation
-        Operation operation = clientSession.put(requestHeaderSet);
-
-        String actionJson = "Hello" /* EFlow.getInstance().getGSON().toJson(action, action.getClass()) */;
+        Operation operation = getClientSession().put(requestHeaderSet);
 
         // Sending the message
-        byte[] actionJsonBytes = actionJson.getBytes(StandardCharsets.UTF_8);
+        byte[] actionJsonBytes = data.getBytes(StandardCharsets.UTF_8);
         OutputStream os = operation.openOutputStream();
         os.write(actionJsonBytes);
         os.close();
 
         operation.close();
-        clientSession.disconnect(null);
-        clientSession.close();
+
+        System.out.println("e");
+    }
+
+    private void disconnect() throws IOException {
+        getClientSession().disconnect(null);
+        getClientSession().close();
     }
 }

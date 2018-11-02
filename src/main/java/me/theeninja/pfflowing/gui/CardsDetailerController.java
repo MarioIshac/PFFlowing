@@ -74,10 +74,12 @@ public class CardsDetailerController implements Initializable, Detailer, SingleV
             next.setVisible(true);
             previous.setVisible(true);
 
-            if (newIndex == getFlowingRegion().getAssociatedCards().size() - 1)
+            if (newIndex == getFlowingRegion().getAssociatedCards().size() - 1) {
                 next.setVisible(false);
-            if (newIndex == 0)
+            }
+            else if (newIndex == 0) {
                 previous.setVisible(false);
+            }
         }
         else {
             webViewContainer.getChildren().clear();

@@ -2,6 +2,7 @@ package me.theeninja.pfflowing.gui;
 
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -138,13 +139,20 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
     public void attemptBluetoothShare() {
-        try {
-            EFlowConnector eFlowConnector = new EFlowConnector("80000B105F71");
+        Thread thread = new Thread(() -> {
+            try {
+                EFlowConnector eFlowConnector = new EFlowConnector("E0997131968B", getSelectedRound());
+                eFlowConnector.start();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
 
-            eFlowConnector.getFlowSender().sendMessageToDevice("7C5CF8F97625", null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        thread.setDaemon(true);
+
+        thread.start();
+
     }
 
     private final ListChangeListener<? super Node> onChildrenChange = Utils.generateListChangeListener(

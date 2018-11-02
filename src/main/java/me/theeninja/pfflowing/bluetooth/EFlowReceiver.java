@@ -1,42 +1,39 @@
 package me.theeninja.pfflowing.bluetooth;
 
-import javax.bluetooth.LocalDevice;
-import javax.microedition.io.Connection;
+import javafx.concurrent.Task;
+
 import javax.microedition.io.Connector;
-import javax.microedition.io.StreamConnection;
-import javax.microedition.io.StreamConnectionNotifier;
-import javax.obex.HeaderSet;
-import javax.obex.Operation;
-import javax.obex.ResponseCodes;
-import javax.obex.ServerRequestHandler;
-import java.io.DataInputStream;
+import javax.obex.*;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 public class EFlowReceiver extends ServerRequestHandler {
-    @Override
-    public int onConnect(HeaderSet request, HeaderSet reply) {
-        try {
-            System.out.println("Incoming connection with name " + request.getHeader(HeaderSet.NAME));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private final EFlowRequestHandler eFlowRequestHandler = new EFlowRequestHandler();
+    private final SessionNotifier streamConnectionNotifier;
 
-        return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
+    EFlowReceiver() throws IOException {
+        String serverURL = EFlowConnector.getOBEXURL("localhost");
+        this.streamConnectionNotifier = (SessionNotifier) Connector.open(serverURL);
     }
 
-    @Override
-    public void onDisconnect(HeaderSet request, HeaderSet reply) {
-        super.onDisconnect(request, reply);
+    private void start() {
+        Thread thread = new Thread(() -> {
+            while (true) {
+                try {
+                    getStreamConnectionNotifier().acceptAndOpen(getEFlowRequestHandler());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.run();
     }
 
-    @Override
-    public int onPut(Operation op) {
-        return super.onPut(op);
+    public EFlowRequestHandler getEFlowRequestHandler() {
+        return eFlowRequestHandler;
     }
 
-    @Override
-    public int onGet(Operation op) {
-        return super.onGet(op);
+    public SessionNotifier getStreamConnectionNotifier() {
+        return streamConnectionNotifier;
     }
 }
