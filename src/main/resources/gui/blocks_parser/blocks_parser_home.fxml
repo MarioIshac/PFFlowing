@@ -18,6 +18,6 @@
             <Button fx:id="fileChooser" text="Select" onAction="#onFileChooserClick" />
             <Button fx:id="automaticParse" text="Automatic Parse" onAction="#onAutomaticParseRequest" />
         </HBox>
-        <WebView fx:id="documentDisplay" VBox.vgrow="ALWAYS" />
+        <WebView fx:id="documentDisplay" VBox.vgrow="ALWAYS" contextMenuEnabled="false" />
     </VBox>
 </HBox>

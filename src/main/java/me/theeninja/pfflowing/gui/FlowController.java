@@ -2,6 +2,7 @@ package me.theeninja.pfflowing.gui;
 
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -16,10 +17,11 @@ import javafx.scene.layout.Region;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import me.theeninja.pfflowing.Action;
+import me.theeninja.pfflowing.actions.Action;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
+import me.theeninja.pfflowing.actions.ModifyCard;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.printing.RoundPrinter;
@@ -137,18 +139,21 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
     public void attemptBluetoothShare() {
-        Thread thread = new Thread(() -> {
-            try {
+        Task<Void> connectTask = new Task<>() {
+            @Override
+            protected Void call() throws IOException {
                 EFlow.getInstance().getEFlowConnector().getFlowSender().connect();
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
 
-        thread.setDaemon(true);
+                return null;
+            }
+        };
 
-        thread.start();
+        Thread connectThread = new Thread(connectTask);
+
+        // Connecting terminates once EFlow application window is closed
+        connectThread.setDaemon(true);
+
+        connectThread.start();
 
     }
 
@@ -463,36 +468,5 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         getSelectedRound().getSelectedController().getActionManager().perform(modifyCard);
     }
 
-    private class ModifyCard extends Action {
-        private final FlowingRegion targetFlowingRegion;
-        private final Card card;
 
-        ModifyCard(FlowingRegion flowingRegion, Card card) {
-            this.targetFlowingRegion = flowingRegion;
-            this.card = card;
-        }
-
-        @Override
-        public void execute() {
-            getTargetFlowingRegion().getAssociatedCards().add(card);
-        }
-
-        @Override
-        public void unexecute() {
-            getTargetFlowingRegion().getAssociatedCards().remove(card);
-        }
-
-        @Override
-        public String getName() {
-            return "Card(s) Change";
-        }
-
-        public FlowingRegion getTargetFlowingRegion() {
-            return targetFlowingRegion;
-        }
-
-        public Card getCard() {
-            return card;
-        }
-    }
 }

@@ -1,11 +1,8 @@
 package me.theeninja.pfflowing.bluetooth;
 
-import me.theeninja.pfflowing.Action;
-import me.theeninja.pfflowing.EFlow;
-import me.theeninja.pfflowing.tournament.Round;
+import me.theeninja.pfflowing.actions.Action;
 
 import javax.bluetooth.BluetoothConnectionException;
-import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
 import javax.microedition.io.Connector;

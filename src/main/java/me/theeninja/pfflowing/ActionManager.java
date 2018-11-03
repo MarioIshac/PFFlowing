@@ -1,13 +1,14 @@
 package me.theeninja.pfflowing;
 
-import javax.xml.namespace.QName;
+import me.theeninja.pfflowing.actions.Action;
+
 import java.util.*;
 
 public class ActionManager {
-    private final LinkedList<Action> doneActions = new LinkedList<>();
-    private final LinkedList<Action> undoneActions = new LinkedList<>();
+    private final LinkedList<Action<?>> doneActions = new LinkedList<>();
+    private final LinkedList<Action<?>> undoneActions = new LinkedList<>();
 
-    public void perform(Action action) {
+    public void perform(Action<?> action) {
         action.execute();
         getDoneActions().push(action);
     }
@@ -16,7 +17,7 @@ public class ActionManager {
         if (getDoneActions().isEmpty())
             return;
 
-        Action action = getDoneActions().pop();
+        Action<?> action = getDoneActions().pop();
         action.unexecute();
         getUndoneActions().push(action);
     }
@@ -25,7 +26,7 @@ public class ActionManager {
         if (getUndoneActions().isEmpty())
             return;
 
-        Action action = getUndoneActions().pop();
+        Action<?> action = getUndoneActions().pop();
         action.execute();
         getDoneActions().push(action);
     }
@@ -37,11 +38,11 @@ public class ActionManager {
      *
      */
 
-    public LinkedList<Action> getDoneActions() {
+    public LinkedList<Action<?>> getDoneActions() {
         return this.doneActions;
     }
 
-    public LinkedList<Action> getUndoneActions() {
+    public LinkedList<Action<?>> getUndoneActions() {
         return undoneActions;
     }
 }

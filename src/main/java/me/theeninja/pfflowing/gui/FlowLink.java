@@ -26,7 +26,7 @@ public class FlowLink {
     private final FlowingRegion first;
     private final FlowingRegion second;
 
-    FlowLink(FlowingRegion first, FlowingRegion second) {
+    public FlowLink(FlowingRegion first, FlowingRegion second) {
         this.first = first;
         this.second = second;
 

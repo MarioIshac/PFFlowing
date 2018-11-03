@@ -2,6 +2,9 @@ package me.theeninja.pfflowing.gui.cardparser;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -20,6 +23,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.events.Event;
+import org.w3c.dom.events.EventTarget;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +38,34 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.w3c.dom.html.HTMLAnchorElement;
+
 public class BlocksParserController implements SingleViewController<HBox>, Initializable {
+    private class DocumentListener implements ChangeListener<Worker.State>, org.w3c.dom.events.EventListener {
+        @Override
+        public void handleEvent(Event evt) {
+            EventTarget target = evt.getCurrentTarget();
+            HTMLAnchorElement anchorElement = (HTMLAnchorElement) target;
+            String href = anchorElement.getHref();
+            //handle opening URL outside JavaFX WebView
+            System.out.println(href);
+            evt.preventDefault();
+        }
+
+        @Override
+        public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
+            if (newValue == Worker.State.SUCCEEDED) {
+                org.w3c.dom.Document document = documentDisplay.getEngine().getDocument();
+                NodeList anchors = document.getElementsByTagName("a");
+                for (int i = 0; i < anchors.getLength(); i++) {
+                    Node node = anchors.item(i);
+                    EventTarget eventTarget = (EventTarget) node;
+                    eventTarget.addEventListener("click", this, false);
+                }
+            }
+        }
+    }
+
     private final Blocks blocks;
     private final Runnable cleanUp;
 
@@ -99,8 +133,6 @@ public class BlocksParserController implements SingleViewController<HBox>, Initi
             }
         }
 
-        int count = 0;
-
         for (int index = 0; index < haveUniqueParents.length; index++) {
             boolean hasUniqueParent = haveUniqueParents[index];
 
@@ -145,11 +177,27 @@ public class BlocksParserController implements SingleViewController<HBox>, Initi
             int startIndex = childrenAtLevel.indexOf(header);
             int endIndex = childrenAtLevel.lastIndexOf(nextHeader);
 
+            /*
+            Indicates that the headers are not one the same level, i.e they probably have different purposes
+            for example one could be a chapter heading while another is simply a p that contains RESPONSE_HEADER[0]
+            by coincidence
+            */
             if (startIndex == -1 || endIndex == -1) {
                 continue;
             }
 
             final Elements associatedContent = childrenAtLevel.subList(startIndex, endIndex).stream().collect(Collectors.toCollection(Elements::new));
+            final Elements groupedContent = new Elements(header, nextHeader);
+
+            /*
+            Indicates that headers have no content between them (tags in between the headers that contain no content
+            still cause a result of no content between the headers based on this method).
+             */
+            if (associatedContent.outerHtml().equals(groupedContent.outerHtml())) {
+                System.out.println("Tabled of contents detected");
+                continue;
+            }
+
             final String cardRepresentation = nextHeader.text();
 
             final Card card = new Card(cardRepresentation, associatedContent.outerHtml());
@@ -220,6 +268,10 @@ public class BlocksParserController implements SingleViewController<HBox>, Initi
         loadedHTMLProperty().addListener((observable, oldValue, newValue) -> {
            documentDisplay.getEngine().loadContent(newValue);
         });
+
+        final org.w3c.dom.events.EventListener eventListener = new DocumentListener();
+
+        documentDisplay.getEngine().getLoadWorker().stateProperty().addListener(eventListener);
     }
 
     public String getLoadedHTML() {

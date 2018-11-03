@@ -23,4 +23,6 @@ module EFlow {
     requires google.api.services.drive.v3.rev93;
     requires jdk.jsobject;
     requires java.desktop;
+    requires java.xml;
+    requires jdk.xml.dom;
 }

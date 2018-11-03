@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 <?import me.theeninja.pfflowing.gui.FlowDisplay?>
-<?import org.controlsfx.control.NotificationPane?>
-<FlowDisplay xmlns="http://javafx.com/javafx"
-             xmlns:fx="http://javafx.com/fxml"
-             fx:id="flowDisplay"
-             minWidth="0">
-    <HBox fx:id="speechLabels" />
-    <fx:include VBox.vgrow="ALWAYS" source="flowing_grid.fxml" fx:id="flowGrid" />
-</FlowDisplay>
+<?import javafx.scene.control.ScrollPane?>
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            minWidth="0"
+            vbarPolicy="ALWAYS"
+            hbarPolicy="NEVER"
+            fitToWidth="true">
+    <FlowDisplay fx:id="flowDisplay">
+        <HBox fx:id="speechLabels" />
+        <fx:include VBox.vgrow="ALWAYS" source="flowing_grid.fxml" fx:id="flowGrid" />
+    </FlowDisplay>
+</ScrollPane>

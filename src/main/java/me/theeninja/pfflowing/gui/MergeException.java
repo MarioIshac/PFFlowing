@@ -1,7 +1,9 @@
 package me.theeninja.pfflowing.gui;
 
-public class MergeException extends Exception {
-    MergeException(String errorMessage) {
-        super(errorMessage);
+import me.theeninja.pfflowing.actions.ActionException;
+
+public class MergeException extends ActionException {
+    public MergeException(String message) {
+        super(message);
     }
 }

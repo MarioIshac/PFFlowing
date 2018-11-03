@@ -16,17 +16,21 @@ public class EFlowReceiver extends ServerRequestHandler {
     }
 
     public void listen() {
-        Thread thread = new Thread(() -> {
-            while (true) {
-                try {
+        Task<Void> listeningTask = new Task<>() {
+            @Override
+            protected Void call() throws IOException {
+                while (true) {
                     getStreamConnectionNotifier().acceptAndOpen(getEFlowRequestHandler());
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
-        });
+        };
 
-        thread.run();
+        Thread listeningThread = new Thread(listeningTask);
+
+        // Listening terminates once EFlow application window is closed
+        listeningThread.setDaemon(true);
+
+        listeningThread.start();
     }
 
     public EFlowRequestHandler getEFlowRequestHandler() {

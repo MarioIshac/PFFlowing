@@ -11,26 +11,30 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.util.Duration;
-import me.theeninja.pfflowing.Action;
 import me.theeninja.pfflowing.ActionManager;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
-import me.theeninja.pfflowing.flowing.*;
-import me.theeninja.pfflowing.flowingregions.Card;
+import me.theeninja.pfflowing.actions.*;
+import me.theeninja.pfflowing.flowing.FlowingRegion;
+import me.theeninja.pfflowing.flowing.FlowingRegionType;
+import me.theeninja.pfflowing.flowing.FlowingTextArea;
+import me.theeninja.pfflowing.flowing.Speech;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.utils.Utils;
 import org.controlsfx.control.PopOver;
-import org.controlsfx.control.decoration.Decoration;
-import org.controlsfx.control.decoration.StyleClassDecoration;
 
 import java.io.IOException;
 import java.net.URL;
@@ -41,9 +45,9 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static javafx.scene.layout.GridPane.*;
+import static javafx.scene.layout.GridPane.getColumnIndex;
+import static javafx.scene.layout.GridPane.getRowIndex;
 
 
 /**
@@ -159,19 +163,23 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     public void attemptDelete() {
-        getActionManager().perform(new Delete(getSelectedFlowingRegions()));
+        Action deleteAction = new Delete(this, getSelectedFlowingRegions());
+
+        getActionManager().perform(deleteAction);
     }
 
     public void attemptExpansion() {
-        for (FlowingRegion flowingRegion : getSelectedFlowingRegions())
+        for (FlowingRegion flowingRegion : getSelectedFlowingRegions()) {
             flowingRegion.setExpanded(!flowingRegion.getExpanded());
+        }
     }
 
     public void selectAll() {
         List<FlowingRegion> allFlowingRegions = Utils.getOfType(flowGrid.getChildren(), FlowingRegion.class);
 
-        for (FlowingRegion flowingRegion : allFlowingRegions)
+        for (FlowingRegion flowingRegion : allFlowingRegions) {
             select(flowingRegion, true);
+        }
     }
 
     private void onSelectedSpeechChange(ObservableValue<? extends Speech> observable, Speech oldValue, Speech newValue) {
@@ -190,15 +198,18 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     }
 
     private void onChildChangeListener(Node node) {
-        if (!(node instanceof FlowingRegion))
+        if (!(node instanceof FlowingRegion)) {
             return;
+        }
 
         FlowingRegion flowingRegion = (FlowingRegion) node;
 
-        if (flowingRegion.getFlowingRegionType() != FlowingRegionType.PROACTIVE)
+        if (flowingRegion.getFlowingRegionType() != FlowingRegionType.PROACTIVE) {
             return;
+        }
 
         Speech speech = getSpeechList().getSpeech(flowingRegion);
+
         long defensiveRegionCount = flowGrid.getColumnChildren(speech.getColumn()).stream()
                 .filter(FlowingRegion.class::isInstance)
                 .map(FlowingRegion.class::cast)
@@ -219,24 +230,22 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         return actionManager;
     }
 
-    private final static int PREVIOUS_ROW_POSITION = 0;
-    private final static int FINAL_ROW_POSITION = 1;
-
     private void onConfigurationBackgroundColorChange(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
         flowGrid.setBackground(Utils.generateBackgroundOfColor(newValue));
     }
 
     private void onFlowingRegionAdded(Node node) {
         if (node instanceof FlowingRegion) {
-            FlowingRegion flowingRegion = (FlowingRegion) node;
+            final FlowingRegion flowingRegion = (FlowingRegion) node;
 
             Side sideToCheck = getSide();
 
-            int column = FlowGrid.getColumnIndex(flowingRegion);
+            final int column = FlowGrid.getColumnIndex(flowingRegion);
 
             // Indicats that this is a refutation speech
-            if (column % 2 == 1)
+            if (column % 2 == 1) {
                 sideToCheck = sideToCheck.getOpposite();
+            }
 
             ObservableValue<Color> observedColor = sideToCheck == Side.AFFIRMATIVE ?
                     EFlow.getInstance().getConfiguration().getAffColor().valueProperty() :
@@ -266,599 +275,10 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         return speechTimerMap;
     }
 
-    private class Split extends Action {
-        private final FlowingRegion flowingRegion;
-
-        private final Map<FlowingRegion, List<Integer>> updateMap = new HashMap<>();
-
-        private final List<FlowingRegion> addedRegions = new ArrayList<>();
-        private final List<FlowingRegion> removedRegions = new ArrayList<>();
-
-        public Split(FlowingRegion flowingRegion, int split) throws SplitException {
-            if (flowingRegion.getFlowingRegionType() != FlowingRegionType.PROACTIVE)
-                throw new SplitException("Cannot split non-defensive actions region");
-
-            this.flowingRegion = flowingRegion;
-
-            getRemovedRegions().add(getFlowingRegion());
-
-            String flowingRegionText = flowingRegion.getFullText();
-
-            String firstPart = flowingRegionText.substring(0, split);
-            String secondPart = flowingRegionText.substring(split);
-
-            FlowingRegion firstRegion = new FlowingRegion(firstPart, FlowingRegionType.PROACTIVE);
-            FlowingRegion secondRegion = new FlowingRegion(secondPart, FlowingRegionType.PROACTIVE);
-
-            getAddedRegions().add(firstRegion);
-            getAddedRegions().add(secondRegion);
-
-            int firstRowIndex = FlowGrid.getRowIndex(flowingRegion);
-            int secondRowIndex = firstRowIndex + 1;
-
-            int baseColumn = FlowGrid.getColumnIndex(flowingRegion);
-
-            FlowGrid.setConstraints(firstRegion, baseColumn, firstRowIndex);
-            FlowGrid.setConstraints(secondRegion, baseColumn, secondRowIndex);
-
-            IntStream.range(secondRowIndex, flowGrid.getRowCount())
-                    .mapToObj(flowGrid::getRowChildren)
-                    .filter(FlowingRegion.class::isInstance)
-                    .map(FlowingRegion.class::cast)
-                    .forEach(region -> {
-                        int originalRowIndex = FlowGrid.getRowIndex(region);
-                        int newRowIndex = originalRowIndex + 1;
-                        getUpdateMap().put(region, List.of(originalRowIndex, newRowIndex));
-                    });
-
-        }
-
-        @Override
-        public void execute() {
-            flowGrid.getChildren().addAll(getAddedRegions());
-            flowGrid.getChildren().removeAll(getRemovedRegions());
-
-            getUpdateMap().forEach((region, integers) -> {
-                int newRowIndex = integers.get(FINAL_ROW_POSITION);
-                FlowGrid.setRowIndex(region, newRowIndex);
-            });
-        }
-
-        @Override
-        public void unexecute() {
-            flowGrid.getChildren().addAll(getAddedRegions());
-            flowGrid.getChildren().addAll(getRemovedRegions());
-
-            getUpdateMap().forEach((region, integers) -> {
-                int oldRowIndex = integers.get(PREVIOUS_ROW_POSITION);
-                FlowGrid.setRowIndex(region, oldRowIndex);
-            });
-        }
-
-        @Override
-        public String getName() {
-            return "Split";
-        }
-
-        public FlowingRegion getFlowingRegion() {
-            return flowingRegion;
-        }
-
-        public List<FlowingRegion> getAddedRegions() {
-            return addedRegions;
-        }
-
-        public List<FlowingRegion> getRemovedRegions() {
-            return removedRegions;
-        }
-
-        public Map<FlowingRegion, List<Integer>> getUpdateMap() {
-            return updateMap;
-        }
-    }
-
-
-    /**
-     * Merging action. The process of merging involves collecting all the contents in the rows of all the actions regions
-     * into the row belonging to the top-most (determined by lowest row index) actions region.
-     * @author TheeNinja
-     */
-    private class Merge extends Action {
-
-        private final List<FlowingRegion> addedRegions = new ArrayList<>();
-        private final List<FlowingRegion> removedRegions;
-
-        private final Map<FlowingRegion, List<Integer>> updateMap;
-
-        private final int keptRow;
-
-        /**
-         * Constructs a merge action given {@code flowingRegions}
-         *
-         * @param flowingRegions regions to select
-         * @throws MergeException
-         */
-        Merge(List<FlowingRegion> flowingRegions) throws MergeException {
-            // Represents the top most row of the actions regions subject to merging
-            keptRow = flowingRegions.stream().map(FlowGrid::getRowIndex).reduce(Integer::min).get();
-
-            removedRegions = flowingRegions.stream()
-                    .map(flowGrid::getWholeLink)
-                    .sorted(Comparator.comparingInt(list -> getRowIndex(list.get(0))))
-                    .distinct()
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-
-            Map<Integer, List<FlowingRegion>> columnRegionsMap = removedRegions.stream()
-                    .collect(Collectors.groupingBy(FlowGrid::getColumnIndex));
-
-            for (Map.Entry<Integer, List<FlowingRegion>> entry : columnRegionsMap.entrySet()) {
-                int column = entry.getKey();
-                List<FlowingRegion> flowingRegionList = entry.getValue();
-
-                FlowingRegion toAdd = condense(flowingRegionList);
-
-                FlowGrid.setConstraints(toAdd, column, getKeptRow());
-                addedRegions.add(toAdd);
-            }
-
-            List<Integer> rows = removedRegions.stream()
-                    .map(FlowGrid::getRowIndex)
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            // We are reinserting kept row anyway, so remove it from the rows to be removed.
-            rows.remove(getKeptRow());
-
-            updateMap = getUpdateMap(rows);
-        }
-
-        private FlowingRegion condense(List<FlowingRegion> flowingRegions) throws MergeException {
-            String condensedText = flowingRegions.stream()
-                    .map(FlowingRegion::getFullText)
-                    .collect(Collectors.joining("-"));
-
-            List<Card> associatedCards = flowingRegions.stream()
-                    .map(FlowingRegion::getAssociatedCards)
-                    .flatMap(List::stream)
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            FlowingRegion flowingRegion = null;
-
-            if (flowingRegions.stream().allMatch(FlowingRegion::isProactive))
-                flowingRegion = new FlowingRegion(condensedText, FlowingRegionType.PROACTIVE);
-
-            if (flowingRegions.stream().allMatch(FlowingRegion::isOffensive)) {
-                flowingRegions.sort(Comparator.comparingInt(FlowGrid::getRowIndex));
-
-                FlowingRegion topFlowingRegion = flowingRegions.get(0);
-
-                flowingRegion = new FlowingRegion(
-                        condensedText,
-                        FlowingRegionType.REFUTATION
-                );
-
-            }
-
-            if (flowingRegions.stream().allMatch(FlowingRegion::isExtension)) {
-                flowingRegions.sort(Comparator.comparingInt(FlowGrid::getRowIndex));
-
-                FlowingRegion topFlowingRegion = flowingRegions.get(0);
-
-                flowingRegion = new FlowingRegion(
-                        "Extension",
-                    FlowingRegionType.EXTENSION
-                );
-
-            }
-
-            // If this passes, indicates that the list of actions regions were different types
-            if (flowingRegion == null)
-                throw new MergeException("Multiple types of actions regions within single speech");
-
-            return flowingRegion;
-        }
-
-        @Override
-        public void execute() {
-            flowGrid.getChildren().removeAll(removedRegions);
-            flowGrid.getChildren().addAll(addedRegions);
-
-            updateMap.forEach((flowingRegion, integers) -> {
-                FlowGrid.setRowIndex(flowingRegion, integers.get(FINAL_ROW_POSITION));
-            });
-        }
-
-        @Override
-        public void unexecute() {
-            flowGrid.getChildren().removeAll(addedRegions);
-            flowGrid.getChildren().addAll(removedRegions);
-
-            updateMap.forEach((flowingRegion, integers) -> {
-                FlowGrid.setRowIndex(flowingRegion, integers.get(PREVIOUS_ROW_POSITION));
-            });
-        }
-
-        @Override
-        public String getName() {
-            return "Merge " + removedRegions.size() + " regions";
-        }
-
-        public int getKeptRow() {
-            return keptRow;
-        }
-    }
-
-    /**
-     * Generates a map that represents what changes would occur to the actions grid upon removing
-     * a list of rows from {@code flowGrid}. However, we must take into account a row that may
-     * be inserted in the case of actions such as merge, which collapses rows (listed as {@code removedRows}).
-     *
-     * Note that this method should be called before {@code removedRows} are removed.
-     *
-     * @param removedRows The rows that will be removed from the {@code flowGrid}.
-     * @return a map consisting of each affected actions region as a key and a list of two integers as each value,
-     *         containing two elements. The first element represents the original row of the actions region. The
-     *         second element represents the new row of the actions region, dependent on {@code removedRows}.
-     */
-    private Map<FlowingRegion, List<Integer>> getUpdateMap(List<Integer> removedRows) {
-        Map<FlowingRegion, List<Integer>> map = new HashMap<>();
-
-        for (Speech speech : getSpeechList().getSpeeches()) {
-            List<Node> speechChildren = flowGrid.getColumnChildren(speech.getColumn());
-            List<FlowingRegion> flowingRegions = Utils.getOfType(
-                speechChildren,
-                FlowingRegion.class
-            );
-
-            for (FlowingRegion flowingRegion : flowingRegions) {
-
-                final int previousRow = getRowIndex(flowingRegion);
-
-                // This will be a removed row anyways, no need to tamper with
-                if (removedRows.contains(previousRow))
-                    continue;
-
-                /*
-                Imagine a tower of ham slices here. When you take a ham slice off from the bottom, all the other ham slices
-                will fall down by one index within the ham tower. removedRowsUnder represents the number of rows
-                that were collapsed under defensiveFlowingRegion
-                 */
-                int removedRowsUnder = (int) removedRows.stream().filter(removedRow -> previousRow > removedRow).count();
-
-                int finalRow = previousRow - removedRowsUnder;
-
-                map.put(flowingRegion, List.of(previousRow, finalRow));
-            }
-        }
-
-        return map;
-    }
-
-    private class Drop extends Action {
-        private final List<FlowingRegion> droppedFlowingRegions;
-
-        public Drop(List<FlowingRegion> flowingRegions) {
-            droppedFlowingRegions = flowingRegions
-                    .stream()
-                    .map(flowGrid::getPostLink)
-                    .flatMap(List::stream)
-                    .distinct()
-                    .collect(Collectors.toList());
-
-        }
-
-        @Override
-        public void execute() {
-            for (FlowingRegion flowingRegion : getDroppedFlowingRegions())
-                flowingRegion.getStyleClass().add("dropped");
-        }
-
-        @Override
-        public void unexecute() {
-            for (FlowingRegion flowingRegion : getDroppedFlowingRegions())
-                flowingRegion.getStyleClass().remove("dropped");
-        }
-
-        @Override
-        public String getName() {
-            return "Drop " + getDroppedFlowingRegions().size() + " regions";
-        }
-
-        public List<FlowingRegion> getDroppedFlowingRegions() {
-            return droppedFlowingRegions;
-        }
-    }
-
-    /**
-     * Refutes all selected nodes in a position relative to the last selected node. This is done by:
-     * 1) constructing a actions region writer that, when submitted, yields an offensive actions region
-     * 2) constructing a visual link between the newly created offensive actions region and the selected nodes
-     */
-    private class Refute extends Action {
-
-        private final FlowingRegion baseFlowingRegion;
-        private FlowingRegion refFlowingRegion;
-
-        public Refute(FlowingRegion baseFlowingRegion, String text) {
-            this.baseFlowingRegion = baseFlowingRegion;
-
-            Speech baseSpeech = getSpeechList().getSpeech(baseFlowingRegion);
-            // Utils.getRelativeElement(...) will wrap around, yet you cannot refute AT-Neg4 or AT-Aff4 CardContent
-            if (Utils.isLastElement(getSpeechList().getSpeeches(), baseSpeech))
-                return;
-
-            this.refFlowingRegion = new FlowingRegion(text, FlowingRegionType.REFUTATION);
-
-            int baseRow = FlowGrid.getRowIndex(baseFlowingRegion);
-            int baseColumn = FlowGrid.getColumnIndex(baseFlowingRegion);
-
-            int refColumn = baseColumn + FlowGrid.REF_COL_OFFSET;
-
-            FlowGrid.setRowIndex(refFlowingRegion, baseRow);
-            FlowGrid.setColumnIndex(refFlowingRegion, refColumn);
-        }
-
-        @Override
-        public void execute() {
-            flowGrid.getChildren().add(refFlowingRegion);
-        }
-
-        @Override
-        public void unexecute() {
-            flowGrid.getChildren().remove(refFlowingRegion);
-        }
-
-        @Override
-        public String getName() {
-            return "Refute \"" + getActionIdentifier(getBaseFlowingRegion()) + "\"";
-        }
-
-        public FlowingRegion getBaseFlowingRegion() {
-            return baseFlowingRegion;
-        }
-    }
-
     private static final Label QUESTION_MARK_LABEL = new Label("?");
 
     static {
         QUESTION_MARK_LABEL.setFont(Font.font(20));
-    }
-
-    private class Question extends Action {
-        private final FlowingRegion baseFlowingRegion;
-        private final String questionMessage;
-
-        Question(FlowingRegion baseFlowingRegion, String questionMessage) {
-            this.baseFlowingRegion = baseFlowingRegion;
-            this.questionMessage = questionMessage;
-        }
-
-        @Override
-        public void execute() {
-            System.out.println("Executed");
-            getBaseFlowingRegion().getAssociatedQuestions().add(getQuestionMessage());
-        }
-
-        @Override
-        public void unexecute() {
-            getBaseFlowingRegion().getAssociatedQuestions().remove(getQuestionMessage());
-        }
-
-        @Override
-        public String getName() {
-            return "Question \"" + getActionIdentifier(getBaseFlowingRegion()) + "\"";
-        }
-
-        FlowingRegion getBaseFlowingRegion() {
-            return baseFlowingRegion;
-        }
-
-        String getQuestionMessage() {
-            return questionMessage;
-        }
-    }
-
-    private class Extend extends Action {
-        private final List<FlowingRegion> baseFlowingRegions;
-        private final List<FlowingRegion> extendFlowingRegions;
-        private List<FlowLink> flowLinks = new ArrayList<>();
-
-        Extend(List<FlowingRegion> baseFlowingRegions) {
-            this.baseFlowingRegions = baseFlowingRegions;
-            this.extendFlowingRegions = this.baseFlowingRegions.stream()
-                    .map(FlowingRegion::duplicate)
-                    .map(this::newExtensionFromBase)
-                    .collect(Collectors.toList());
-        }
-
-        @Override
-        public void execute() {
-            flowGrid.getChildren().addAll(extendFlowingRegions);
-            addFlowLinks();
-
-        }
-
-        @Override
-        public void unexecute() {
-            flowGrid.getChildren().removeAll(this.extendFlowingRegions);
-            removeFlowLinks();
-        }
-
-        @Override
-        public String getName() {
-            return "Extend " + baseFlowingRegions.size() + " regions";
-        }
-
-        private void addFlowLinks() {
-            for (int index = 0; index < extendFlowingRegions.size(); index++) {
-                FlowingRegion base = baseFlowingRegions.get(index);
-                FlowingRegion extension = extendFlowingRegions.get(index);
-
-                FlowLink flowLink = new FlowLink(base, extension);
-                flowLinks.add(flowLink);
-            }
-
-            flowLinks.stream()
-                    .map(FlowLink::getLines)
-                    .flatMap(List::stream)
-                    .forEach(flowGrid.getChildren()::add);
-        }
-
-        private void removeFlowLinks() {
-            flowGrid.getChildren().removeAll(flowLinks);
-
-        }
-
-        private FlowingRegion newExtensionFromBase(FlowingRegion baseFlowingRegion) {
-            FlowingRegion extension = new FlowingRegion("Extend", FlowingRegionType.EXTENSION);
-
-            int baseRowIndex = FlowGrid.getRowIndex(baseFlowingRegion);
-            int baseColIndex = FlowGrid.getColumnIndex(baseFlowingRegion);
-
-            int newColIndex = baseColIndex + FlowGrid.EXT_COL_OFFSET;
-
-            FlowGrid.setColumnIndex(extension, newColIndex);
-            FlowGrid.setRowIndex(extension, baseRowIndex);
-
-            return extension;
-        }
-    }
-
-    private class Delete extends Action {
-        private List<FlowingRegion> deletedFlowingRegions;
-
-        private final Map<FlowingRegion, List<Integer>> updateMap;
-
-        public Delete(List<FlowingRegion> flowingRegions) {
-            // Remove duplicates, as they are a possibility. An example to demonstrate:
-           /* S = Selected, N = Not Selected
-           N
-           S S N
-           */
-            // Assuming that the user wishes to remove all selected, the right-most selected actions region is part of the link of
-            // the left-most selected actions region. Hence, I can expect this actions region to be included twice in deletedFlowingRegions.
-            deletedFlowingRegions = flowingRegions.stream()
-                    .map(flowGrid::getPostLink)
-                    .flatMap(List::stream)
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            List<Integer> rows = deletedFlowingRegions.stream()
-                    .map(FlowGrid::getRowIndex)
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            updateMap = getUpdateMap(rows);
-        }
-
-
-        @Override
-        public void execute() {
-            flowGrid.getChildren().removeAll(deletedFlowingRegions);
-
-            // post-removal, visibly, a actions region previously on row 2 will be "seen" on row 1.
-            // Yet, its row is still 2 within memory. Below corrects this issue.
-
-            updateMap.forEach((flowingRegion, integers) -> {
-                FlowGrid.setRowIndex(flowingRegion, integers.get(FINAL_ROW_POSITION));
-            });
-        }
-
-        @Override
-        public void unexecute() {
-            flowGrid.getChildren().addAll(deletedFlowingRegions);
-
-            updateMap.forEach((flowingRegion, integers) -> {
-                FlowGrid.setRowIndex(flowingRegion, integers.get(PREVIOUS_ROW_POSITION));
-            });
-        }
-
-        @Override
-        public String getName() {
-            return "Delete " + deletedFlowingRegions.size() + " regions";
-        }
-    }
-
-    private class ProactiveWrite extends Action {
-        private final FlowingRegion flowingRegion;
-
-        Map<FlowingRegion, List<Integer>> updateMap = new HashMap<>();
-
-        ProactiveWrite(Speech speech, FlowingRegion flowingRegion) {
-            this.flowingRegion = flowingRegion;
-
-            FlowGrid.setColumnIndex(getFlowingRegion(), speech.getColumn());
-            FlowGrid.setRowIndex(getFlowingRegion(), speech.getAvailableRow());
-
-            /* Imagine a scenario like this, where R = defensive actions region;
-
-                 Column Index
-               0 1 2 3 4 5 6 7
-               R
-               R
-               R
-                 R
-                   R
-
-               We would expect a user would add another actions region to a column index greater or equal to 2. However,
-               we must account for the fact that they may want to add another actions region to column 0 (perhaps
-               they forgot to flow something of the construction speech. In general, they may want to add something to
-               a column that does not have the most recently added defensive actions regions.
-
-               To support this case, the following for-loop only runs if there are defensive actions regions located
-               in the speeches after the speech that the user is adding a defensive actions region to. We increment
-               the row indexes of all those defensive actions regions by 1.
-            */
-            for (int column = speech.getColumn() + 1; column < Speech.SPEECH_SIZE; column++) {
-                List<FlowingRegion> affectedRegions =  flowGrid.getColumnChildren(column).stream()
-                        .filter(FlowingRegion.class::isInstance)
-                        .map(FlowingRegion.class::cast)
-                        .filter(FlowingRegion::isProactive)
-                        .collect(Collectors.toList());
-
-
-                for (FlowingRegion affectedRegion : affectedRegions) {
-                    int row = FlowGrid.getRowIndex(affectedRegion);
-                    updateMap.put(affectedRegion, List.of(row, row + 1));
-                }
-            }
-        }
-
-        @Override
-        public void execute() {
-            flowGrid.getChildren().add(getFlowingRegion());
-
-            updateMap.forEach((key, value) -> {
-                FlowGrid.setRowIndex(key, value.get(FINAL_ROW_POSITION));
-            });
-        }
-
-        @Override
-        public void unexecute() {
-            flowGrid.getChildren().remove(getFlowingRegion());
-
-            updateMap.forEach((key, value) -> {
-                FlowGrid.setRowIndex(key, value.get(PREVIOUS_ROW_POSITION));
-            });
-        }
-
-        @Override
-        public String getName() {
-            return "Write \"" + getActionIdentifier(getFlowingRegion()) + "\"";
-        }
-
-        public FlowingRegion getFlowingRegion() {
-            return flowingRegion;
-        }
-    }
-
-    private static final int IDENTIFIER_CHAR_LIMIT = 10;
-
-
-    private static String getActionIdentifier(FlowingRegion flowingRegion) {
-        return flowingRegion.getFullText().substring(0, IDENTIFIER_CHAR_LIMIT);
     }
 
     /**
@@ -886,7 +306,9 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         if (!isAnySelected())
             return;
 
-        getActionManager().perform(new Drop(getSelectedFlowingRegions()));
+        Action dropAction = new Drop(this, getSelectedFlowingRegions());
+
+        getActionManager().perform(dropAction);
 
     }
 
@@ -913,7 +335,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         questionTextField.setOnAction(actionEvent -> {
             String questionText = questionTextField.getText();
-            Question questionAction = new Question(flowingRegion, questionText);
+            Action questionAction = new Question(this, flowingRegion, questionText);
 
             getActionManager().perform(questionAction);
             popOver.hide();
@@ -937,10 +359,16 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         Speech offensiveSpeech = Utils.getRelativeElement(getSpeechList().getSpeeches(), baseSpeech, 1);
 
         TextArea textArea = getFlowingRegionWriter(
-                offensiveSpeech,
-                false,
-                flowingTextArea -> getActionManager().perform(new Refute(flowingRegion, flowingTextArea.getText())),
-                getRowIndex(getLastSelected())
+            offensiveSpeech,
+            false,
+            flowingTextArea -> getActionManager().perform(
+                new Refute(
+                    this,
+                    flowingRegion,
+                    flowingTextArea.getText()
+                )
+            ),
+            getRowIndex(getLastSelected())
         );
 
         flowGrid.getChildren().add(textArea);
@@ -968,10 +396,12 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
 
         // No need to reextend already extended actions regions
         List<FlowingRegion> flowingRegions = getSelectedFlowingRegions().stream().filter(
-                flowingRegion -> !flowGrid.getExtension(flowingRegion).isPresent()
+            flowingRegion -> !flowGrid.getExtension(flowingRegion).isPresent()
         ).collect(Collectors.toList());
 
-        getActionManager().perform(new Extend(getSelectedFlowingRegions()));
+        Action extendAction = new Extend(this, getSelectedFlowingRegions());
+
+        getActionManager().perform(extendAction);
     }
 
     private static int getColumnSpan(int startColumn, int endColumn) {
@@ -1054,46 +484,6 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         return selectedFlowingRegions;
     }
 
-    private class Edit extends Action {
-        private final FlowingRegion flowingRegion;
-        private final String newText;
-        private final String oldText;
-
-        public Edit(FlowingRegion flowingRegion, String newText) {
-            this.flowingRegion = flowingRegion;
-            this.newText = newText;
-            this.oldText = flowingRegion.getFullText();
-        }
-
-
-        @Override
-        public void execute() {
-            getFlowingRegion().setFullText(getNewText());
-        }
-
-        @Override
-        public void unexecute() {
-            getFlowingRegion().setFullText(getOldText());
-        }
-
-        @Override
-        public String getName() {
-            return "Edit";
-        }
-
-        public FlowingRegion getFlowingRegion() {
-            return flowingRegion;
-        }
-
-        public String getNewText() {
-            return newText;
-        }
-
-        public String getOldText() {
-            return oldText;
-        }
-    }
-
     public void attemptEdit() {
         FlowingRegion editedFlowingRegion = getLastSelected();
 
@@ -1101,7 +491,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             String nonTrimmedText = flowingTextArea.getText();
             String newText = nonTrimmedText.trim();
 
-            Edit editAction = new Edit(editedFlowingRegion, newText);
+            Action<?> editAction = new Edit(editedFlowingRegion, newText);
             getActionManager().perform(editAction);
         }, getRowIndex(editedFlowingRegion));
 
@@ -1127,7 +517,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             int caretPosition = flowingTextArea.getCaretPosition();
 
             try {
-                Action splitAction = new Split(selectedFlowingRegion, caretPosition);
+                Action<?> splitAction = new Split(this, selectedFlowingRegion, caretPosition);
                 getActionManager().perform(splitAction);
             } catch (SplitException splitException) {
                 notify(splitException.getMessage(), Level.SEVERE);
@@ -1166,7 +556,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         }
 
         try {
-            Action merge = new Merge(getSelectedFlowingRegions());
+            Action<?> merge = new Merge(this, getSelectedFlowingRegions());
             getActionManager().perform(merge);
         } catch (MergeException e) {
             e.printStackTrace();
@@ -1363,7 +753,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
             FlowGrid.setColumnIndex(defensiveFlowingRegion, speech.getColumn());
             FlowGrid.setRowIndex(defensiveFlowingRegion, speech.getAvailableRow());
 
-            ProactiveWrite proactiveWrite = new ProactiveWrite(speech, defensiveFlowingRegion);
+            Action<?> proactiveWrite = new ProactiveWrite(this, speech, defensiveFlowingRegion);
 
             getActionManager().perform(proactiveWrite);
         }, speech.getAvailableRow());
