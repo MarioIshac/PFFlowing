@@ -72,6 +72,15 @@ public class Configuration {
             0.75
     );
 
+    @SerializedName("partnerBluetoothAddress")
+    @Expose
+    private Configurable<String> partnerBluetoothAddress = new Configurable<>(
+            new Descriptor(
+                    "Bluetooth",
+                          "Partner Bluetooth Address",
+                    "Determines what computer this EFlow client will try to connect to upon request"),
+            "localhost");
+
     public Configurable<Color> getAffColor() {
         return affColor;
     }
@@ -106,5 +115,13 @@ public class Configuration {
 
     public void setQuestionColor(Configurable<Color> questionColor) {
         this.questionColor = questionColor;
+    }
+
+    public Configurable<String> getPartnerBluetoothAddress() {
+        return partnerBluetoothAddress;
+    }
+
+    public void setPartnerBluetoothAddress(Configurable<String> partnerBluetoothAddress) {
+        this.partnerBluetoothAddress = partnerBluetoothAddress;
     }
 }

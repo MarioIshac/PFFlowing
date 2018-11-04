@@ -32,8 +32,14 @@ public class EFlowSender {
 
     private final ClientSession clientSession;
 
+    private static String parseDeviceAddress(final String deviceAddress) {
+        return deviceAddress.replace(":", "");
+    }
+
     EFlowSender(String deviceAddress) throws IOException {
-        String obexURL = EFlowConnector.getOBEXURL(deviceAddress);
+        deviceAddress = parseDeviceAddress(deviceAddress);
+
+        final String obexURL = EFlowConnector.getOBEXURL(deviceAddress);
 
         System.out.println("a " + obexURL);
         this.clientSession = (ClientSession) Connector.open(obexURL);

@@ -32,8 +32,9 @@ public class ConfigEditorController implements SingleViewController<PropertyShee
         ConfigurationItem<Color> affColorItem = new ConfigurationItem<>(getConfiguration().getAffColor());
         ConfigurationItem<Color> negColorItem = new ConfigurationItem<>(getConfiguration().getNegColor());
         ConfigurationItem<Color> backgroundColorItem = new ConfigurationItem<>(getConfiguration().getBackgroundColor());
-        ConfigurationItem<Font> fontItem = new ConfigurationItem<Font>(getConfiguration().getReasoningFont());
-        propertySheet.getItems().addAll(affColorItem, negColorItem, backgroundColorItem, fontItem);
+        ConfigurationItem<Font> fontItem = new ConfigurationItem<>(getConfiguration().getReasoningFont());
+        ConfigurationItem<String> partnerBluetoothAddressItem = new ConfigurationItem<>(getConfiguration().getPartnerBluetoothAddress());
+        propertySheet.getItems().addAll(affColorItem, negColorItem, backgroundColorItem, fontItem, partnerBluetoothAddressItem);
     }
 
     @Override
