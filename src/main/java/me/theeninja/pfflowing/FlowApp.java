@@ -1,12 +1,15 @@
 package me.theeninja.pfflowing;
 
 import javafx.application.Application;
+import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
+import me.theeninja.pfflowing.bluetooth.EFlowConnector;
 import me.theeninja.pfflowing.gui.*;
+import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.tournament.Round;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -23,10 +26,6 @@ public class FlowApp extends Application {
 
     public Logger getLogger() {
         return logger;
-    }
-
-    public void setScene(Scene scene) {
-        this.scene = scene;
     }
 
     public void setStage(Stage stage) {
@@ -61,8 +60,9 @@ public class FlowApp extends Application {
             e.printStackTrace();
         }
 
-        setFlowController(flowController);
-        setScene(new Scene(flowController.getCorrelatingView()));
+        this.flowController = flowController;
+
+        this.scene = new Scene(flowController.getCorrelatingView());
 
         getStage().setScene(scene);
         getStage().setTitle(APPLICATION_STAGE_TITLE);
@@ -71,8 +71,6 @@ public class FlowApp extends Application {
         getStage().show();
 
         EFlow.setAsFullscreenToggler(getStage());
-
-        setActionManager(new ActionManager());
     }
 
     public Scene getScene() {
@@ -81,13 +79,5 @@ public class FlowApp extends Application {
 
     public Stage getStage() {
         return this.stage;
-    }
-
-    public ActionManager getActionManager() {
-        return actionManager;
-    }
-
-    private void setActionManager(ActionManager actionManager) {
-        this.actionManager = actionManager;
     }
 }

@@ -1,5 +1,6 @@
 package me.theeninja.pfflowing.gui;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.concurrent.Task;
@@ -22,6 +23,7 @@ import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.actions.ModifyCard;
+import me.theeninja.pfflowing.bluetooth.EFlowConnector;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.printing.RoundPrinter;
@@ -40,6 +42,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class FlowController implements Initializable, SingleViewController<FlowingPane> {
+    private EFlowConnector eFlowConnector;
     @FXML public FlowingPane pfFlowingMain;
     @FXML public HBox notificationDisplay;
     @FXML public TabPane roundsBar;
@@ -48,8 +51,40 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     private NavigatorController navigatorController;
     private final FlowApp flowApp;
 
+
+    public void attemptBluetoothShare() {
+        Task<Void> connectTask = new Task<>() {
+                @Override
+                protected Void call() throws IOException {
+                Round round = new Round(Side.AFFIRMATIVE);
+                round.setName("A");
+
+                getEFlowConnector().getSender().shareRound(round);
+
+                Platform.runLater(() -> FlowController.this.addRound(round));
+
+                return null;
+            }
+        };
+
+        Thread connectThread = new Thread(connectTask);
+
+        // Connecting terminates once EFlow application window is closed
+        connectThread.setDaemon(true);
+
+        connectThread.start();
+
+    }
+
     public FlowController(FlowApp flowApp) {
         this.flowApp = flowApp;
+
+        try {
+            this.eFlowConnector = new EFlowConnector("7C5CF8F97625", this);
+            getEFlowConnector().getFlowReceiver().listen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void onRegionRemovalRemoveDragSupport(Node node) {
@@ -138,25 +173,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         RoundPrinter.print(getSelectedRound());
     }
 
-    public void attemptBluetoothShare() {
-        Task<Void> connectTask = new Task<>() {
-            @Override
-            protected Void call() throws IOException {
-                EFlow.getInstance().getEFlowConnector().getFlowSender().connect();
-
-                return null;
-            }
-        };
-
-        Thread connectThread = new Thread(connectTask);
-
-        // Connecting terminates once EFlow application window is closed
-        connectThread.setDaemon(true);
-
-        connectThread.start();
-
-    }
-
     private final ListChangeListener<? super Node> onChildrenChange = Utils.generateListChangeListener(
             this::onRegionAdditionAddDragSupport,
             this::onRegionRemovalRemoveDragSupport
@@ -226,12 +242,8 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     }
 
-    public void addRound(String roundName, Side side) {
-        Round round = new Round(side);
+    public void addRound(Round round) {
         RoundTab roundTab = new RoundTab(round);
-
-        round.setName(roundName);
-        round.setDisplayedSide(side);
 
         roundsBar.getTabs().add(roundTab);
     }
@@ -341,7 +353,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
      *
      * @return All rounds represented by the rounds bar.
      */
-    public List<Round> getRoundsOnBar() {
+    public List<Round> getRounds() {
         return roundsBar.getTabs().stream()
                 .map(RoundTab.class::cast)
                 .map(RoundTab::getRound)
@@ -353,7 +365,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
      * @return null
      */
     public Round getRoundByPath(Path path) {
-        List<Round> rounds = getRoundsOnBar();
+        List<Round> rounds = getRounds();
 
         for (Round round : rounds) {
             // if round is not associated with path, skip it
@@ -469,4 +481,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
 
+    public EFlowConnector getEFlowConnector() {
+        return eFlowConnector;
+    }
 }

@@ -271,7 +271,7 @@ public class BlocksParserController implements SingleViewController<HBox>, Initi
 
         final org.w3c.dom.events.EventListener eventListener = new DocumentListener();
 
-        documentDisplay.getEngine().getLoadWorker().stateProperty().addListener(eventListener);
+        //documentDisplay.getEngine().getLoadWorker().stateProperty().addListener(eventListener);
     }
 
     public String getLoadedHTML() {

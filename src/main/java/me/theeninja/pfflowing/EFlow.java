@@ -95,13 +95,6 @@ public class EFlow {
     private EFlow() {
         this.gson = newGson();
 
-        try {
-            this.eFlowConnector = new EFlowConnector("7C5CF8F97625");
-            getEFlowConnector().getFlowReceiver().listen();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         if (isFirstTime())
             this.handleFirstTime();
 

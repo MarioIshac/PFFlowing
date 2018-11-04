@@ -1,6 +1,10 @@
 package me.theeninja.pfflowing.bluetooth;
 
+import com.google.common.base.Charsets;
+import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.actions.Action;
+import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.tournament.Round;
 
 import javax.bluetooth.BluetoothConnectionException;
 import javax.bluetooth.RemoteDevice;
@@ -12,6 +16,7 @@ import javax.obex.Operation;
 import javax.obex.ResponseCodes;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -39,17 +44,19 @@ public class EFlowSender {
         return clientSession;
     }
 
-    public void connect() throws IOException {
-        HeaderSet requestHeaderSet = getClientSession().createHeaderSet();
+    public void shareRound(Round round) throws IOException {
+        System.out.println("round shares");
 
-        requestHeaderSet.setHeader(HeaderSet.NAME, "Name");
+        HeaderSet roundHeaderSet = getNewRoundHeaderSet(round);
 
         System.out.println("c");
-        HeaderSet responseHeaderSet = getClientSession().connect(requestHeaderSet);
+        HeaderSet responseHeaderSet = getClientSession().connect(roundHeaderSet);
         System.out.println("d");
 
-        if (responseHeaderSet.getResponseCode() != ResponseCodes.OBEX_HTTP_OK) {
-            throw new BluetoothConnectionException(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
+        int responseCode = responseHeaderSet.getResponseCode();
+
+        if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
+            throw new BluetoothConnectionException(responseCode);
         }
 
        putData(Map.of(
@@ -57,8 +64,27 @@ public class EFlowSender {
        ), "Hello");
     }
 
-    private void putAction(Action action) {
+    private void shareAction(Round round, Side side, Action action) throws IOException {
+        HeaderSet actionHeaderSet = getNewActionHeaderSet(round, side, action);
 
+        Operation putOperation = getClientSession().put(actionHeaderSet);
+        HeaderSet receivedHeaders = putOperation.getReceivedHeaders();
+
+        int responseCode = receivedHeaders.getResponseCode();
+
+        if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
+            throw new BluetoothConnectionException(responseCode);
+        }
+
+        OutputStream outputStream = putOperation.openOutputStream();
+
+        String actionJson = EFlow.getInstance().getGSON().toJson(action);
+        byte[] actionJsonBytes = actionJson.getBytes(StandardCharsets.UTF_8);
+
+        outputStream.write(actionJsonBytes);
+        outputStream.close();
+
+        putOperation.close();
     }
 
     private void putData(Map<Integer, String> headerValues, String data) throws IOException {
@@ -90,5 +116,24 @@ public class EFlowSender {
     private void disconnect() throws IOException {
         getClientSession().disconnect(null);
         getClientSession().close();
+    }
+
+    public HeaderSet getNewRoundHeaderSet(Round round) {
+        HeaderSet headerSet = getClientSession().createHeaderSet();
+
+        headerSet.setHeader(EFlowHeader.ROUND_NAME, round.getName());
+        headerSet.setHeader(EFlowHeader.SIDE, round.getSide().getRepresentation());
+
+        return headerSet;
+    }
+
+    public HeaderSet getNewActionHeaderSet(Round round, Side side, Action action) {
+        HeaderSet headerSet = getClientSession().createHeaderSet();
+
+        headerSet.setHeader(EFlowHeader.ROUND_NAME, round.getName());
+        headerSet.setHeader(EFlowHeader.SIDE, side.getRepresentation());
+        headerSet.setHeader(EFlowHeader.ACTION_CLASS, action.getClass());
+
+        return headerSet;
     }
 }

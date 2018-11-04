@@ -1,16 +1,19 @@
 package me.theeninja.pfflowing.bluetooth;
 
 import javafx.concurrent.Task;
+import me.theeninja.pfflowing.gui.FlowController;
 
 import javax.microedition.io.Connector;
 import javax.obex.*;
 import java.io.IOException;
 
 public class EFlowReceiver extends ServerRequestHandler {
-    private final EFlowRequestHandler eFlowRequestHandler = new EFlowRequestHandler();
+    private final EFlowRequestHandler eFlowRequestHandler;
     private final SessionNotifier streamConnectionNotifier;
 
-    EFlowReceiver() throws IOException {
+    EFlowReceiver(FlowController flowController) throws IOException {
+        this.eFlowRequestHandler = new EFlowRequestHandler(flowController);
+
         String serverURL = EFlowConnector.getOBEXURL("localhost");
         this.streamConnectionNotifier = (SessionNotifier) Connector.open(serverURL);
     }
@@ -19,9 +22,9 @@ public class EFlowReceiver extends ServerRequestHandler {
         Task<Void> listeningTask = new Task<>() {
             @Override
             protected Void call() throws IOException {
-                while (true) {
-                    getStreamConnectionNotifier().acceptAndOpen(getEFlowRequestHandler());
-                }
+            while (true) {
+                getStreamConnectionNotifier().acceptAndOpen(getEFlowRequestHandler());
+            }
             }
         };
 

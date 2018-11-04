@@ -65,7 +65,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
     private BooleanProperty onDisplay;
 
     public FlowDisplayController(Side side) {
-        actionManager = new ActionManager();
+        this.actionManager = new ActionManager();
 
         this.side = side;
         setSpeechList(new SpeechList(side));
@@ -226,7 +226,7 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         }
     }
 
-    ActionManager getActionManager() {
+    public ActionManager getActionManager() {
         return actionManager;
     }
 

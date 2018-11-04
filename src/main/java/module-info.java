@@ -25,4 +25,5 @@ module EFlow {
     requires java.desktop;
     requires java.xml;
     requires jdk.xml.dom;
+    requires org.apache.commons.io;
 }

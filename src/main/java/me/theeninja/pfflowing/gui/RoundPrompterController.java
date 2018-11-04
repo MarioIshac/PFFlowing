@@ -12,6 +12,7 @@ import javafx.stage.Stage;
 import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.tournament.Round;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -44,7 +45,10 @@ public class RoundPrompterController implements SingleViewController<VBox>, Init
         String roundName = roundNameField.getText();
         Side side = sideChooser.getValue();
 
-        getFlowController().addRound(roundName, side);
+        Round round = new Round(side);
+        round.setName(roundName);
+
+        getFlowController().addRound(round);
     }
 
     public FlowController getFlowController() {
