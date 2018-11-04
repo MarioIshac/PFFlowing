@@ -19,6 +19,7 @@ import org.hildan.fxgson.FxGson;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,26 +51,27 @@ public class EFlow {
         });
     }
 
-    private final static EFlow instance = new EFlow();
+    private final static EFlow INSTANCE = new EFlow();
     private final Gson gson;
-    private EFlowConnector eFlowConnector;
     private final Configuration configuration;
 
     public static final String APPLICATION_NAME = "EFlow";
     public static final String BLOCKS_DIRECTORY = "Blocks";
     public static final String CONFIG_FILE = "config.json";
 
-    private String getDefault() {
-        Map<Boolean, String> OS_DEFAULT_DIRECTORIES = new HashMap<>() {{
-            put(SystemUtils.IS_OS_UNIX, System.getProperty("user.home") + "/.config");
-            put(SystemUtils.IS_OS_WINDOWS, System.getenv("AppData"));
-        }};
+    private static final Map<Boolean, String> OS_DEFAULT_DIRECTORIES = Map.of(
+        SystemUtils.IS_OS_UNIX, System.getProperty("user.home") + "/.config",
+        SystemUtils.IS_OS_WINDOWS, System.getenv("AppData")
+    );
 
+    private String getDefault() {
         for (Map.Entry<Boolean, String> entry : OS_DEFAULT_DIRECTORIES.entrySet()) {
-            if (entry.getKey())
+            if (entry.getKey()) {
                 return entry.getValue();
+            }
         }
-        return null;
+
+        throw new IllegalStateException("Operating system not supported");
     }
 
     private Gson newGson() {
@@ -95,8 +97,7 @@ public class EFlow {
     private EFlow() {
         this.gson = newGson();
 
-        if (isFirstTime())
-            this.handleFirstTime();
+        handleFiles();
 
         this.configuration = loadConfiguration();
     }
@@ -108,7 +109,7 @@ public class EFlow {
     }
 
     public static EFlow getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
 
@@ -124,24 +125,46 @@ public class EFlow {
         return Paths.get(getDefault(), APPLICATION_NAME, CONFIG_FILE);
     }
 
-    private boolean isFirstTime() {
+    private boolean hasFullAppPath() {
         return !Files.exists(getFullAppPath());
     }
 
-    private void handleFirstTime() {
+    private boolean hasCardsPath() {
+        return !Files.exists(getCardsPath());
+    }
+
+    private boolean hasConfigPath() {
+        return !Files.exists(getConfigPath());
+    }
+
+    private void handleNoFullAppPath() throws IOException {
+        Files.createDirectory(getFullAppPath());
+    }
+
+    private void handleNoCardsPath() throws IOException {
+        Files.createDirectory(getCardsPath());
+    }
+
+    private void handleNoConfigPath() throws IOException {
+        Files.createFile(getConfigPath());
+        Configuration defaultConfiguration = new Configuration();
+        String configurationRepresentation = getGSON().toJson(defaultConfiguration, Configuration.class);
+        Files.write(getConfigPath(), configurationRepresentation.getBytes());
+    }
+
+    private void handleFiles() {
         try {
-            // EFlow
-            Files.createDirectory(getFullAppPath());
-
-            // EFlow/config.json
-            Files.createFile(getConfigPath());
-            Configuration defaultConfiguration = new Configuration();
-            String configurationRepresentation = getGSON().toJson(defaultConfiguration, Configuration.class);
-            Files.write(getConfigPath(), configurationRepresentation.getBytes());
-
-            // EFlow/Cards
-            Files.createDirectory(getCardsPath());
-        } catch (IOException e) {
+            if (!hasFullAppPath()) {
+                handleNoFullAppPath();
+            }
+            if (!hasCardsPath()) {
+                handleNoCardsPath();
+            }
+            if (!hasConfigPath()) {
+                handleNoConfigPath();
+            }
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -151,10 +174,10 @@ public class EFlow {
             byte[] bytes = Files.readAllBytes(getConfigPath());
             String string = new String(bytes);
             return getGSON().fromJson(string, Configuration.class);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        return null;
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public Configuration getConfiguration() {
@@ -166,16 +189,13 @@ public class EFlow {
             String json = getGSON().toJson(getConfiguration(), Configuration.class);
             byte[] bytes = json.getBytes();
             Files.write(getConfigPath(), bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
     public Gson getGSON() {
         return gson;
-    }
-
-    public EFlowConnector getEFlowConnector() {
-        return eFlowConnector;
     }
 }

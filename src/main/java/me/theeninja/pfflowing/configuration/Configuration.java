@@ -8,7 +8,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import me.theeninja.pfflowing.utils.Utils;
 
-public class Configuration {
+public final class Configuration {
 
     private static final String AFF_COLOR_PROPERTY_LABEL = "Affirmative Color";
     private static final String NEG_COLOR_PROPERTY_LABEL = "Negation Color";

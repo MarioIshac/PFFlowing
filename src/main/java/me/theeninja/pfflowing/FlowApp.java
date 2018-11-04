@@ -56,7 +56,8 @@ public class FlowApp extends Application {
 
         try {
             fxmlLoader.load();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
 

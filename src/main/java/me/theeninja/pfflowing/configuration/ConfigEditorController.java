@@ -8,6 +8,9 @@ import javafx.scene.text.Font;
 import me.theeninja.pfflowing.SingleViewController;
 import org.controlsfx.control.PropertySheet;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -29,12 +32,37 @@ public class ConfigEditorController implements SingleViewController<PropertyShee
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        ConfigurationItem<Color> affColorItem = new ConfigurationItem<>(getConfiguration().getAffColor());
+        this.addConfigurationItems();
+
+        /* ConfigurationItem<?> affColorItem = new ConfigurationItem<>(getConfiguration().getAffColor());
         ConfigurationItem<Color> negColorItem = new ConfigurationItem<>(getConfiguration().getNegColor());
         ConfigurationItem<Color> backgroundColorItem = new ConfigurationItem<>(getConfiguration().getBackgroundColor());
         ConfigurationItem<Font> fontItem = new ConfigurationItem<>(getConfiguration().getReasoningFont());
         ConfigurationItem<String> partnerBluetoothAddressItem = new ConfigurationItem<>(getConfiguration().getPartnerBluetoothAddress());
-        propertySheet.getItems().addAll(affColorItem, negColorItem, backgroundColorItem, fontItem, partnerBluetoothAddressItem);
+
+        propertySheet.getItems().addAll(affColorItem, negColorItem, backgroundColorItem, fontItem, partnerBluetoothAddressItem); */
+    }
+
+    private void addConfigurationItems() {
+        // Configuration.class is final, therefore no need to go over inherited fields (which are non existent)
+        try {
+            for (Field field : Configuration.class.getDeclaredFields()) {
+                Class<?> fieldClass = field.getDeclaringClass();
+
+                if (Configurable.class.isAssignableFrom(fieldClass)) {
+                    Constructor<ConfigurationItem> configurationItemConstructor = ConfigurationItem.class.getConstructor(Configurable.class);
+                    Configurable<?> configurable = (Configurable<?>) field.get(getConfiguration());
+
+                    ConfigurationItem<?> configurationItem = configurationItemConstructor.newInstance(configurable);
+
+                    propertySheet.getItems().add(configurationItem);
+                }
+            }
+        }
+        catch (IllegalAccessException | IllegalArgumentException | InstantiationException | SecurityException | NoSuchMethodException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -46,7 +74,7 @@ public class ConfigEditorController implements SingleViewController<PropertyShee
 
         private final Configurable<T> configurable;
 
-        ConfigurationItem(Configurable<T> configurable) {
+        public ConfigurationItem(Configurable<T> configurable) {
             this.configurable = configurable;
         }
 
@@ -79,7 +107,10 @@ public class ConfigEditorController implements SingleViewController<PropertyShee
         public void setValue(Object object) {
             if (object.getClass() != getType())
                 throw new IllegalArgumentException("object not instance of " + getType().getSimpleName());
+
+            @SuppressWarnings("unchecked")
             T value = (T) object;
+
             getConfigurable().setValue(value);
         }
 
