@@ -45,10 +45,10 @@ public class ProactiveWrite extends FlowAction {
             */
         for (int column = speech.getColumn() + 1; column < Speech.SPEECH_SIZE; column++) {
             List<FlowingRegion> affectedRegions =  getFlowGrid().getColumnChildren(column).stream()
-                    .filter(FlowingRegion.class::isInstance)
-                    .map(FlowingRegion.class::cast)
-                    .filter(FlowingRegion::isProactive)
-                    .collect(Collectors.toList());
+                .filter(FlowingRegion.class::isInstance)
+                .map(FlowingRegion.class::cast)
+                .filter(FlowingRegion::isProactive)
+                .collect(Collectors.toList());
 
 
             for (FlowingRegion affectedRegion : affectedRegions) {

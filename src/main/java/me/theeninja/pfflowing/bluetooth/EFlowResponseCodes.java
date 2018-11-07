@@ -1,7 +1,7 @@
 package me.theeninja.pfflowing.bluetooth;
 
-public class EFlowResponseCodes {
-    public static final int NO_ACTION_CLASS = 0;
-    public static final int NO_SIDE = 1;
-    public static final int NO_ROUND_NAME = 2;
+class EFlowResponseCodes {
+    static final int NO_ACTION_CLASS = 0;
+    static final int NO_SIDE = 1;
+    static final int NO_ROUND_NAME = 2;
 }

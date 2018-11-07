@@ -7,6 +7,7 @@ import javafx.scene.input.*;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.speech.Side;
+import me.theeninja.pfflowing.utils.Utils;
 
 public class CardTreeCell extends TreeCell<Card> {
     CardTreeCell() {
@@ -24,11 +25,12 @@ public class CardTreeCell extends TreeCell<Card> {
     @Override
     public void updateItem(Card item, boolean empty) {
         super.updateItem(item, empty);
+
         if (item != null && !empty) {
             setText(item.getRepresentation());
         }
         else {
-            setText("");
+            setText(Utils.ZERO_LENGTH_STRING);
         }
     }
 
@@ -46,10 +48,12 @@ public class CardTreeCell extends TreeCell<Card> {
         Card card = newValue.getValue();
 
         // Indicates that this card is a dummy card only used for headers
-        if (card.getRepresentation() == null)
+        if (card.getRepresentation() == null) {
             removeDragSupport();
-        else
+        }
+        else {
             addDragSupport();
+        }
     }
 
     private void updateTextFill(TreeItem<Card> newValue) {
@@ -61,8 +65,9 @@ public class CardTreeCell extends TreeCell<Card> {
         Card card = newValue.getValue();
 
         // Indicates that this is a dummy cell
-        if (card.getSide() == null || card.getRepresentation() == null)
+        if (card.getSide() == null || card.getRepresentation() == null) {
             return;
+        }
 
         Side side = card.getSide();
 

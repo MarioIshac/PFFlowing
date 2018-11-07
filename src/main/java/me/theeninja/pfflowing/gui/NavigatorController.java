@@ -12,7 +12,7 @@ import javafx.scene.Parent;
 import me.theeninja.pfflowing.*;
 import me.theeninja.pfflowing.configuration.ConfigEditorController;
 import me.theeninja.pfflowing.flowingregions.Blocks;
-import me.theeninja.pfflowing.gui.cardparser.BlocksParserController;
+import me.theeninja.pfflowing.gui.cardparser.BlocksParserHomeController;
 import me.theeninja.pfflowing.tournament.Round;
 import me.theeninja.pfflowing.utils.Utils;
 
@@ -278,11 +278,11 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/blocks_parser/blocks_parser_home.fxml"));
 
-        BlocksParserController blocksParserController = new BlocksParserController(
+        BlocksParserHomeController blocksParserHomeController = new BlocksParserHomeController(
             blocks,
             stage::hide
         );
-        fxmlLoader.setController(blocksParserController);
+        fxmlLoader.setController(blocksParserHomeController);
 
         try {
             fxmlLoader.load();
@@ -290,7 +290,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
             e.printStackTrace();
         }
 
-        Scene scene = new Scene(blocksParserController.getCorrelatingView());
+        Scene scene = new Scene(blocksParserHomeController.getCorrelatingView());
         stage.setScene(scene);
 
         stage.show();
@@ -298,7 +298,7 @@ public class NavigatorController implements SingleViewController<MenuBar>, Initi
 
         EFlow.setAsFullscreenToggler(stage);
 
-        blocksParserController.startProcess();
+        blocksParserHomeController.startProcess();
     }
 
     @FXML

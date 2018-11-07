@@ -3,13 +3,9 @@ package me.theeninja.pfflowing.gui;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
-import me.theeninja.pfflowing.FlowApp;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.tournament.Round;
@@ -45,8 +41,7 @@ public class RoundPrompterController implements SingleViewController<VBox>, Init
         String roundName = roundNameField.getText();
         Side side = sideChooser.getValue();
 
-        Round round = new Round(side);
-        round.setName(roundName);
+        Round round = new Round(roundName, side);
 
         getFlowController().addRound(round);
     }

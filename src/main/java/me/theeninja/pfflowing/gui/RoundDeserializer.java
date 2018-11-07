@@ -24,9 +24,6 @@ public class RoundDeserializer implements JsonDeserializer<Round> {
         JsonObject negFlowGridJsonElement = jsonObject.get(NEG_FLOWING_GRID).getAsJsonObject();
         FlowGrid negFlowingGrid = context.deserialize(negFlowGridJsonElement, FlowGrid.class);
 
-        Round round = new Round(affFlowingGrid, negFlowingGrid, side);
-        round.setName(roundName);
-
-        return round;
+        return new Round(roundName, side, affFlowingGrid, negFlowingGrid);
     }
 }

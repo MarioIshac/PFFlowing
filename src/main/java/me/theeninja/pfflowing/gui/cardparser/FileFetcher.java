@@ -7,14 +7,15 @@ abstract class FileFetcher<T> {
     abstract String getHTMLOfFile(T file) throws IOException;
     abstract void feedFetchedFile(Consumer<T> fileConsumerCallback) throws IOException;
 
-    protected void feedFetchedHTML(Consumer<String> htmlConsumerCallback) throws IOException {
+    void feedFetchedHTML(Consumer<String> htmlConsumerCallback) throws IOException {
         feedFetchedFile(fetchedFile -> {
             try {
                 String html = getHTMLOfFile(fetchedFile);
                 System.out.println(html);
 
                 htmlConsumerCallback.accept(html);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
             }
         });

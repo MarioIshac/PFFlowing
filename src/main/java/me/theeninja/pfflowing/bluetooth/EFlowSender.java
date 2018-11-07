@@ -1,6 +1,5 @@
 package me.theeninja.pfflowing.bluetooth;
 
-import com.google.common.base.Charsets;
 import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.actions.Action;
 import me.theeninja.pfflowing.speech.Side;
@@ -16,7 +15,6 @@ import javax.obex.Operation;
 import javax.obex.ResponseCodes;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -64,13 +62,9 @@ public class EFlowSender {
         if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
             throw new BluetoothConnectionException(responseCode);
         }
-
-       putData(Map.of(
-           HeaderSet.NAME, "myName"
-       ), "Hello");
     }
 
-    private void shareAction(Round round, Side side, Action action) throws IOException {
+    private void shareNewAction(Round round, Side side, Action action) throws IOException {
         HeaderSet actionHeaderSet = getNewActionHeaderSet(round, side, action);
 
         Operation putOperation = getClientSession().put(actionHeaderSet);
@@ -93,30 +87,19 @@ public class EFlowSender {
         putOperation.close();
     }
 
-    private void putData(Map<Integer, String> headerValues, String data) throws IOException {
-        RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(getClientSession());
-        System.out.println("Friendly name " + remoteDevice.getFriendlyName(true));
+    private void shareActionModification(Round round, Side side, boolean isUndo) throws IOException {
+        HeaderSet headerSet = getModifyActionHeaderSet(round, side, isUndo);
 
-        HeaderSet requestHeaderSet = getClientSession().createHeaderSet();
+        Operation putOperation = getClientSession().put(headerSet);
+        HeaderSet receivedHeaders = putOperation.getReceivedHeaders();
 
-        for (Map.Entry<Integer, String> entry : headerValues.entrySet()) {
-            int headerKey = entry.getKey();
-            String headerValue = entry.getValue();
+        int responseCode = receivedHeaders.getResponseCode();
 
-            requestHeaderSet.setHeader(headerKey, headerValue);
+        if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
+            throw new BluetoothConnectionException(responseCode);
         }
 
-        Operation operation = getClientSession().put(requestHeaderSet);
-
-        // Sending the message
-        byte[] actionJsonBytes = data.getBytes(StandardCharsets.UTF_8);
-        OutputStream os = operation.openOutputStream();
-        os.write(actionJsonBytes);
-        os.close();
-
-        operation.close();
-
-        System.out.println("e");
+        putOperation.close();
     }
 
     private void disconnect() throws IOException {
@@ -124,21 +107,34 @@ public class EFlowSender {
         getClientSession().close();
     }
 
-    public HeaderSet getNewRoundHeaderSet(Round round) {
+    private HeaderSet getNewRoundHeaderSet(Round round) {
         HeaderSet headerSet = getClientSession().createHeaderSet();
 
-        headerSet.setHeader(EFlowHeader.ROUND_NAME, round.getName());
+        headerSet.setHeader(EFlowHeader.ROUND_NAME, round.getRoundName());
         headerSet.setHeader(EFlowHeader.SIDE, round.getSide().getRepresentation());
 
         return headerSet;
     }
 
-    public HeaderSet getNewActionHeaderSet(Round round, Side side, Action action) {
+    private HeaderSet getNewActionHeaderSet(Round round, Side side, Action action) {
         HeaderSet headerSet = getClientSession().createHeaderSet();
 
-        headerSet.setHeader(EFlowHeader.ROUND_NAME, round.getName());
+        headerSet.setHeader(EFlowHeader.ROUND_NAME, round.getRoundName());
         headerSet.setHeader(EFlowHeader.SIDE, side.getRepresentation());
+        headerSet.setHeader(EFlowHeader.TYPE, PutOperationType.NEW_ACTION);
         headerSet.setHeader(EFlowHeader.ACTION_CLASS, action.getClass());
+
+        return headerSet;
+    }
+
+    private HeaderSet getModifyActionHeaderSet(Round round, Side side, boolean isUndo) {
+        byte actonType = isUndo ? PutOperationType.UNDO_ACTION : PutOperationType.REDO_ACTION;
+
+        HeaderSet headerSet = getClientSession().createHeaderSet();
+
+        headerSet.setHeader(EFlowHeader.ROUND_NAME, round.getRoundName());
+        headerSet.setHeader(EFlowHeader.SIDE, side.getRepresentation());
+        headerSet.setHeader(EFlowHeader.TYPE, actonType);
 
         return headerSet;
     }

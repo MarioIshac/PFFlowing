@@ -17,8 +17,6 @@ import java.util.logging.Logger;
 public class FlowApp extends Application {
     private final Logger logger = Logger.getLogger(getClass().getSimpleName());
 
-    private ActionManager actionManager;
-
     private Scene scene;
 
     private Stage stage;
@@ -34,10 +32,6 @@ public class FlowApp extends Application {
 
     public FlowController getFlowController() {
         return flowController;
-    }
-
-    public void setFlowController(FlowController flowController) {
-        this.flowController = flowController;
     }
 
     public void toggleFullscreen() {

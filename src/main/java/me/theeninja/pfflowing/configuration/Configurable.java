@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
-public class Configurable<T> {
+public final class Configurable<T> {
     @Expose
     @SerializedName("descriptor")
     private final Descriptor descriptor;

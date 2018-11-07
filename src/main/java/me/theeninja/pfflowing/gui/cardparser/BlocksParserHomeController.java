@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 import org.w3c.dom.html.HTMLAnchorElement;
 
-public class BlocksParserController implements SingleViewController<HBox>, Initializable {
+public class BlocksParserHomeController implements SingleViewController<HBox>, Initializable {
     private class DocumentListener implements ChangeListener<Worker.State>, org.w3c.dom.events.EventListener {
         @Override
         public void handleEvent(Event evt) {
@@ -87,7 +87,7 @@ public class BlocksParserController implements SingleViewController<HBox>, Initi
     @FXML public ProgressBar progressBar;
     @FXML public VBox rightContainer;
 
-    public BlocksParserController(Blocks blocks, Runnable cleanUp) {
+    public BlocksParserHomeController(Blocks blocks, Runnable cleanUp) {
         this.blocks = blocks;
         this.cleanUp = cleanUp;
     }

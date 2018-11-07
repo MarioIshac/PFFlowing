@@ -8,7 +8,12 @@
 
 <VBox xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller=""
+            fx:controller="me.theeninja.pfflowing.gui.cardparser.BlocksParserConfigController"
+            fx:id="configBox"
             prefHeight="400.0" prefWidth="600.0">
-
+    <VBox fx:id="criteriaBox">
+        <!-- include one criteria to start, user can add more -->
+        <fx:include source="heading_criteria.fxml"/>
+    </VBox>
+    <Button prefWidth="Infinity" text="+" onAction="#addNewCriteria"/>
 </VBox>

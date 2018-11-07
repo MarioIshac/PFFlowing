@@ -39,17 +39,9 @@ public class RoundPrinter {
 
             // Should always be finished, as showPageSetupDialog waits until page setup has been configured
             // (and thus user has finished configuration) before allowing the rest of the code to occur
-            if (!hasFinishedSetup)
-                // User has decided not to print
-                return null;
-
-            for (FlowDisplayController flowDisplayController : getRound().getSideControllers()) {
-                FlowDisplay flowDisplay = flowDisplayController.getCorrelatingView();
-
-                boolean hadSuccessfulRendering = printerJob.printPage(flowDisplay);
-
-                if (hadSuccessfulRendering)
-                    printerJob.endJob();
+            if (hasFinishedSetup) {
+                printPage(printerJob, getRound().getAffirmativeController());
+                printPage(printerJob, getRound().getNegationController());
             }
 
             return null;
@@ -57,6 +49,16 @@ public class RoundPrinter {
 
         public Round getRound() {
             return round;
+        }
+
+        private static void printPage(PrinterJob printerJob, FlowDisplayController flowDisplayController) {
+            FlowDisplay flowDisplay = flowDisplayController.getCorrelatingView();
+
+            boolean hadSuccessfulRendering = printerJob.printPage(flowDisplay);
+
+            if (hadSuccessfulRendering) {
+                printerJob.endJob();
+            }
         }
     }
 }

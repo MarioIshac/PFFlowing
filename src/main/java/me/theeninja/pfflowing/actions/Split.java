@@ -1,6 +1,5 @@
 package me.theeninja.pfflowing.actions;
 
-import me.theeninja.pfflowing.actions.Action;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowing.FlowingRegionType;
 import me.theeninja.pfflowing.gui.FlowDisplayController;
@@ -24,8 +23,9 @@ public class Split extends FlowAction {
     public Split(FlowDisplayController flowDisplayController, FlowingRegion flowingRegion, int split) throws SplitException {
         super(flowDisplayController);
 
-        if (flowingRegion.getFlowingRegionType() != FlowingRegionType.PROACTIVE)
+        if (flowingRegion.getFlowingRegionType() != FlowingRegionType.PROACTIVE) {
             throw new SplitException("Cannot split non-defensive actions region");
+        }
 
         this.flowingRegion = flowingRegion;
 
@@ -51,14 +51,10 @@ public class Split extends FlowAction {
         FlowGrid.setConstraints(secondRegion, baseColumn, secondRowIndex);
 
         IntStream.range(secondRowIndex, getFlowGrid().getRowCount())
-                .mapToObj(getFlowGrid()::getRowChildren)
-                .filter(FlowingRegion.class::isInstance)
-                .map(FlowingRegion.class::cast)
-                .forEach(region -> {
-                    int originalRowIndex = FlowGrid.getRowIndex(region);
-                    int newRowIndex = originalRowIndex + 1;
-                    getUpdateMap().put(region, List.of(originalRowIndex, newRowIndex));
-                });
+            .mapToObj(getFlowGrid()::getRowChildren)
+            .filter(FlowingRegion.class::isInstance)
+            .map(FlowingRegion.class::cast)
+            .forEach(this::handleRegion);
 
     }
 
@@ -103,5 +99,11 @@ public class Split extends FlowAction {
 
     public Map<FlowingRegion, List<Integer>> getUpdateMap() {
         return updateMap;
+    }
+
+    private void handleRegion(FlowingRegion region) {
+        int originalRowIndex = FlowGrid.getRowIndex(region);
+        int newRowIndex = originalRowIndex + 1;
+        getUpdateMap().put(region, List.of(originalRowIndex, newRowIndex));
     }
 }

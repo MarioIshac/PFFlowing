@@ -77,11 +77,13 @@ public class FlowDisplayController implements Initializable, SingleViewControlle
         FXMLLoader fxmlLoader = new FXMLLoader(FlowDisplayController.class.getResource("/gui/flow/flowing_display.fxml"));
         FlowDisplayController flowDisplayController = new FlowDisplayController(side);
         fxmlLoader.setController(flowDisplayController);
+
         try {
             fxmlLoader.load();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         return flowDisplayController;
     }
 

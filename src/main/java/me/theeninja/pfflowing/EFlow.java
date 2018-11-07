@@ -1,6 +1,7 @@
 package me.theeninja.pfflowing;
 
 import com.google.gson.Gson;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -13,6 +14,7 @@ import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowing.FlowingRegionDeserializer;
 import me.theeninja.pfflowing.flowing.FlowingRegionSerializer;
 import me.theeninja.pfflowing.gui.*;
+import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.tournament.Round;
 import org.apache.commons.lang3.SystemUtils;
 import org.hildan.fxgson.FxGson;
@@ -25,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class EFlow {
     public static void setAsFullscreenToggler(Stage stage) {
@@ -59,13 +62,19 @@ public class EFlow {
     public static final String BLOCKS_DIRECTORY = "Blocks";
     public static final String CONFIG_FILE = "config.json";
 
-    private static final Map<Boolean, String> OS_DEFAULT_DIRECTORIES = Map.of(
-        SystemUtils.IS_OS_UNIX, System.getProperty("user.home") + "/.config",
-        SystemUtils.IS_OS_WINDOWS, System.getenv("AppData")
-    );
+    private final Map<Boolean, String> OS_DEFAULT_DIRECTORIES = new HashMap<>();
+
+    private void populateDefaultDirectories() {
+        OS_DEFAULT_DIRECTORIES.put(SystemUtils.IS_OS_UNIX, System.getProperty("user.home") + "/.config");
+        OS_DEFAULT_DIRECTORIES.put(SystemUtils.IS_OS_WINDOWS, System.getenv("AppData"));
+    }
 
     private String getDefault() {
-        for (Map.Entry<Boolean, String> entry : OS_DEFAULT_DIRECTORIES.entrySet()) {
+        System.out.println("DE " + OS_DEFAULT_DIRECTORIES);
+
+        for (final Map.Entry<Boolean, String> entry : OS_DEFAULT_DIRECTORIES.entrySet()) {
+            final boolean isOperatingSystem = entry.getKey();
+
             if (entry.getKey()) {
                 return entry.getValue();
             }
@@ -95,6 +104,8 @@ public class EFlow {
     }
 
     private EFlow() {
+        populateDefaultDirectories();
+
         this.gson = newGson();
 
         handleFiles();
@@ -126,15 +137,15 @@ public class EFlow {
     }
 
     private boolean hasFullAppPath() {
-        return !Files.exists(getFullAppPath());
+        return Files.exists(getFullAppPath());
     }
 
     private boolean hasCardsPath() {
-        return !Files.exists(getCardsPath());
+        return Files.exists(getCardsPath());
     }
 
     private boolean hasConfigPath() {
-        return !Files.exists(getConfigPath());
+        return Files.exists(getConfigPath());
     }
 
     private void handleNoFullAppPath() throws IOException {
@@ -165,7 +176,7 @@ public class EFlow {
             }
         }
         catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -197,5 +208,16 @@ public class EFlow {
 
     public Gson getGSON() {
         return gson;
+    }
+
+    public static <T> void associateController(Class<T> controllerClass, String resourceLocation, T disassociatedController) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(FlowDisplayController.class.getResource(resourceLocation));
+            fxmlLoader.setController(disassociatedController);
+            fxmlLoader.load();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

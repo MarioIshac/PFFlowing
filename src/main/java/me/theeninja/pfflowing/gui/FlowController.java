@@ -33,6 +33,7 @@ import me.theeninja.pfflowing.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,10 +55,9 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
     public void attemptBluetoothShare() {
         Task<Void> connectTask = new Task<>() {
-                @Override
+            @Override
                 protected Void call() throws IOException {
-                Round round = new Round(Side.AFFIRMATIVE);
-                round.setName("A");
+                Round round = new Round("A", Side.AFFIRMATIVE);
 
                 getEFlowConnector().getSender().shareRound(round);
 
@@ -79,12 +79,12 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     public FlowController(FlowApp flowApp) {
         this.flowApp = flowApp;
 
-        try {
+        /* try {
             this.eFlowConnector = new EFlowConnector("7C5CF8F97625", this);
             getEFlowConnector().getFlowReceiver().listen();
         } catch (IOException e) {
-            e.printStackTrace();
-        }
+            throw new UncheckedIOException(e);
+        } */
     }
 
     private void onRegionRemovalRemoveDragSupport(Node node) {
@@ -126,7 +126,6 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         return keyEvent -> {
             if (!roundsBar.getTabs().isEmpty()) {
                 RoundTab selectedRoundTab = (RoundTab) roundsBar.getSelectionModel().getSelectedItem();
-                Round selectedRound = selectedRoundTab.getRound();
 
                 KeyEventProcessor keyEventProcessor = new KeyEventProcessor(this, keyEvent);
                 keyEventProcessor.process();
@@ -185,20 +184,24 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         RoundTab roundTab = (RoundTab) tab;
         Round round = roundTab.getRound();
 
-        for (FlowDisplayController controller : round.getSideControllers()) {
-            controller.getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
-            controller.flowGrid.getChildren().addListener(onChildrenChange);
-        }
+        round.applyPerSide(this::associateFlowDisplayController);
+    }
+
+    private void associateFlowDisplayController(FlowDisplayController flowDisplayController) {
+        flowDisplayController.getCorrelatingView().maxWidthProperty().bind(roundsBar.widthProperty());
+        flowDisplayController.flowGrid.getChildren().addListener(onChildrenChange);
+    }
+
+    private void disassociateFlowDisplayController(FlowDisplayController flowDisplayController) {
+        flowDisplayController.getCorrelatingView().maxWidthProperty().unbind();
+        flowDisplayController.flowGrid.getChildren().removeListener(onChildrenChange);
     }
 
     private void onTabRemoved(Tab tab) {
         RoundTab roundTab = (RoundTab) tab;
         Round round = roundTab.getRound();
 
-        for (FlowDisplayController controller : round.getSideControllers()) {
-            controller.getCorrelatingView().maxWidthProperty().unbind();
-            controller.flowGrid.getChildren().removeListener(onChildrenChange);
-        }
+        round.applyPerSide(this::disassociateFlowDisplayController);
     }
 
     private <T> void setUpController(T controllerInstance, String fileName, Consumer<T> setter) {
@@ -208,7 +211,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
             fxmlLoader.load();
             setter.accept(controllerInstance);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -227,7 +230,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         try {
             fxmlLoader.load();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException(e);
         }
 
         Scene scene = new Scene(roundPrompterController.getCorrelatingView());
@@ -264,10 +267,12 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     private static final String SAVE_TITLE = "Save an EFlow";
 
     private File getEFlowTypeFile(File file) {
-        if (!file.getAbsolutePath().endsWith("." + FILE_EXTENSION))
+        if (!file.getAbsolutePath().endsWith("." + FILE_EXTENSION)) {
             return new File(file.getAbsoluteFile() + "." + FILE_EXTENSION);
-        else
+        }
+        else {
             return file;
+        }
     }
 
     public void saveSelectedRound() throws IOException {
@@ -281,8 +286,9 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
             File file = getFileChooser().showSaveDialog(allocatedStage);
 
-            if (file == null)
+            if (file == null) {
                 return;
+            }
 
             File eFlowFile = getEFlowTypeFile(file);
             Path returnedPath = eFlowFile.toPath();
@@ -304,8 +310,9 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         File file = getFileChooser().showOpenDialog(allocatedStage);
 
         // no file chosen
-        if (file == null)
+        if (file == null) {
             return; // assume that user cancelled opening
+        }
 
         File eflowFile = getEFlowTypeFile(file);
         Path path = eflowFile.toPath();
@@ -341,11 +348,12 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         for (Tab tab : roundsBar.getTabs()) {
             RoundTab roundTab = (RoundTab) tab;
 
-            if (roundTab.getRound() == round)
+            if (roundTab.getRound() == round) {
                 return roundTab;
+            }
         }
 
-        return null;
+        throw new IllegalArgumentException("Round not on tab bar");
     }
 
     /**
@@ -369,14 +377,16 @@ public class FlowController implements Initializable, SingleViewController<Flowi
 
         for (Round round : rounds) {
             // if round is not associated with path, skip it
-            if (round.getPath() == null)
+            if (round.getPath() == null) {
                 continue;
+            }
 
-            if (round.getPath().equals(path))
+            if (round.getPath().equals(path)) {
                 return round;
+            }
         }
 
-        return null;
+        throw new IllegalArgumentException("Path not on round bar");
     }
 
     public void openDirectory() throws IOException {
@@ -384,8 +394,9 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         File directory = getDirectoryChooser().showDialog(getFlowApp().getStage());
 
         // no directory chosen
-        if (directory == null)
+        if (directory == null) {
             return; // assume that user cancelled opening
+        }
 
         Path directoryPath = directory.toPath();
 

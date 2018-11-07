@@ -1,21 +1,14 @@
 package me.theeninja.pfflowing.tournament;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import me.theeninja.pfflowing.gui.FlowDisplayController;
 import me.theeninja.pfflowing.gui.FlowGrid;
 import me.theeninja.pfflowing.speech.Side;
 
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.function.Consumer;
 
 public class Round {
     public static final String NAME = "name";
@@ -24,40 +17,39 @@ public class Round {
     public static final String NEG_FLOWING_GRID = "negFlowingGrid";
 
     private ObjectProperty<Path> path = new SimpleObjectProperty<>();
-    private StringProperty name = new SimpleStringProperty();
+
+    private final String roundName;
     private final Side side;
-    private ObjectProperty<Side> displayedSide = new SimpleObjectProperty<>();
-    private final FlowDisplayController affController;
-    private final FlowDisplayController negController;
+    private final ObjectProperty<Side> displayedSide = new SimpleObjectProperty<>();
+    private final FlowDisplayController affirmativeController;
+    private final FlowDisplayController negationController;
     private final ObjectProperty<FlowDisplayController> selectedController = new SimpleObjectProperty<>();
 
-    public Round(Side side) {
-        this.affController = FlowDisplayController.newController(Side.AFFIRMATIVE);
-        this.negController = FlowDisplayController.newController(Side.NEGATION);
+    public Round(String roundName, Side side) {
+        this.affirmativeController = FlowDisplayController.newController(Side.AFFIRMATIVE);
+        this.negationController = FlowDisplayController.newController(Side.NEGATION);
 
+        this.roundName = roundName;
         this.side = side;
 
         displayedSideProperty().addListener(this::onDisplayedSideChanged);
 
-        SIDE_CONTROLLER_MAP = ImmutableMap.of(
-            Side.AFFIRMATIVE, getAffController(),
-            Side.NEGATION, getNegController()
-        );
+        setDisplayedSide(getSide());
     }
 
-    public Round(FlowGrid affFlowGrid, FlowGrid negFlowGrid, Side side) {
-        this(side);
+    public Round(String roundName, Side side, FlowGrid affFlowGrid, FlowGrid negFlowGrid) {
+        this(roundName, side);
 
-        getAffController().flowGrid.getChildren().setAll(affFlowGrid.getChildren());
-        getNegController().flowGrid.getChildren().setAll(negFlowGrid.getChildren());
+        getAffirmativeController().flowGrid.getChildren().setAll(affFlowGrid.getChildren());
+        getNegationController().flowGrid.getChildren().setAll(negFlowGrid.getChildren());
     }
 
-    public FlowDisplayController getAffController() {
-        return affController;
+    public FlowDisplayController getAffirmativeController() {
+        return affirmativeController;
     }
 
-    public FlowDisplayController getNegController() {
-        return negController;
+    public FlowDisplayController getNegationController() {
+        return negationController;
     }
 
     public FlowDisplayController getSelectedController() {
@@ -88,16 +80,8 @@ public class Round {
         this.displayedSide.set(displayedSide);
     }
 
-    public String getName() {
-        return name.get();
-    }
-
-    public StringProperty nameProperty() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name.set(name);
+    public String getRoundName() {
+        return this.roundName;
     }
 
     public Path getPath() {
@@ -112,13 +96,19 @@ public class Round {
         this.path.set(path);
     }
 
-    private final Map<Side, FlowDisplayController> SIDE_CONTROLLER_MAP;
-
     private void onDisplayedSideChanged(ObservableValue<? extends Side> observable, Side oldValue, Side newValue) {
-        setSelectedController(SIDE_CONTROLLER_MAP.get(newValue));
+        FlowDisplayController flowDisplayController = getController(newValue);
+
+        System.out.println("displayed side changed");
+        setSelectedController(flowDisplayController);
     }
 
-    public Set<FlowDisplayController> getSideControllers() {
-        return Set.of(getAffController(), getNegController());
+    public void applyPerSide(Consumer<FlowDisplayController> consumer) {
+        consumer.accept(getAffirmativeController());
+        consumer.accept(getNegationController());
+    }
+
+    public FlowDisplayController getController(Side side) {
+        return side == Side.AFFIRMATIVE ? getAffirmativeController() : getNegationController();
     }
 }
