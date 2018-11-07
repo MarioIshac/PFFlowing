@@ -18,8 +18,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-;
-
 public class EFlowSender {
     private static final UUID OBEX_OBJECT_PUSH_SERVICE = new UUID(0x1005);
     private static final int SERVICE_NAME_ATTRIBUTE = 0x0100;
@@ -46,7 +44,7 @@ public class EFlowSender {
     }
 
     private void connect() throws IOException {
-        this.clientSession = (ClientSession) Connector.open(obexURL);
+        this.clientSession = (ClientSession) Connector.open(getOBEXURL());
 
         HeaderSet responseHeaderSet = getClientSession().connect(null);
 
@@ -156,7 +154,7 @@ public class EFlowSender {
         return headerSet;
     }
 
-    public String getObexURL() {
+    private String getOBEXURL() {
         return obexURL;
     }
 }
