@@ -71,8 +71,8 @@ public class FlowController implements Initializable, SingleViewController<Flowi
                     Platform.runLater(() -> FlowController.this.addRound(round));
                     System.out.println("S4");
                 }
-                catch (IOException e) {
-                    throw new UncheckedIOException(e);
+                catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
                 }
 
                 return null;

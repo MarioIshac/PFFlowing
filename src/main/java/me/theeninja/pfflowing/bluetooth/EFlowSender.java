@@ -16,7 +16,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class EFlowSender {
     private static final UUID OBEX_OBJECT_PUSH_SERVICE = new UUID(0x1005);
@@ -43,13 +42,27 @@ public class EFlowSender {
         return clientSession;
     }
 
-    private void connect() throws IOException {
+    private final Object inquiryLock = new Object();
+    private final Object serviceLock = new Object();
+
+    private void connect() throws IOException, InterruptedException {
         System.out.println("A");
         this.clientSession = (ClientSession) Connector.open(getOBEXURL());
         System.out.println("B");
 
+        List<RemoteDevice> remoteDevices = new ArrayList<>();
         List<String> serviceUrls = new ArrayList<>();
-        DiscoveryListener serviceListener = new ServiceListener(serviceUrls);
+
+        DiscoveryListener serviceListener = new EFlowDiscoveryListener(remoteDevices, serviceUrls, inquiryLock, serviceLock);
+
+        synchronized (inquiryLock) {
+            boolean started = LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, serviceListener);
+            if (started) {
+                System.out.println("wait for device inquiry to complete...");
+                inquiryLock.wait();
+                System.out.println(remoteDevices.size() +  " device(s) found");
+            }
+        }
 
         RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(getClientSession());
         LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(new int[] {
@@ -75,7 +88,7 @@ public class EFlowSender {
         System.out.println("E");
     }
 
-    public void shareRound(Round round) throws IOException {
+    public void shareRound(Round round) throws IOException, InterruptedException {
         if (getClientSession() == null) {
             connect();
         }

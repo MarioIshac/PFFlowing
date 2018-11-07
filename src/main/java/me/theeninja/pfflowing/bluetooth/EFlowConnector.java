@@ -1,12 +1,13 @@
 package me.theeninja.pfflowing.bluetooth;
 
+import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.gui.FlowController;
 
 import java.io.IOException;
 import java.util.UUID;
 
 public class EFlowConnector {
-    private static final String EFLOW_IDENTIFIER = "11111111111111111111111111111123";
+    private static final String EFLOW_IDENTIFIER = "2";
 
     private final EFlowSender eFlowSender;
     private final EFlowReceiver eFlowReceiver;
@@ -25,6 +26,6 @@ public class EFlowConnector {
     }
 
     static String getOBEXURL(String deviceAddress) {
-        return "btgoep://" + deviceAddress + ":" + EFlowConnector.EFLOW_IDENTIFIER;
+        return "btgoep://" + deviceAddress + ":" + EFlowConnector.EFLOW_IDENTIFIER + ";name=" + EFlow.class.getSimpleName();
     }
 }
