@@ -54,6 +54,7 @@ public class EFlowSender {
         HeaderSet roundHeaderSet = getNewRoundHeaderSet(round);
 
         System.out.println("c");
+        System.out.println("Remote device " + RemoteDevice.getRemoteDevice(getClientSession()));
         HeaderSet responseHeaderSet = getClientSession().connect(roundHeaderSet);
         System.out.println("d");
 
@@ -108,10 +109,16 @@ public class EFlowSender {
     }
 
     private HeaderSet getNewRoundHeaderSet(Round round) {
+        System.out.println("creating");
         HeaderSet headerSet = getClientSession().createHeaderSet();
+        System.out.println("finished creating");
 
+        System.out.println("setting round name");
         headerSet.setHeader(EFlowHeader.ROUND_NAME, round.getRoundName());
+        System.out.println("finished setting round name");
         headerSet.setHeader(EFlowHeader.SIDE, round.getSide().getRepresentation());
+
+        System.out.println("done with method");
 
         return headerSet;
     }

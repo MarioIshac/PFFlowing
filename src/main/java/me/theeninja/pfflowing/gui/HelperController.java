@@ -50,7 +50,8 @@ public class HelperController implements SingleViewController<TabPane>, Initiali
 
             tab.setContent(webView);
             getCorrelatingView().getTabs().add(tab);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }

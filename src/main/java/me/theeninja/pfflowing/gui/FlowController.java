@@ -24,6 +24,7 @@ import me.theeninja.pfflowing.EFlow;
 import me.theeninja.pfflowing.SingleViewController;
 import me.theeninja.pfflowing.actions.ModifyCard;
 import me.theeninja.pfflowing.bluetooth.EFlowConnector;
+import me.theeninja.pfflowing.configuration.Configurable;
 import me.theeninja.pfflowing.flowing.FlowingRegion;
 import me.theeninja.pfflowing.flowingregions.Card;
 import me.theeninja.pfflowing.printing.RoundPrinter;
@@ -56,12 +57,21 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     public void attemptBluetoothShare() {
         Task<Void> connectTask = new Task<>() {
             @Override
-                protected Void call() throws IOException {
+                protected Void call() {
+                System.out.println("S");
+
                 Round round = new Round("A", Side.AFFIRMATIVE);
 
-                getEFlowConnector().getSender().shareRound(round);
-
-                Platform.runLater(() -> FlowController.this.addRound(round));
+                try {
+                    System.out.println("S2");
+                    getEFlowConnector().getSender().shareRound(round);
+                    System.out.println("S3");
+                    Platform.runLater(() -> FlowController.this.addRound(round));
+                    System.out.println("S4");
+                }
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
 
                 return null;
             }
@@ -79,12 +89,14 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     public FlowController(FlowApp flowApp) {
         this.flowApp = flowApp;
 
-        /* try {
-            this.eFlowConnector = new EFlowConnector("7C5CF8F97625", this);
+        try {
+            String partnerBluetoothAddress = EFlow.getInstance().getConfiguration().getPartnerBluetoothAddress().getValue();
+
+            this.eFlowConnector = new EFlowConnector(partnerBluetoothAddress, this);
             getEFlowConnector().getFlowReceiver().listen();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } */
+        }
     }
 
     private void onRegionRemovalRemoveDragSupport(Node node) {
@@ -246,6 +258,7 @@ public class FlowController implements Initializable, SingleViewController<Flowi
     }
 
     public void addRound(Round round) {
+        System.out.println("[Round added]");
         RoundTab roundTab = new RoundTab(round);
 
         roundsBar.getTabs().add(roundTab);
