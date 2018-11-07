@@ -28,7 +28,8 @@ public class EFlowSender {
 
     private static final int[] ATTRIBUTES = {SERVICE_NAME_ATTRIBUTE};
 
-    private final ClientSession clientSession;
+    private final String obexURL;
+    private ClientSession clientSession;
 
     private static String parseDeviceAddress(final String deviceAddress) {
         return deviceAddress.replace(":", "");
@@ -37,32 +38,41 @@ public class EFlowSender {
     EFlowSender(String deviceAddress) throws IOException {
         deviceAddress = parseDeviceAddress(deviceAddress);
 
-        final String obexURL = EFlowConnector.getOBEXURL(deviceAddress);
-
-        System.out.println("a " + obexURL);
-        this.clientSession = (ClientSession) Connector.open(obexURL);
-        System.out.println("b");
+        this.obexURL = EFlowConnector.getOBEXURL(deviceAddress);
     }
 
     public ClientSession getClientSession() {
         return clientSession;
     }
 
-    public void shareRound(Round round) throws IOException {
-        System.out.println("round shares");
+    private void connect() throws IOException {
+        this.clientSession = (ClientSession) Connector.open(obexURL);
 
-        HeaderSet roundHeaderSet = getNewRoundHeaderSet(round);
-
-        System.out.println("c");
-        System.out.println("Remote device " + RemoteDevice.getRemoteDevice(getClientSession()));
-        HeaderSet responseHeaderSet = getClientSession().connect(roundHeaderSet);
-        System.out.println("d");
+        HeaderSet responseHeaderSet = getClientSession().connect(null);
 
         int responseCode = responseHeaderSet.getResponseCode();
 
         if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
             throw new BluetoothConnectionException(responseCode);
         }
+    }
+
+    public void shareRound(Round round) throws IOException {
+        if (getClientSession() == null) {
+            connect();
+        }
+
+        HeaderSet roundHeaderSet = getNewRoundHeaderSet(round);
+
+        Operation putOperation = getClientSession().put(roundHeaderSet);
+        HeaderSet receivedHeaders = putOperation.getReceivedHeaders();
+
+        int responseCode = receivedHeaders.getResponseCode();
+
+        if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
+            throw new BluetoothConnectionException(responseCode);
+        }
+
     }
 
     private void shareNewAction(Round round, Side side, Action action) throws IOException {
@@ -144,5 +154,9 @@ public class EFlowSender {
         headerSet.setHeader(EFlowHeader.TYPE, actonType);
 
         return headerSet;
+    }
+
+    public String getObexURL() {
+        return obexURL;
     }
 }
