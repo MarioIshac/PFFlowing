@@ -3,9 +3,10 @@ package me.theeninja.pfflowing.bluetooth;
 import me.theeninja.pfflowing.gui.FlowController;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class EFlowConnector {
-    private static final int EFLOW_IDENTIFIER = 2;
+    private static final String EFLOW_IDENTIFIER = "11111111111111111111111111111123";
 
     private final EFlowSender eFlowSender;
     private final EFlowReceiver eFlowReceiver;

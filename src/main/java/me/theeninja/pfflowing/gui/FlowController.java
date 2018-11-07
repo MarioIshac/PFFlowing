@@ -58,6 +58,8 @@ public class FlowController implements Initializable, SingleViewController<Flowi
         Task<Void> connectTask = new Task<>() {
             @Override
                 protected Void call() {
+                getEFlowConnector().getFlowReceiver().listen();
+
                 System.out.println("S");
 
                 Round round = new Round("A", Side.AFFIRMATIVE);

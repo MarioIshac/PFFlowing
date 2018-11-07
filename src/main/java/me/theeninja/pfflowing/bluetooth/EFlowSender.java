@@ -5,9 +5,7 @@ import me.theeninja.pfflowing.actions.Action;
 import me.theeninja.pfflowing.speech.Side;
 import me.theeninja.pfflowing.tournament.Round;
 
-import javax.bluetooth.BluetoothConnectionException;
-import javax.bluetooth.RemoteDevice;
-import javax.bluetooth.UUID;
+import javax.bluetooth.*;
 import javax.microedition.io.Connector;
 import javax.obex.ClientSession;
 import javax.obex.HeaderSet;
@@ -16,6 +14,8 @@ import javax.obex.ResponseCodes;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class EFlowSender {
@@ -44,15 +44,35 @@ public class EFlowSender {
     }
 
     private void connect() throws IOException {
+        System.out.println("A");
         this.clientSession = (ClientSession) Connector.open(getOBEXURL());
+        System.out.println("B");
+
+        List<String> serviceUrls = new ArrayList<>();
+        DiscoveryListener serviceListener = new ServiceListener(serviceUrls);
+
+        RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(getClientSession());
+        LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(new int[] {
+                0x0100 // Service name
+        }, new UUID[] {
+                new UUID(0x1105)
+        }, remoteDevice, serviceListener);
+
+        System.out.println();
+        serviceUrls.forEach(System.out::println);
+
+        System.out.println(RemoteDevice.getRemoteDevice(getClientSession()).getFriendlyName(true));
 
         HeaderSet responseHeaderSet = getClientSession().connect(null);
+        System.out.println("C");
 
         int responseCode = responseHeaderSet.getResponseCode();
+        System.out.println("D");
 
         if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
             throw new BluetoothConnectionException(responseCode);
         }
+        System.out.println("E");
     }
 
     public void shareRound(Round round) throws IOException {

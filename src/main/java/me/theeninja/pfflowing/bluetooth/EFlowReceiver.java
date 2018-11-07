@@ -1,5 +1,7 @@
 package me.theeninja.pfflowing.bluetooth;
 
+import com.intel.bluetooth.obex.OBEXClientSessionImpl;
+import com.intel.bluetooth.obex.OBEXSessionNotifierImpl;
 import javafx.concurrent.Task;
 import me.theeninja.pfflowing.gui.FlowController;
 
@@ -22,9 +24,9 @@ public class EFlowReceiver extends ServerRequestHandler {
         Task<Void> listeningTask = new Task<>() {
             @Override
             protected Void call() throws IOException {
-            while (true) {
-                getStreamConnectionNotifier().acceptAndOpen(getEFlowRequestHandler());
-            }
+                while (true) {
+                    getStreamConnectionNotifier().acceptAndOpen(getEFlowRequestHandler());
+                }
             }
         };
 
