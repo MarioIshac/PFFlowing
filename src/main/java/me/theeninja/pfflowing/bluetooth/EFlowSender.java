@@ -18,24 +18,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EFlowSender {
-    private static final UUID OBEX_OBJECT_PUSH_SERVICE = new UUID(0x1005);
+    private static final UUID OBEX_OBJECT_PUSH_SERVICE = new UUID(0x1105);
     private static final int SERVICE_NAME_ATTRIBUTE = 0x0100;
 
     private static final UUID[] REQUESTED_SERVICES = {OBEX_OBJECT_PUSH_SERVICE};
 
     private static final int[] ATTRIBUTES = {SERVICE_NAME_ATTRIBUTE};
 
-    private final String obexURL;
     private ClientSession clientSession;
 
     private static String parseDeviceAddress(final String deviceAddress) {
         return deviceAddress.replace(":", "");
-    }
-
-    EFlowSender(String deviceAddress) throws IOException {
-        deviceAddress = parseDeviceAddress(deviceAddress);
-
-        this.obexURL = EFlowConnector.getOBEXURL(deviceAddress);
     }
 
     public ClientSession getClientSession() {
@@ -45,31 +38,53 @@ public class EFlowSender {
     private final Object inquiryLock = new Object();
     private final Object serviceLock = new Object();
 
+    public Object getInquiryLock() {
+        return this.inquiryLock;
+    }
+
+    public Object getServiceLock() {
+        return this.serviceLock;
+    }
+
     private void connect() throws IOException, InterruptedException {
         System.out.println("A");
-        this.clientSession = (ClientSession) Connector.open(getOBEXURL());
-        System.out.println("B");
 
         List<RemoteDevice> remoteDevices = new ArrayList<>();
         List<String> serviceUrls = new ArrayList<>();
 
-        DiscoveryListener serviceListener = new EFlowDiscoveryListener(remoteDevices, serviceUrls, inquiryLock, serviceLock);
+        DiscoveryListener serviceListener = new EFlowDiscoveryListener(remoteDevices, serviceUrls, getInquiryLock(), getServiceLock());
 
-        synchronized (inquiryLock) {
+        synchronized (getInquiryLock()) {
             boolean started = LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, serviceListener);
+
             if (started) {
                 System.out.println("wait for device inquiry to complete...");
-                inquiryLock.wait();
+                getInquiryLock().wait();
                 System.out.println(remoteDevices.size() +  " device(s) found");
             }
         }
+        // this.clientSession = (ClientSession) Connector.open(getOBEXURL());
+        System.out.println("B");
 
-        RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(getClientSession());
-        LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(new int[] {
-                0x0100 // Service name
-        }, new UUID[] {
-                new UUID(0x1105)
-        }, remoteDevice, serviceListener);
+        RemoteDevice remoteDevice = null;
+
+        for (RemoteDevice remoteDevice1 : remoteDevices) {
+            if (remoteDevice1.getFriendlyName(true).equals("MARIO-PC")) {
+                remoteDevice = remoteDevice1;
+                break;
+            }
+        }
+
+        System.out.println("C");
+
+        LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(
+            ATTRIBUTES,
+            REQUESTED_SERVICES,
+            remoteDevice,
+            serviceListener
+        );
+
+        System.out.println("D");
 
         System.out.println();
         serviceUrls.forEach(System.out::println);
@@ -185,9 +200,5 @@ public class EFlowSender {
         headerSet.setHeader(EFlowHeader.TYPE, actonType);
 
         return headerSet;
-    }
-
-    private String getOBEXURL() {
-        return obexURL;
     }
 }

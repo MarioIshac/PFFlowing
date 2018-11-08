@@ -13,7 +13,7 @@ public class EFlowConnector {
     private final EFlowReceiver eFlowReceiver;
 
     public EFlowConnector(String remoteDeviceAddress, FlowController flowController) throws IOException {
-        this.eFlowSender = new EFlowSender(remoteDeviceAddress);
+        this.eFlowSender = new EFlowSender();
         this.eFlowReceiver = new EFlowReceiver(flowController);
     }
 

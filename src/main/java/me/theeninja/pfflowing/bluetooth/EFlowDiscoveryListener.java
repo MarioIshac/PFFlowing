@@ -32,8 +32,7 @@ public class EFlowDiscoveryListener implements DiscoveryListener {
     @Override
     public void servicesDiscovered(int id, ServiceRecord[] serviceRecords) {
         System.out.println("servvicesDiscovered called");
-        for (int serviceRecordIndex = 0; serviceRecordIndex < serviceRecords.length; serviceRecordIndex++) {
-            ServiceRecord serviceRecord = serviceRecords[serviceRecordIndex];
+        for (ServiceRecord serviceRecord : serviceRecords) {
             String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
 
             if (url == null) {
@@ -63,6 +62,7 @@ public class EFlowDiscoveryListener implements DiscoveryListener {
     @Override
     public void inquiryCompleted(int i) {
         System.out.println("Device Inquiry completed!");
+
         synchronized(getInquiryLock()){
             getInquiryLock().notifyAll();
         }
