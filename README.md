@@ -1,7 +1,7 @@
 # PFFlowing
 A note-taking application specialized for high school public forum debate.
 
-The public forum debate format can be found (here)[https://debate.uvm.edu/dcpdf/PFNFL.pdf], and PFFlowing incorporates an interface that
+The public forum debate format can be found [here](https://debate.uvm.edu/dcpdf/PFNFL.pdf), and PFFlowing incorporates an interface that
 supports multiple components of this format, including:
 
 1. Speaker-specific, side-specific notes (with each column representing a side of one speaker). For example, there is a dedicated column
